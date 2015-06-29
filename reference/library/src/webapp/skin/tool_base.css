@@ -1133,3 +1133,59 @@ ul.calendarLegend li{
   margin:3px;
   line-height: 25px;
 }
+
+.ck-grid {
+	margin: 0 auto;
+}
+
+.ck-grid div,
+.ck-grid div:after,
+.ck-grid div:before {
+	margin: 0;
+	padding: 0;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.ck-grid h3 {
+	margin: 2px 0 5px 0;
+}
+
+/* Clearfix */
+.ck-grid:after,
+.ck-grid-inset:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.ck-grid div {
+	float: left;
+	padding: 0.3em;
+}
+
+.ck-grid-2 {
+	width: 50%;
+}
+
+.ck-grid-3 {
+	width: 33%;
+}
+
+@media (max-width: 35em) {
+	.ck-grid-2,
+	.ck-grid-3 {
+		width: 100%;
+	}
+}
+
+.ck-grid-inset img {
+	float: left;
+	margin-right: 10px;
+}
+
+.ck-grid-inset div {
+	float: left;
+	width: 70%;
+}
