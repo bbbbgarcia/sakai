@@ -427,14 +427,27 @@
             parent="javax.sql.BaseDataSource">
     </bean>
 
-    <!--  The "Global" Hibernate Session Factory -->
-	<bean id="org.sakaiproject.springframework.orm.hibernate.GlobalSessionFactory"
-		  class="org.sakaiproject.springframework.orm.hibernate.AddableSessionFactoryBean"
-		  init-method="init">
+	<bean id="org.sakaiproject.springframework.orm.hibernate.SakaiPersistenceUnitManager"
+		  class="org.sakaiproject.springframework.orm.hibernate.SakaiPersistenceUnitManager">
+		<property name="dataSource" ref="javax.sql.LazyDataSource"/>
+		<property name="persistenceUnitPostProcessors">
+			<list>
+				<bean class="org.sakaiproject.springframework.orm.hibernate.AddablePersistenceUnit"/>
+			</list>
+		</property>
+		<property name="serverConfigurationService" ref="org.sakaiproject.component.api.ServerConfigurationService"/>
+	</bean>
 
-		<property name="dataSource" ref="javax.sql.LazyDataSource" />
-
-		<property name="hibernateProperties">
+	<!--  The "Global" JPA Entity Manager Factory -->
+	<bean id="org.sakaiproject.springframework.orm.jpa.EntityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="jpaVendorAdapter">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"/>
+		</property>
+		<property name="jpaDialect">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
+		</property>
+		<property name="persistenceUnitManager" ref="org.sakaiproject.springframework.orm.hibernate.SakaiPersistenceUnitManager"/>
+		<property name="jpaProperties">
 			<props>
 				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
 				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
@@ -446,9 +459,15 @@
 				<prop key="hibernate.generate_statistics">true</prop>
 				<prop key="hibernate.enable_lazy_load_no_trans">true</prop>
 				<prop key="net.sf.ehcache.configurationResourceName">/org/sakaiproject/memory/api/ehcache.xml</prop>
+				<prop key="hibernate.current_session_context_class">org.springframework.orm.hibernate4.SpringSessionContext</prop>
 			</props>
 		</property>
-		<property name="serverConfigurationService" ref="org.sakaiproject.component.api.ServerConfigurationService"/>
+	</bean>
+
+	<!--  The "Global" Session Factory -->
+	<bean id="org.sakaiproject.springframework.orm.hibernate.GlobalSessionFactory"
+		  class="org.springframework.orm.jpa.vendor.HibernateJpaSessionFactoryBean">
+		<property name="entityManagerFactory" ref="org.sakaiproject.springframework.orm.jpa.EntityManagerFactory"/>
 	</bean>
 
 	<!--  The "Global" Transaction Manager -->
