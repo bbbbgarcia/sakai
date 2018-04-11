@@ -43,6 +43,26 @@
 			NewCal('revise:closeDate','MMDDYYYY',true,12, '<h:outputText value="#{ForumTool.defaultAvailabilityTime}"/>');
 	}
 	</script>
+<!-- RUBRICS JAVASCRIPT -->
+<script>
+  var imports = [
+	'/rubrics-service/imports/sakai-rubric-association.html',
+	'/rubrics-service/imports/sakai-rubric-grading.html'
+  ];
+  var Polymerdom = 'shady';
+  var rbcstoken = "<h:outputText value="#{ForumTool.rbcsToken}"/>";
+</script>
+<%
+	FacesContext fcontext = FacesContext.getCurrentInstance();
+	Application appl = fcontext.getApplication();
+	ValueBinding vbinding = appl.createValueBinding("#{ForumTool}");
+	DiscussionForumTool forumTool = (DiscussionForumTool) vbinding.getValue(fcontext);
+	String stateDetails = forumTool.getRbcsStateDetails();
+	String entityId = forumTool.getSelectedForum().getForum().getUuid();
+%>
+<script src="/rubrics-service/js/sakai-rubrics.js"></script>
+<link rel="stylesheet" href="/rubrics-service/css/sakai-rubrics-associate.css">
+<!-- END RUBRICS JAVASCRIPT -->
 
   <!-- Y:\msgcntr\messageforums-app\src\webapp\jsp\dfReviseForumSettingsAttach.jsp -->
     <h:form id="revise">
@@ -220,9 +240,6 @@
            <%-- </h:panelGrid> --%>
  		</div>
 
-
- 		
-
  		<script type="text/javascript">
  		      localDatePicker({
  		      	input:'.openDate', 
@@ -240,7 +257,6 @@
  		      	useTime:1 
  		      });
  		</script>
-
 
 		<h2><h:outputText value="#{msgs.cdfm_forum_mark_read}"/></h2>
 			
@@ -278,21 +294,39 @@
 			    		</div>
 					</div>
 				</div>
+			
+		<sakai-rubric-association styleClass="checkbox" style="margin-left:10px"
+
+			dont-associate-label='<h:outputText value="#{msgs.forum_dont_associate_label}" />'
+			dont-associate-value="0"
+			associate-label='<h:outputText value="#{msgs.forum_associate_label}" />'
+			associate-value="1"
+
+			tool-id="sakai.forums"
+			<% if(entityId != null && !"".equals(entityId)){ %>
+				entity-id=<%= entityId %>
+			<%}%>
+			<% if(stateDetails != null && !"".equals(stateDetails)){ %>
+				state-details=<%= stateDetails %>
+			<%}%>
+
+			config-fine-tune-points='<h:outputText value="#{msgs.option_pointsoverride}" />'
+			config-hide-student-preview='<h:outputText value="#{msgs.option_studentpreview}" />'
+
+		></sakai-rubric-association>
 
 			<%@ include file="/jsp/discussionForum/permissions/permissions_include.jsp"%>
 
-				
-        
       <div class="act">
-          <h:commandButton action="#{ForumTool.processActionSaveForumSettings}" value="#{msgs.cdfm_button_bar_save_setting}"
+          <h:commandButton action="#{ForumTool.processActionSaveForumSettings}" actionListener="#{ForumTool.keepStateDetails}" value="#{msgs.cdfm_button_bar_save_setting}"
           								 rendered="#{!ForumTool.selectedForum.markForDeletion}" accesskey="s" styleClass="blockMeOnClick"> 
     	 	  	<f:param value="#{ForumTool.selectedForum.forum.id}" name="forumId"/>         
           </h:commandButton>
-				<h:commandButton action="#{ForumTool.processActionSaveForumAndAddTopic}" value="#{msgs.cdfm_button_bar_save_setting_add_topic}" accesskey="t"
+				<h:commandButton action="#{ForumTool.processActionSaveForumAndAddTopic}" actionListener="#{ForumTool.keepStateDetails}" value="#{msgs.cdfm_button_bar_save_setting_add_topic}" accesskey="t"
           								 rendered = "#{!ForumTool.selectedForum.markForDeletion}" styleClass="blockMeOnClick">
 	        	<f:param value="#{ForumTool.selectedForum.forum.id}" name="forumId"/>
           </h:commandButton>  
-				<h:commandButton action="#{ForumTool.processActionSaveForumAsDraft}" value="#{msgs.cdfm_button_bar_save_draft}" accesskey="v"
+				<h:commandButton action="#{ForumTool.processActionSaveForumAsDraft}" actionListener="#{ForumTool.keepStateDetails}" value="#{msgs.cdfm_button_bar_save_draft}" accesskey="v"
           								 rendered = "#{!ForumTool.selectedForum.markForDeletion}" styleClass="blockMeOnClick">
 	        	<f:param value="#{ForumTool.selectedForum.forum.id}" name="forumId"/>
           </h:commandButton>

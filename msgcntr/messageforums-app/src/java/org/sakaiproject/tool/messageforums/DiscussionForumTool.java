@@ -50,6 +50,7 @@ import javax.faces.component.UIData;
 import javax.faces.component.UIInput;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
+import javax.faces.event.ActionEvent;
 import javax.faces.event.ValueChangeEvent;
 import javax.faces.model.SelectItem;
 import javax.servlet.http.HttpServletRequest;
@@ -149,6 +150,7 @@ import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.user.cover.UserDirectoryService;
 import org.sakaiproject.util.FormattedText;
 import org.sakaiproject.util.ResourceLoader;
+import org.sakaiproject.rubrics.logic.RubricsService;
 
 /**
  * @author <a href="mailto:rshastri@iupui.edu">Rashmi Shastri</a>
@@ -363,6 +365,9 @@ public class DiscussionForumTool
   private boolean gradeByPercent;
   private boolean gradeByLetter;
 
+  private static final String RUBRIC_STATE_DETAILS = "rbcs-state-details";
+  private static final String RUBRIC_TOKEN = "rbcs-token";
+  private String rbcsStateDetails = "";
 
   /**
    * Dependency Injected
@@ -379,7 +384,8 @@ public class DiscussionForumTool
   private AuthzGroupService authzGroupService;
   private LearningResourceStoreService learningResourceStoreService;
   private EventTrackingService eventTrackingService;
-  
+  private RubricsService rubricsService;
+
   private Boolean instructor = null;
   private Boolean sectionTA = null;
   private Boolean newForum = null;
@@ -438,7 +444,11 @@ public class DiscussionForumTool
 	  this.eventTrackingService = eventTrackingService;
   }
 
-private String editorRows;
+  public void setRubricsService(RubricsService rubricsService) {
+	this.rubricsService = rubricsService;
+  }
+
+  private String editorRows;
   
   private boolean threadMoved;
 
@@ -689,8 +699,6 @@ private String editorRows;
 	    		 } // end the big forum if
 	    	 }
 
-
-
 	    	 // get the total message count of non-moderated topics and add them to the discussion topic bean and
 	    	 // initialize the unread number of messages to all of them.
 	    	 List<Object[]> topicMessageCounts = forumManager.getMessageCountsForMainPage(topicIdsForCounts);
@@ -718,7 +726,6 @@ private String editorRows;
 	    		 assignments.add(new SelectItem(DEFAULT_GB_ITEM, getResourceBundleString(SELECT_ASSIGN)));
 
 	    		 //Code to get the gradebook service from ComponentManager
-
 	    		 GradebookService gradebookService = getGradebookService();
 
 	    		 if(getGradebookExist()) {
@@ -741,11 +748,7 @@ private String editorRows;
 	    	 }
 
 	    	 // now loop through the forums that we found earlier and turn them into forums ready to be displayed to the end user
-	    	 
 	    	 int sortIndex = 1;
-	    	 
-
-
 	    	 for (DiscussionForum forum: tempSortedForums) {
 	    		 // manually set the sort index now that the list is sorted
 	    		 forum.setSortIndex(Integer.valueOf(sortIndex));
@@ -763,7 +766,6 @@ private String editorRows;
 
 	    			 //itterate over all topics in the decoratedForum to add the unread message
 	    			 //counts to update the sypnoptic tool
-
 	    			 for (Iterator iterator = decoForum.getTopics().iterator(); iterator.hasNext();) {
 	    				 DiscussionTopicBean dTopicBean = (DiscussionTopicBean) iterator.next();
 	    				 //if user can read this forum topic, count the messages as well
@@ -771,7 +773,6 @@ private String editorRows;
 	    					 unreadMessagesCount += dTopicBean.getUnreadNoMessages();
 	    				 }
 	    			 }
-
 	    		 }
 
 	    		 decoForum.setGradeAssign(DEFAULT_GB_ITEM);
@@ -784,7 +785,6 @@ private String editorRows;
 	    		 }
 	    		 forums.add(decoForum);
 	    	 }
-
 	    	 
 	     }
 	     //update synotpic info for forums only:
@@ -858,7 +858,7 @@ private String editorRows;
     setEditMode(true);
     setPermissionMode(PERMISSION_MODE_TEMPLATE);
     template = new DiscussionAreaBean(areaManager.getDiscusionArea());
-               
+
     if(!isInstructor())
     {
       setErrorMessage(getResourceBundleString(INSUFFICIENT_PRIVILEGES_TO_EDIT_TEMPLATE_SETTINGS));
@@ -876,7 +876,7 @@ private String editorRows;
     
     setEditMode(false);
     setPermissionMode(PERMISSION_MODE_TEMPLATE);
-               
+
     if(!isInstructor())
     {
       setErrorMessage(getResourceBundleString(INSUFFICIENT_PRIVILEGES_TO_EDIT_TEMPLATE_ORGANIZE));
@@ -890,7 +890,6 @@ private String editorRows;
    */
   public List getPermissions()
   {
-  	  	  	
     if (permissions == null)
     {
       siteMembers=null;
@@ -1076,7 +1075,6 @@ private String editorRows;
   
   public String processActionDeleteForumMainConfirm()
   {
-
 	  log.debug("processForumMainConfirm()");
 
 	  String forumId = getExternalParameterByKey(FORUM_ID);
@@ -1135,8 +1133,7 @@ private String editorRows;
     HashMap<String, Integer> beforeChangeHM = null;    
     Long forumId = selectedForum.getForum().getId();
     beforeChangeHM = SynopticMsgcntrManagerCover.getUserToNewMessagesForForumMap(getSiteId(), forumId, null);
-    
-   
+
 	  forumManager.deleteForum(selectedForum.getForum());
 
 	  if(beforeChangeHM != null)
@@ -1511,8 +1508,7 @@ private String editorRows;
 	if(forum.getShortDescription()!=null && forum.getShortDescription().length() > 255){
 		forum.setShortDescription(forum.getShortDescription().substring(0, 255));
 	}
-    
-    
+
     if ("<br/>".equals(forum.getExtendedDescription()))
 	{
 		forum.setExtendedDescription("");
@@ -1537,7 +1533,10 @@ private String editorRows;
     		updateSynopticMessagesForForumComparingOldMessagesCount(getSiteId(), forum.getId(), null, beforeChangeHM, SynopticMsgcntrManager.NUM_OF_ATTEMPTS);
     	}        
     }
-    
+
+    //RUBRICS, Save the binding between the forum and the rubric
+    rubricsService.saveRubricAssociation("sakai.forums", forum.getUuid(), getRubricConfigurationParameters());
+
     return forum;
   }
 
@@ -1936,6 +1935,10 @@ private String editorRows;
    		Event event = eventTrackingService.newEvent(DiscussionForumService.EVENT_FORUMS_TOPIC_ADD, getEventReference(selectedTopic.getTopic()), null, true, NotificationService.NOTI_OPTIONAL, statement);
         eventTrackingService.post(event);
     }
+
+    //RUBRICS, Save the binding between the topic and the rubric
+    rubricsService.saveRubricAssociation("sakai.forums", selectedTopic.getTopic().getUuid(), getRubricConfigurationParameters());
+
     return processReturnToOriginatingPage();
     //reset();
     //return MAIN;
@@ -3595,7 +3598,7 @@ private String editorRows;
     prepareRemoveAttach.clear();
     assignments.clear();
     refreshPendingMsgs = true;
-  
+    rbcsStateDetails = "";
   }
 
   /**
@@ -6309,8 +6312,8 @@ private String editorRows;
   }
   
   public String processDfGradeCancel() 
-  { 
-	  selectedMessageCount = 0;
+  {
+    selectedMessageCount = 0;
     gradeNotify = false; 
     selectedAssign = DEFAULT_GB_ITEM; 
     resetGradeInfo();
@@ -6320,8 +6323,8 @@ private String editorRows;
   } 
   
   public String processDfGradeCancelFromDialog() 
-  { 
-	  selectedMessageCount = 0;
+  {
+    selectedMessageCount = 0;
     gradeNotify = false; 
     selectedAssign = DEFAULT_GB_ITEM; 
     resetGradeInfo();
@@ -6446,7 +6449,8 @@ private String editorRows;
   }
   
   public String processDfGradeSubmit() 
-  { 
+  {
+	keepStateDetails(null);
 	GradebookService gradebookService = getGradebookService();
 	if (gradebookService == null) {
 //		Maybe print an error message if it's possible to get into this state
@@ -6559,6 +6563,9 @@ private String editorRows;
     selectedAssign = DEFAULT_GB_ITEM; 
     resetGradeInfo();  
     getThreadFromMessage();
+	
+	// Persist the rubric evaluation
+	rubricsService.saveRubricEvaluation("sakai.forums", getRubricAssociationUuid(), selectedMessage.getMessage().getUuid(), studentUid, getUserId(), getRubricConfigurationParameters());
     return MESSAGE_VIEW; 
   } 
  
@@ -10056,6 +10063,58 @@ private String editorRows;
 	
 	public boolean isShowAvailabilityDates(){
 		return ServerConfigurationService.getBoolean("msgcntr.display.availability.dates", true);
+	}
+
+	//RUBRICS INTEGRATION FUNCTIONS
+	public HashMap<String,String> getRubricConfigurationParameters() {
+		FacesContext context = FacesContext.getCurrentInstance();
+		Map requestParams = context.getExternalContext().getRequestParameterMap();
+		HashMap list = new HashMap<String, String>();
+
+		requestParams.forEach((key, value) -> {
+			if (key.toString().startsWith("rbcs")) {
+				list.put(key, value);
+			}
+		});
+		return list;
+	}
+
+	public String getRbcsToken() {
+		log.debug("getRbcsToken()");
+		return rubricsService.generateJsonWebToken("sakai.forums");
+	}
+
+	public String getRbcsStateDetails() {
+		log.debug("getRbcsStateDetails() " + rbcsStateDetails);
+		return rbcsStateDetails;
+	}
+
+	public void setRbcsStateDetails(String details) {
+		log.debug("setRbcsStateDetails()");
+		this.rbcsStateDetails = details;
+	}
+
+	public void keepStateDetails(ActionEvent e) {//this is currently only used for rubrics, but could be used to avoid repeating code on each submit action
+		List rbcsDetails = getRequestParamArrayValueLike("rbcs-state-details");
+		if(rbcsDetails != null){
+			Iterator iter = rbcsDetails.iterator();
+			rbcsStateDetails = (String)iter.next();
+			log.debug("rbcsStateDetails " + rbcsStateDetails);
+		}
+	}
+
+	public boolean hasAssociatedRubric(){
+		return (allowedToGradeItem && (getRubricAssociationUuid() != null));
+	}
+
+	public String getRubricAssociationUuid(){
+		if(rubricsService.hasAssociatedRubric("sakai.forums", selectedTopic.getTopic().getUuid())){
+			return selectedTopic.getTopic().getUuid();
+		} else if(rubricsService.hasAssociatedRubric("sakai.forums", selectedForum.getForum().getUuid())) {
+			return selectedForum.getForum().getUuid();
+		} else {
+			return null;
+		}
 	}
 }
 
