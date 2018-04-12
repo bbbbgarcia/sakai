@@ -281,7 +281,10 @@ public class DeliveryBean
   
   private boolean  firstTimeTaking;
   boolean timeExpired = false;
-  
+
+  // Rubrics
+  private String rbcsToken;
+
   private static String ACCESSBASE = ServerConfigurationService.getAccessUrl();
   private static String RECPATH = ServerConfigurationService.getString("samigo.recommendations.path"); 
 
@@ -4076,5 +4079,13 @@ public class DeliveryBean
 
     public String getQuestionProgressMardPath () {
       return questionProgressMardPath;
+    }
+
+    public String getRbcsToken() {
+      return this.rbcsToken;
+    }
+
+    public void setRbcsToken(String rbcsToken) {
+      this.rbcsToken = rbcsToken;
     }
 }
