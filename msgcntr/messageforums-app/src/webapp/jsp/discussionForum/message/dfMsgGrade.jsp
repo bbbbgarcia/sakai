@@ -70,7 +70,14 @@
 		String stateDetails = forumTool.getRbcsStateDetails();
 		boolean hasAssociatedRubric = forumTool.hasAssociatedRubric();
 		String entityId = forumTool.getRubricAssociationUuid();
-		String rbcsMessageId = forumTool.getSelectedMessage().getMessage().getUuid();
+		String rbcsEvaluationId = "";
+		if (forumTool.getSelectedMessage() != null) {
+			rbcsEvaluationId = forumTool.getSelectedMessage().getMessage().getUuid();
+		} else if (forumTool.getSelectedTopic() != null) {
+			rbcsEvaluationId = forumTool.getSelectedTopic().getTopic().getUuid();
+		} else {
+			rbcsEvaluationId = forumTool.getSelectedForum().getForum().getUuid();
+		}
 		%>
 		
 		<script type="text/javascript" language="javascript">
@@ -197,7 +204,7 @@
 
 			tool-id="sakai.forums"
 			entity-id=<%= entityId %>
-			evaluated-item-id=<%= rbcsMessageId %>
+			evaluated-item-id=<%= rbcsEvaluationId %>
 			
 			<% if(stateDetails != null && !"".equals(stateDetails)){ %>
 				state-details=<%= stateDetails %>
