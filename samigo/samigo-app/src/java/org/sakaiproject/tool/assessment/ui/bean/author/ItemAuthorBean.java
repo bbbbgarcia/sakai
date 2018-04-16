@@ -1618,7 +1618,7 @@ public class ItemAuthorBean
     }
 
     public String getRubricStateDetails() {
-        if (StringUtils.isNotBlank(this.rubricStateDetails)) {
+        if (StringUtils.isNotBlank(this.rubricStateDetails) && !StringUtils.isNotBlank(ContextUtil.lookupParam(SamigoConstants.RBCS_ASSOCIATION_STATE_DETAILS))) {
             return this.rubricStateDetails;
         }
         this.rubricStateDetails = ContextUtil.lookupParam(SamigoConstants.RBCS_ASSOCIATION_STATE_DETAILS);
