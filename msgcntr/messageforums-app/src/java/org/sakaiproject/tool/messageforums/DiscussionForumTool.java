@@ -6542,10 +6542,13 @@ public class DiscussionForumTool
     String eventRef = "";
     if(selectedMessage != null){
     	eventRef = getEventReference(selectedMessage.getMessage());
+    	rubricsService.saveRubricEvaluation("sakai.forums", getRubricAssociationUuid(), selectedMessage.getMessage().getUuid(), studentUid, getUserId(), getRubricConfigurationParameters());
     }else if(selectedTopic != null){
     	eventRef = getEventReference(selectedTopic.getTopic());
+    	rubricsService.saveRubricEvaluation("sakai.forums", getRubricAssociationUuid(), selectedTopic.getTopic().getUuid(), studentUid, getUserId(), getRubricConfigurationParameters());
     }else if(selectedForum != null){
     	eventRef = getEventReference(selectedForum.getForum());
+    	rubricsService.saveRubricEvaluation("sakai.forums", getRubricAssociationUuid(), selectedForum.getForum().getUuid(), studentUid, getUserId(), getRubricConfigurationParameters());
     }
     LRS_Statement statement = null;
     if (null != learningResourceStoreService) {
@@ -6564,8 +6567,6 @@ public class DiscussionForumTool
     resetGradeInfo();  
     getThreadFromMessage();
 	
-	// Persist the rubric evaluation
-	rubricsService.saveRubricEvaluation("sakai.forums", getRubricAssociationUuid(), selectedMessage.getMessage().getUuid(), studentUid, getUserId(), getRubricConfigurationParameters());
     return MESSAGE_VIEW; 
   } 
  
@@ -10098,8 +10099,10 @@ public class DiscussionForumTool
 		List rbcsDetails = getRequestParamArrayValueLike("rbcs-state-details");
 		if(rbcsDetails != null){
 			Iterator iter = rbcsDetails.iterator();
-			rbcsStateDetails = (String)iter.next();
-			log.debug("rbcsStateDetails " + rbcsStateDetails);
+      if (iter.hasNext()) {
+        rbcsStateDetails = (String)iter.next();
+        log.debug("rbcsStateDetails " + rbcsStateDetails); 
+      }
 		}
 	}
 
@@ -10108,9 +10111,9 @@ public class DiscussionForumTool
 	}
 
 	public String getRubricAssociationUuid(){
-		if(rubricsService.hasAssociatedRubric("sakai.forums", selectedTopic.getTopic().getUuid())){
+		if(selectedTopic != null && rubricsService.hasAssociatedRubric("sakai.forums", selectedTopic.getTopic().getUuid())){
 			return selectedTopic.getTopic().getUuid();
-		} else if(rubricsService.hasAssociatedRubric("sakai.forums", selectedForum.getForum().getUuid())) {
+		} else if(selectedForum != null && rubricsService.hasAssociatedRubric("sakai.forums", selectedForum.getForum().getUuid())) {
 			return selectedForum.getForum().getUuid();
 		} else {
 			return null;
