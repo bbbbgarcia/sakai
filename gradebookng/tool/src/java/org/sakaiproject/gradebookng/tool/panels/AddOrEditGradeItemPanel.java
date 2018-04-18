@@ -17,7 +17,10 @@ package org.sakaiproject.gradebookng.tool.panels;
 
 import java.text.MessageFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
@@ -27,7 +30,10 @@ import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.ResourceModel;
+import org.apache.wicket.request.IRequestParameters;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
+import org.apache.wicket.util.string.StringValue;
 import org.sakaiproject.gradebookng.tool.component.GbAjaxButton;
 import org.sakaiproject.gradebookng.tool.component.GbFeedbackPanel;
 import org.sakaiproject.gradebookng.tool.pages.GradebookPage;
@@ -96,6 +102,8 @@ public class AddOrEditGradeItemPanel extends BasePanel {
 			final Gradebook gradebook = this.businessService.getGradebook();
 			assignment.setCounted(GradebookService.CATEGORY_TYPE_NO_CATEGORY == gradebook.getCategory_type());
 		}
+                
+                System.out.println("assignment.getId(): " + assignment.getId());
 
 		// form model
 		final Model<Assignment> formModel = new Model<Assignment>(assignment);
@@ -161,6 +169,7 @@ public class AddOrEditGradeItemPanel extends BasePanel {
 						final boolean success = AddOrEditGradeItemPanel.this.businessService.updateAssignment(assignment);
 
 						if (success) {
+                                                        saveRubricsConfiguration(assignment.getId());
 							getSession().success(MessageFormat.format(getString("message.edititem.success"), assignment.getName()));
 							setResponsePage(getPage().getPageClass(),
 									new PageParameters().add(GradebookPage.FOCUS_ASSIGNMENT_ID_PARAM, assignment.getId()));
@@ -190,6 +199,7 @@ public class AddOrEditGradeItemPanel extends BasePanel {
 							success = false;
 						}
 						if (success) {
+                                                        saveRubricsConfiguration(assignmentId);
 							getSession()
 									.success(MessageFormat.format(getString("notification.addgradeitem.success"), assignment.getName()));
 							setResponsePage(getPage().getPageClass(),
@@ -251,4 +261,20 @@ public class AddOrEditGradeItemPanel extends BasePanel {
 			this.dueDate = DateFormatterUtil.parseISODate(dueDateString);
 		}
 	}
+
+        private void saveRubricsConfiguration(Long assignmentId) {
+            HashMap<String, String> list = new HashMap<String, String>();
+            IRequestParameters parameters = RequestCycle.get().getRequest().getPostParameters();
+            String rbcsAssociate = parameters.getParameterValue("rbcs-associate").toString();
+            String rbcsConfigHideStudentPreview = parameters.getParameterValue("rbcs-config-hideStudentPreview").toString();
+            String rbcsConfigFineTunePoints = parameters.getParameterValue("rbcs-config-fineTunePoints").toString();
+            String rbcsStateDetails = parameters.getParameterValue("rbcs-state-details").toString();
+            String rbcsRubricsList = parameters.getParameterValue("rbcs-rubricslist").toString();
+            list.put("rbcs-associate", rbcsAssociate);
+            list.put("rbcs-config-hideStudentPreview", rbcsConfigHideStudentPreview);
+            list.put("rbcs-config-fineTunePoints", rbcsConfigFineTunePoints);
+            list.put("rbcs-state-details", rbcsStateDetails);
+            list.put("rbcs-rubricslist", rbcsRubricsList);
+            rubricsService.saveRubricAssociation("sakai.gradebookng", assignmentId.toString(), list);
+        }
 }

@@ -62,6 +62,7 @@ import org.sakaiproject.gradebookng.tool.actions.ViewAssignmentStatisticsAction;
 import org.sakaiproject.gradebookng.tool.actions.ViewCourseGradeLogAction;
 import org.sakaiproject.gradebookng.tool.actions.ViewCourseGradeStatisticsAction;
 import org.sakaiproject.gradebookng.tool.actions.ViewGradeLogAction;
+import org.sakaiproject.gradebookng.tool.actions.ViewGradeRubricAction;
 import org.sakaiproject.gradebookng.tool.actions.ViewGradeSummaryAction;
 import org.sakaiproject.gradebookng.tool.component.GbAjaxButton;
 import org.sakaiproject.gradebookng.tool.component.GbAjaxLink;
@@ -97,6 +98,7 @@ public class GradebookPage extends BasePage {
 	GbModalWindow addOrEditGradeItemWindow;
 	GbModalWindow studentGradeSummaryWindow;
 	GbModalWindow updateUngradedItemsWindow;
+	GbModalWindow gradeRubricWindow;
 	GbModalWindow gradeLogWindow;
 	GbModalWindow gradeCommentWindow;
 	GbModalWindow deleteItemWindow;
@@ -167,6 +169,9 @@ public class GradebookPage extends BasePage {
 
 		this.updateUngradedItemsWindow = new GbModalWindow("updateUngradedItemsWindow");
 		this.form.add(this.updateUngradedItemsWindow);
+
+		this.gradeRubricWindow = new GbModalWindow("gradeRubricWindow");
+		this.form.add(this.gradeRubricWindow);
 
 		this.gradeLogWindow = new GbModalWindow("gradeLogWindow");
 		this.form.add(this.gradeLogWindow);
@@ -258,6 +263,7 @@ public class GradebookPage extends BasePage {
 					}
 				});
 		this.gradeTable.addEventListener("setScore", new GradeUpdateAction());
+		this.gradeTable.addEventListener("gradeRubric", new ViewGradeRubricAction());
 		this.gradeTable.addEventListener("viewLog", new ViewGradeLogAction());
 		this.gradeTable.addEventListener("editAssignment", new EditAssignmentAction());
 		this.gradeTable.addEventListener("viewStatistics", new ViewAssignmentStatisticsAction());
@@ -454,6 +460,10 @@ public class GradebookPage extends BasePage {
 
 	public GbModalWindow getUpdateUngradedItemsWindow() {
 		return this.updateUngradedItemsWindow;
+	}
+
+	public GbModalWindow getGradeRubricWindow() {
+		return this.gradeRubricWindow;
 	}
 
 	public GbModalWindow getGradeLogWindow() {
