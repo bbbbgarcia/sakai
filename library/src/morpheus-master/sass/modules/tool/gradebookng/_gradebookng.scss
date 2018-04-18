@@ -1,0 +1,9 @@
+.#{$namespace}sakai-gradebookng {
+    .wicket-modal {
+        z-index: 999;
+    }
+
+    .wicket-mask-transparent {
+        z-index: 998;
+    }
+}

@@ -933,8 +933,19 @@ GbGradeTable.renderTable = function (elementId, tableData) {
   });
 
   // Setup menu event bindings
+  // Grade rubric
+  $(document).on("click", ".gb-dropdown-menu .gb-grade-rubric", function() {
+    var $dropdown = $(this).closest(".gb-dropdown-menu");
+    var $cell = $dropdown.data("cell");
+
+    GbGradeTable.ajax({
+      action: 'gradeRubric',
+      studentId: $.data($cell[0], "studentid"),
+      assignmentId: $.data($cell[0], "assignmentid")
+    });
+  }).
   // View Log
-  $(document).on("click", ".gb-dropdown-menu .gb-view-log", function() {
+  on("click", ".gb-dropdown-menu .gb-view-log", function() {
     var $dropdown = $(this).closest(".gb-dropdown-menu");
     var $cell = $dropdown.data("cell");
 
