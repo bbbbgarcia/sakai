@@ -253,6 +253,8 @@ $(document).ready(function() {
       </f:facet>
 
       <h:outputText id="assessmentTitle2" value="#{coreAssessment.title}" />
+      <!--Rubrics icon-->
+      <h:outputText styleClass="fa fa-th-large" id="rubrics-assessment-icon" rendered="#{author.assessmentHasRubric(coreAssessment.assessmentBaseId, false)}" title="#{authorFrontDoorMessages.assessment_use_rubric}" style="margin-left:0.5em"/>
     </t:column>
     
     <t:column headerstyleClass="lastModified" styleClass="lastModified">
@@ -346,6 +348,8 @@ $(document).ready(function() {
       </f:facet>
 
       <h:outputText id="publishedAssessmentTitle2" value="#{publishedAssessment.title}" />
+      <!--Rubrics icon-->
+      <h:outputText styleClass="fa fa-th-large" id="rubrics-published-assessment-icon" rendered="#{author.assessmentHasRubric(publishedAssessment.publishedAssessmentId, true)}" title="#{authorFrontDoorMessages.assessment_use_rubric}" style="margin-left:0.5em"/>
       <h:outputText value="#{authorFrontDoorMessages.asterisk_2}" rendered="#{publishedAssessment.status == 3}" styleClass="validate"/> 
     </t:column>
 

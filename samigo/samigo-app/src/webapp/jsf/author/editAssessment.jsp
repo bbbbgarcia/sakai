@@ -368,6 +368,10 @@ $(window).load( function() {
 		<h:outputText rendered="#{question.itemData.score == 0}" value=" #{authorMessages.points_lower_case}"/>
 	</h:panelGroup>
 
+	<!--Rubrics icon-->
+	<h:outputText styleClass="fa fa-th-large" id="rubrics-question-icon" rendered="#{author.isEditPendingAssessmentFlow && author.questionHasRubric(assessmentBean.assessmentId, question.itemData.itemIdString, false)}" title="#{authorMessages.question_use_rubric}" style="margin-left:0.5em"/>
+	<h:outputText styleClass="fa fa-th-large" id="rubrics-published-question-icon" rendered="#{!author.isEditPendingAssessmentFlow && author.questionHasRubric(author.editPublishedAssessmentID, question.itemData.itemIdString, true)}" title="#{authorMessages.question_use_rubric}" style="margin-left:0.5em"/>
+
 
         </h:panelGroup>
           <h:panelGroup>
