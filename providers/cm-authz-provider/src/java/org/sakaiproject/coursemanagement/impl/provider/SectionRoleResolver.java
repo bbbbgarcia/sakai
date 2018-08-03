@@ -118,7 +118,7 @@ public class SectionRoleResolver extends BaseRoleResolver {
 		return userRoleMap;
 	}
 
-	public Map<String, String> getGroupRoles(CourseManagementService cmService, String userEid) {
+	public Map<String, String> getGroupRoles(CourseManagementService cmService, String userEid) {System.out.println("getGroupRolesgetGroupRoles SEC");
 		Map<String, String> groupRoleMap = new HashMap<String, String>();
 		
 		// Start with the sectionEid->role map
@@ -128,6 +128,7 @@ public class SectionRoleResolver extends BaseRoleResolver {
 			// Convert these roles to Sakai roles
 			for(Entry<String, String> entry : sectionRoles.entrySet()) {
 				groupRoleMap.put(entry.getKey(), convertRole(entry.getValue()));
+				System.out.println("convert SEC " + entry.getKey() + " - " + entry.getValue());
 			}
 		}
 
@@ -135,9 +136,11 @@ public class SectionRoleResolver extends BaseRoleResolver {
 		if ((enrollmentStatusRoleMap != null) && (enrollmentStatusRoleMap.size() > 0)) {
 			Set<Section> enrolledSections = cmService.findEnrolledSections(userEid);
 			if(log.isDebugEnabled()) log.debug("Found " + enrolledSections.size() + " currently enrolled sections for user " + userEid);
+			System.out.println("Found " + enrolledSections.size() + " currently enrolled sections for user " + userEid);
 			for(Section section : enrolledSections) {
 				if(log.isDebugEnabled()) log.debug(userEid + " is enrolled in an enrollment set attached to section " + section.getEid());
-				// TODO Calling this for every section  is inefficient -- add new method to CM service?
+				System.out.println(userEid + " is enrolled in an enrollment set attached to section " + section.getEid());
+				// TODO Calling this for every section is inefficient -- add new method to CM service?
 				Enrollment enr = cmService.findEnrollment(userEid, section.getEnrollmentSet().getEid());
 				String roleFromEnrollmentStatus = enrollmentStatusRoleMap.get(enr.getEnrollmentStatus());
 
@@ -153,14 +156,16 @@ public class SectionRoleResolver extends BaseRoleResolver {
 			Set<Section> instructingSections = cmService.findInstructingSections(userEid);
 			for(Section instructingSection : instructingSections) {
 				groupRoleMap.put(instructingSection.getEid(), officialInstructorRole);
+				System.out.println("instructors SEC " + instructingSection.getEid() + " - " + officialInstructorRole);
 			}
 		}
 		
-		if(log.isDebugEnabled()) {
+		//if(log.isDebugEnabled()) {
 			for(Entry<String, String> sectionEid : groupRoleMap.entrySet()) {
 				log.debug("User " + userEid + " has role " + sectionEid.getValue() + " in " + sectionEid);
+				System.out.println("User " + userEid + " has role " + sectionEid.getValue() + " in " + sectionEid);
 			}
-		}
+		//}
 		return groupRoleMap;
 	}
 	

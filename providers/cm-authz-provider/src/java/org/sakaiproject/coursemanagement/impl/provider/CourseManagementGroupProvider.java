@@ -131,13 +131,15 @@ public class CourseManagementGroupProvider implements GroupProvider {
 	 * Provides a map of Course Section EIDs (which can be used as AuthzGroup provider IDs)
 	 * to Sakai roles for a given user.
 	 */
-	public Map<String, String> getGroupRolesForUser(String userEid) {
+	public Map<String, String> getGroupRolesForUser(String userEid) {System.out.println("EEEEEEEEEEEEE");
 		if(log.isDebugEnabled()) log.debug("------------------CMGP.getGroupRolesForUser(" + userEid + ")");
+		System.out.println("------------------CMGP.getGroupRolesForUser(" + userEid + ")");
 		Map<String, String> groupRoleMap = new HashMap<String, String>();
 		
 		for(RoleResolver rr : roleResolvers) {
 			Map<String, String> rrGroupRoleMap = rr.getGroupRoles(cmService, userEid);
 			if(log.isDebugEnabled()) log.debug("Found " + rrGroupRoleMap.size() + " groups for " + userEid + " from resolver " + rr.getClass().getName());
+			System.out.println("Found " + rrGroupRoleMap.size() + " groups for " + userEid + " from resolver " + rr.getClass().getName());
 
 			// Only add the section eids if they aren't already in the map or if the new role has a higher preference.
 			for(Iterator<Entry<String, String>> rrRoleIter = rrGroupRoleMap.entrySet().iterator(); rrRoleIter.hasNext();) {
@@ -145,7 +147,7 @@ public class CourseManagementGroupProvider implements GroupProvider {
 				String sectionEid = entry.getKey();
 				String existingRole = groupRoleMap.get(sectionEid);
 				String rrRole = entry.getValue();
-
+System.out.println("-+-+-+-+ "+ userEid + "'s role in groupRoleMap from " + existingRole + " to " + rrRole + " for section " + sectionEid);
 				// The Role Resolver has found no role for this section
 				if(rrRole == null) {
 					continue;
@@ -161,6 +163,7 @@ public class CourseManagementGroupProvider implements GroupProvider {
 			}
 		}
 		if(log.isDebugEnabled()) log.debug("______________getGroupRolesForUser=" + groupRoleMap);
+		System.out.println("______________getGroupRolesForUser=" + groupRoleMap);
 		return groupRoleMap;
 	}
 

@@ -61,7 +61,7 @@
 			            	sample chained impl with your custom impl, if any, or replace the
 			            	federated impl entirely with your own custom impl.
 			            -->
-			            <bean class="org.sakaiproject.coursemanagement.impl.CourseManagementServiceSampleChainImpl"/>
+			            <!--<bean class="org.sakaiproject.coursemanagement.impl.CourseManagementServiceSampleChainImpl"/>-->
 
             			<!-- The internal, hibernate-backed implementation -->
 						<bean class="org.sakaiproject.coursemanagement.impl.CourseManagementServiceHibernateImpl"
@@ -135,7 +135,7 @@
 	</bean>
 
 	<!--  Reconciliation Job for CM data -->
-<!--
+
    <bean id="sampleCMSyncJob"
    		class="org.sakaiproject.coursemanagement.impl.job.ClassPathCMSyncJob"
    		init-method="init" destroy-method="destroy">
@@ -152,10 +152,10 @@
    			<ref bean="org.sakaiproject.authz.api.AuthzGroupService"/>
    		</property>
    	</bean>
--->
+
 
    <!-- this is the helper that will register the above bean with the job scheduler -->
-<!--
+
    <bean id="org.sakaiproject.api.app.scheduler.JobBeanWrapper.SampleCMSyncJob"
       class="org.sakaiproject.component.app.scheduler.jobs.SpringJobBeanWrapper"
       init-method="init">
@@ -169,7 +169,7 @@
          <ref bean="org.sakaiproject.api.app.scheduler.SchedulerManager" />
       </property>
    </bean>
--->
+
 
     <!-- SAK-29138 - SiteTitleAdvisor default impl registration -->
     <bean id="org.sakaiproject.site.api.SiteTitleAdvisor"

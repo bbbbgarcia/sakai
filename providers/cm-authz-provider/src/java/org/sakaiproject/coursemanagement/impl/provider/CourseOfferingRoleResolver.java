@@ -104,7 +104,7 @@ public class CourseOfferingRoleResolver extends BaseRoleResolver {
 	/**
 	 * {@inheritDoc}
 	 */
-	public Map<String, String> getGroupRoles(CourseManagementService cmService, String userEid) {
+	public Map<String, String> getGroupRoles(CourseManagementService cmService, String userEid) {System.out.println("getGroupRolesgetGroupRoles COURSEOFF");
 		Map<String, String> sectionRoles = new HashMap<String, String>();
 
 		// Don't bother doing anything if the integration is configured to ignore
@@ -116,6 +116,7 @@ public class CourseOfferingRoleResolver extends BaseRoleResolver {
 		// Find all of the course offerings for which this user is a member
 		Map<String, String> courseOfferingRoles = cmService.findCourseOfferingRoles(userEid);
 		if(log.isDebugEnabled()) log.debug("Found " + courseOfferingRoles.size() + " course offering roles for " + userEid);
+		System.out.println("Found " + courseOfferingRoles.size() + " course offering roles for " + userEid);
 
 		// Add all of the equivalent course offerings-> role mappings for this user
 		Set<String> coEids = new HashSet<String>(courseOfferingRoles.keySet());
@@ -137,10 +138,12 @@ public class CourseOfferingRoleResolver extends BaseRoleResolver {
 			String sakaiRole = convertRole(coRole);
 			if(sakaiRole == null) {
 				if(log.isDebugEnabled()) log.debug("Course offering role " + coRole + " is not mapped to a sakai role.  Skipping this membership.");
+				System.out.println("Course offering role " + coRole + " is not mapped to a sakai role.  Skipping this membership.");
 				continue;
 			}
 			
 			if(log.isDebugEnabled()) log.debug(userEid + " has role=" + coRole + " in course offering " + coEid);
+			System.out.println(userEid + " has role=" + coRole + " in course offering " + coEid);
 			// Get the sections in each course offering
 			Set<Section> sections = cmService.getSections(coEid);
 			for(Iterator<Section> secIter = sections.iterator(); secIter.hasNext();) {

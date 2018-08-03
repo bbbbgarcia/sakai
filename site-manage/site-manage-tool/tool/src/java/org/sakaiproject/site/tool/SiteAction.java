@@ -13524,7 +13524,7 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 	private void prepareCourseAndSectionMap(String userId,
 			String academicSessionEid, HashMap courseOfferingHash,
 			HashMap sectionHash) {
-
+//System.out.println("prepareCourseAndSectionMapprepareCourseAndSectionMap");
 		// looking for list of courseOffering and sections that should be
 		// included in
 		// the selection list. The course offering must be offered
@@ -13537,33 +13537,33 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 			log.warn("Group provider not found");
 			return;
 		}
-		
+//System.out.println("1111");	
 		Map map = groupProvider.getGroupRolesForUser(userId);
 		if (map == null)
 			return;
-
+//System.out.println("222");
 		Set keys = map.keySet();
 		Set roleSet = getRolesAllowedToAttachSection();
 		for (Iterator i = keys.iterator(); i.hasNext();) {
 			String sectionEid = (String) i.next();
-			String role = (String) map.get(sectionEid);
+			String role = (String) map.get(sectionEid);//System.out.println("sec " + sectionEid + " - " + role);
 			if (includeRole(role, roleSet)) {
 				Section section = null;
 				getCourseOfferingAndSectionMap(academicSessionEid, courseOfferingHash, sectionHash, sectionEid, section);
 			}
 		}
-		
+//System.out.println("3333");	
 		// now consider those user with affiliated sections
 		List affiliatedSectionEids = affiliatedSectionProvider.getAffiliatedSectionEids(userId, academicSessionEid);
 		if (affiliatedSectionEids != null)
-		{
+		{System.out.println("NO PASAAA NORMALMENTEEEEE");
 			for (int k = 0; k < affiliatedSectionEids.size(); k++) {
 				String sectionEid = (String) affiliatedSectionEids.get(k);
-				Section section = null;
+				Section section = null;System.out.println("sec2 " + sectionEid);
 				getCourseOfferingAndSectionMap(academicSessionEid, courseOfferingHash, sectionHash, sectionEid, section);
 			}
 		}
-		
+//System.out.println("4444");
 		
 	} // prepareCourseAndSectionMap
 
@@ -13573,12 +13573,13 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 		} catch (IdNotFoundException e) {
 			log.warn("getCourseOfferingAndSectionMap: cannot find section " + sectionEid);
 		}
-		if (section != null) {
-			String courseOfferingEid = section.getCourseOfferingEid();
+		if (section != null) {//System.out.println("getCourseOfferingAndSectionMapgetCourseOfferingAndSectionMap " + sectionEid);
+			String courseOfferingEid = section.getCourseOfferingEid();//System.out.println("courseOfferingEid " + courseOfferingEid);
 			CourseOffering courseOffering = cms
 					.getCourseOffering(courseOfferingEid);
 			String sessionEid = courseOffering.getAcademicSession()
 					.getEid();
+			System.out.println(academicSessionEid + " vs " + sessionEid);
 			if (academicSessionEid.equals(sessionEid)) {
 				// a long way to the conclusion that yes, this course
 				// offering
@@ -13646,7 +13647,7 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 	 * @return
 	 */
 	private List prepareCourseAndSectionListing(String userId,
-			String academicSessionEid, SessionState state) {
+			String academicSessionEid, SessionState state) {System.out.println("venga va " + academicSessionEid);
 		// courseOfferingHash = (courseOfferingEid, vourseOffering)
 		// sectionHash = (courseOfferingEid, list of sections)
 		HashMap courseOfferingHash = new HashMap();
@@ -13662,8 +13663,10 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 		ArrayList offeringList = new ArrayList();
 		Set keys = courseOfferingHash.keySet();
 		for (Iterator i = keys.iterator(); i.hasNext();) {
+			String nexto = (String) i.next();
+			System.out.println("neee " + nexto);
 			CourseOffering o = (CourseOffering) courseOfferingHash
-					.get((String) i.next());
+					.get(nexto);
 			offeringList.add(o);
 		}
 
@@ -13679,7 +13682,7 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 
 		for (Iterator j = offeringListSorted.iterator(); j.hasNext();) {
 			CourseOffering o = (CourseOffering) j.next();
-			if (!dealtWith.contains(o.getEid())) {
+			if (!dealtWith.contains(o.getEid())) {System.out.println("no deatl");
 				// 1. construct list of CourseOfferingObject for CourseObject
 				ArrayList l = new ArrayList();
 				CourseOfferingObject coo = new CourseOfferingObject(o,
@@ -13689,10 +13692,10 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 				// 2. check if course offering is cross-listed
 				Set set = cms.getEquivalentCourseOfferings(o.getEid());
 				if (set != null)
-				{
-					for (Iterator k = set.iterator(); k.hasNext();) {
+				{System.out.println("set no");
+					for (Iterator k = set.iterator(); k.hasNext();) {System.out.println("itrn");
 						CourseOffering eo = (CourseOffering) k.next();
-						if (courseOfferingHash.containsKey(eo.getEid())) {
+						if (courseOfferingHash.containsKey(eo.getEid())) {System.out.println("cont");
 							// => cross-listed, then list them together
 							CourseOfferingObject coo_equivalent = new CourseOfferingObject(
 									eo, (ArrayList) sectionHash.get(eo.getEid()));
