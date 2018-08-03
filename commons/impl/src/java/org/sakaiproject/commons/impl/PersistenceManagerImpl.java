@@ -97,7 +97,7 @@ public class PersistenceManagerImpl implements PersistenceManager {
         return getAllPost(query, false);
     }
 
-    public List<Post> getAllPost(final QueryBean query, boolean populate) throws Exception {
+    public List<Post> getAllPost(final QueryBean query, boolean populate) throws Exception {//if query.context equals XX ...
 
         log.debug("getAllPost({})", query);
 
@@ -196,10 +196,11 @@ public class PersistenceManagerImpl implements PersistenceManager {
                 public void run() {
 
                     // Test if the commons exists.
-                    if (getCommons(post.getCommonsId()) == null) {
+                    if (getCommons(post.getCommonsId()) == null) {//
                         // Commons doesn't exist yet. Create it.
                         String embedder = post.getEmbedder();
                         String siteId = (embedder.equals(CommonsConstants.SOCIAL)) ? CommonsConstants.SOCIAL : post.getSiteId();
+						//TODO for ace context siteId should maybe be null?
                         sqlService.dbWrite(COMMONS_INSERT
                             , new Object [] { post.getCommonsId(), siteId, embedder });
                     }

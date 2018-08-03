@@ -46,6 +46,9 @@ public interface SakaiProxy {
     public String getCurrentSiteLocale();
 
     public Tool getCurrentTool();
+	
+	//public boolean isAceContext();
+	public String getToolContext();
 
     public String getCurrentToolId();
 

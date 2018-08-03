@@ -19,9 +19,13 @@
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="portlet" uri="http://java.sun.com/portlet" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <portlet:defineObjects />
 <link type="text/css" rel="stylesheet"  href="<%=request.getContextPath()%>/css/simple-rss-portlet.css" />
+
+<fmt:setLocale value="${userlanguage}" />
+<fmt:setBundle basename="au.edu.anu.portal.portlets.rss.utils.messages" />
 
 <div class="news-feed">
 
@@ -51,6 +55,9 @@
 		      			</c:otherwise>
 		      		</c:choose>
 		      		</h3>
+					<c:if test="${not empty dates[SyndEntry.uri]}">
+						<span class="date">${dates[SyndEntry.uri]}</span>
+					</c:if>
 	      			<span class="news-item-excerpt">${SyndEntry.description.value}</span>
 	      			
 	      			<c:if test="${not empty Media[SyndEntry.uri] && !Media[SyndEntry.uri].image}">
@@ -59,7 +66,11 @@
 							 (${Media[SyndEntry.uri].type}, ${Media[SyndEntry.uri].displayLength})
 						</div>
 					</c:if>
-	      				      			
+
+					<c:if test="${not empty SyndEntry.link}">
+						<a href="${SyndEntry.link}" target="_blank" class="fullstory pull-right" title="<fmt:message key="view.readnewwindow" />"><fmt:message key="view.resumereading" /></a>	 
+						<div class="clearfix"></div>
+					</c:if>							  
 	    		</li>
     		</c:forEach>
 			

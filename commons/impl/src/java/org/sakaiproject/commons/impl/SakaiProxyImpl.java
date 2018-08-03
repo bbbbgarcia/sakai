@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Observer;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -28,6 +29,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.lang.BooleanUtils;
 
 import org.sakaiproject.assignment.api.AssignmentServiceConstants;
 import org.sakaiproject.authz.api.AuthzGroup;
@@ -92,7 +94,7 @@ public class SakaiProxyImpl implements SakaiProxy {
         return sessionManager.getCurrentSession();
     }
 
-    public String getCurrentSiteId() {
+    public String getCurrentSiteId() {//System.out.println("getCurrentSiteId getCurrentSiteI " + getCurrentTool());
         return toolManager.getCurrentPlacement().getContext(); // equivalent to
     }
 
@@ -129,8 +131,40 @@ public class SakaiProxyImpl implements SakaiProxy {
     }
 
     public Tool getCurrentTool() {
+		
+		//TESTING CONTEXTS
+		/*Tool t = toolManager.getCurrentTool();
+		Properties props = t.getMutableConfig();*/
+/*		if(toolManager == null){ System.out.println("toolManager nuuuuuuu");}
+		else if(toolManager.getCurrentPlacement() == null){ System.out.println("toolManager.getCurrentPlacement()toolManager.getCurrentPlacement()");}
+		else if(toolManager.getCurrentPlacement().getConfig() == null){ System.out.println(".().getConfig().().getConfig()");}
+		else {Properties props = toolManager.getCurrentPlacement().getConfig();
+		System.out.println("props " + props);
+		System.out.println("ace " + isAceContext()); }*/
+		
         return toolManager.getCurrentTool();
     }
+	
+/*	public boolean isAceContext(){//if we have more than one context, make this getcontext with switch/case + constants
+		//CONSTANTS.ACE_CONTEXT = "wewe";
+		if(toolManager.getCurrentPlacement() == null){ return false; }
+		Properties props = toolManager.getCurrentPlacement().getConfig();
+		return BooleanUtils.toBoolean(props.getProperty("ace-context"));
+	}*/
+	public String getToolContext(){
+		if(toolManager.getCurrentPlacement() == null){ return null; }
+		Properties props = toolManager.getCurrentPlacement().getConfig();
+		if(BooleanUtils.toBoolean(props.getProperty(CommonsConstants.ACE))){
+			return CommonsConstants.ACE;
+		} else if(props.getProperty(CommonsConstants.REGION) != null){//QUIEN / CUANDO METERA ESTA PROPERTY EN ESTA TOOL?? proceso automatico de creacion de worksites? DEBERIA LEERLO DE OTRO LADO? PUEDE TENER MAS DE UNA REGION?
+																		//1 procesado de plantillas manual + carga inicial -> por ejemplo por ws
+																		//2 desde la tool de region -> al configurarla se le crea la pagina en el workspace o algo asi
+																		//3 job que vaya creando paginas en workspaces asociadas a la region
+			return props.getProperty(CommonsConstants.REGION);
+			//TODO check if user belongs to region? //regionService.getUserRegions
+		}
+		return null;
+	}
 
     public String getCurrentToolId() {
         return toolManager.getCurrentPlacement().getId();
@@ -496,6 +530,8 @@ public class SakaiProxyImpl implements SakaiProxy {
     }
 
     public boolean isUserSite(String siteId) {
+		//if(isAceContext()){ return false; }
+		if(getToolContext() != null){ return false; }
         return siteService.isUserSite(siteId);
     }
 

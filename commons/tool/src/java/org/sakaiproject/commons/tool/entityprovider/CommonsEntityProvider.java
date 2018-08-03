@@ -98,6 +98,8 @@ public class CommonsEntityProvider extends AbstractEntityProvider implements Req
         String userId = getCheckedUser();
 
         String commonsId = view.getPathSegment(2);
+		//System.out.println("getPostsgetPosts cuidado " + commonsId);//if no es ace cuando toca, ver como obtenemos el tool_id y lo otro... porque seguramente sea null aqui
+			//sakaiProxy.getCurrentTool();
         String siteId = (String) params.get("siteId");
         String embedder = (String) params.get("embedder");
 
@@ -190,7 +192,8 @@ public class CommonsEntityProvider extends AbstractEntityProvider implements Req
 
         String content = (String) params.get("content");
         String siteId = (String) params.get("siteId");
-        String commonsId = (String) params.get("commonsId");
+        String commonsId = (String) params.get("commonsId");//
+		System.out.println("aqui llega " + commonsId);
         String embedder = (String) params.get("embedder");
 
         if (StringUtils.isBlank(content) || StringUtils.isBlank(siteId)
@@ -213,7 +216,7 @@ public class CommonsEntityProvider extends AbstractEntityProvider implements Req
             post.setSiteId(siteId);
             post.setCommonsId(commonsId);
             post.setEmbedder(embedder);
-            post.setContent(content);
+            post.setContent(content);//
         }
 
         Post createdOrUpdatedPost = commonsManager.savePost(post);
@@ -241,7 +244,7 @@ public class CommonsEntityProvider extends AbstractEntityProvider implements Req
         getCheckedUser();
 
         String postId = (String) params.get("postId");
-        String commonsId = (String) params.get("commonsId");
+        String commonsId = (String) params.get("commonsId");System.out.println("aqui delete " + commonsId);
         String siteId = (String) params.get("siteId");
         if (StringUtils.isBlank(postId) || StringUtils.isBlank(commonsId) || StringUtils.isBlank(siteId)) {
             throw new EntityException("You must supply a postId, a commonsId and a siteId."
