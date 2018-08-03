@@ -20,4 +20,6 @@ public interface CommonsConstants {
     public static final String ASSIGNMENT = "ASSIGNMENT";
     public static final String SITE = "SITE";
     public static final String SOCIAL = "SOCIAL";
+	public static final String ACE = "ace-context";
+	public static final String REGION = "region";
 }

@@ -16,6 +16,9 @@
 package au.edu.anu.portal.portlets.rss;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.portlet.ActionRequest;
@@ -35,6 +38,7 @@ import javax.portlet.RenderResponse;
 import javax.portlet.ValidatorException;
 
 import com.sun.syndication.feed.synd.SyndFeed;
+import com.sun.syndication.feed.synd.SyndEntry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
@@ -46,6 +50,8 @@ import au.edu.anu.portal.portlets.rss.utils.Messages;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.memory.api.Cache;
 import org.sakaiproject.memory.api.MemoryService;
+import org.sakaiproject.time.cover.TimeService;
+import org.sakaiproject.util.ResourceLoader;
 
 /**
  * SimpleRssPortlet
@@ -136,9 +142,13 @@ public class SimpleRSSPortlet extends GenericPortlet{
 		//get max items (subtract 1 since it will be used in a 0 based index)
 		int maxItems = getConfiguredMaxItems(request) - 1;
 
+		Map<String,String> dates = getFeedDate(feed);
+
 		request.setAttribute("SyndFeed", feed);
 		request.setAttribute("Media", media);
 		request.setAttribute("maxItems", maxItems);
+		request.setAttribute("dates", dates);
+		request.setAttribute("userlanguage", new ResourceLoader().getLocale());
 		
 		dispatch(request, response, viewUrl);
 	}	
@@ -340,6 +350,27 @@ public class SimpleRSSPortlet extends GenericPortlet{
 		}
 		
 		return media;
+	}
+
+	//public static final DateFormat ISO_8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+	private Map<String,String> getFeedDate(SyndFeed feed) {
+		
+		DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, new ResourceLoader().getLocale());	
+		df.setTimeZone(TimeService.getLocalTimeZone());
+		
+		Map<String,String> ret = new HashMap<String,String>();
+		
+		for(Object obj : feed.getEntries()){
+			SyndEntry entry = (SyndEntry)obj;
+			try {System.out.println("entry.getPublishedDate() " + entry.getPublishedDate());
+				ret.put(entry.getUri(), df.format(entry.getPublishedDate()));
+			} catch(Exception e){
+				//e.printStackTrace();
+				//System.out.println("iso " + ISO_8601_DATE_FORMAT.format(entry.getPublishedDate()));
+			}
+		}
+		
+		return ret;
 	}
 
 	/**

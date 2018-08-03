@@ -80,8 +80,7 @@ public class CommonsManagerImpl implements CommonsManager, Observer {
         sakaiProxy.addObserver(this);
     }
 
-    private List<Post> getPosts(String siteId) throws Exception {
-
+    private List<Post> getPosts(String siteId) throws Exception {//System.out.println("getPosts");sakaiProxy.getCurrentTool();
         QueryBean query = new QueryBean();
         query.siteId = siteId;
         return commonsSecurityManager.filter(persistenceManager.getAllPost(query), siteId, CommonsConstants.SITE);
@@ -91,8 +90,7 @@ public class CommonsManagerImpl implements CommonsManager, Observer {
         return persistenceManager.getPost(postId, loadComments);
     }
 
-    public List<Post> getPosts(QueryBean query) throws Exception {
-
+    public List<Post> getPosts(QueryBean query) throws Exception {//System.out.println("getPostsgetPosts");sakaiProxy.getCurrentTool();
         Cache cache = sakaiProxy.getCache(POST_CACHE);
 
         // Social commons caches are keyed on the owner's user id
@@ -115,8 +113,7 @@ public class CommonsManagerImpl implements CommonsManager, Observer {
         }
     }
 
-    public Post savePost(Post post) {
-
+    public Post savePost(Post post) {//System.out.println("savePostsavePost " + post.getCommonsId());sakaiProxy.getCurrentTool();
         if (commonsSecurityManager.canCurrentUserEditPost(post)) {
             try {
                 post.setContent(FormattedText.processFormattedText(post.getContent(), new StringBuilder(), true, false));
@@ -241,7 +238,7 @@ public class CommonsManagerImpl implements CommonsManager, Observer {
             stack.push(element);
 
             Element commons = doc.createElement("commons");
-            List<Post> posts = getPosts(siteId);
+            List<Post> posts = getPosts(siteId);//danger
             if (posts != null && posts.size() > 0) {
                 for (Post post : posts) {
                     Element postElement = post.toXml(doc, stack);
@@ -291,7 +288,7 @@ public class CommonsManagerImpl implements CommonsManager, Observer {
 
             Post post = new Post();
             post.fromXml(postElement);
-            post.setSiteId(siteId);
+            post.setSiteId(siteId);//
 
             savePost(post);
 
@@ -400,7 +397,7 @@ public class CommonsManagerImpl implements CommonsManager, Observer {
             reference.set("sakai:commons", "", "", null, "");
             return true;
         }
-
+System.out.println("parseEntityReferenceparseEntityReference");
         String siteId = parts[2];
         String subType = parts[3];
         /*String entityId = parts[4];

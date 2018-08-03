@@ -58,7 +58,7 @@ public class CommonsTool extends HttpServlet {
         }
     }
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {System.out.println("doGetdoGetdoGet");
 
         log.debug("doGet()");
 
@@ -70,7 +70,7 @@ public class CommonsTool extends HttpServlet {
             throw new ServletException("Not logged in.");
         }
 
-        String siteLanguage = sakaiProxy.getCurrentSiteLocale();
+        String siteLanguage = sakaiProxy.getCurrentSiteLocale();System.out.println("siteLanguage " + siteLanguage);
 
         Locale locale = null;
         ResourceLoader rl = null;
@@ -105,12 +105,22 @@ public class CommonsTool extends HttpServlet {
         request.setAttribute("sakaiHtmlHead", (String) request.getAttribute("sakai.html.head"));
         request.setAttribute("isolanguage", language);
         request.setAttribute("userId", userId);
-        String siteId = sakaiProxy.getCurrentSiteId();
+        String siteId = sakaiProxy.getCurrentSiteId();System.out.println("siteIdsiteId " + siteId);
         request.setAttribute("siteId", siteId);
         boolean isUserSite = sakaiProxy.isUserSite(siteId);
         request.setAttribute("isUserSite", isUserSite);
         request.setAttribute("embedder", isUserSite ? CommonsConstants.SOCIAL : CommonsConstants.SITE);
-        request.setAttribute("commonsId", isUserSite ? CommonsConstants.SOCIAL : siteId);
+		/*boolean context = sakaiProxy.isAceContext();System.out.println("context " + context);//TODO if we have more than 1 context (regions, whatever) it should change from boolean isAceContext to string getcontext
+		if(context){
+			//request.setAttribute("context", "ace-context");
+			request.setAttribute("commonsId", "ace-context");
+		} else {*/
+		String context = sakaiProxy.getToolContext();System.out.println("context " + context);
+		if(context != null){
+			request.setAttribute("commonsId", context);
+		} else {
+			request.setAttribute("commonsId", isUserSite ? CommonsConstants.SOCIAL : siteId); 
+		}
 
         String pathInfo = request.getPathInfo();
 

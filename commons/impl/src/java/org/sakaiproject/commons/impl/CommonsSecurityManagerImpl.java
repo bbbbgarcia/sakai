@@ -53,7 +53,7 @@ public class CommonsSecurityManagerImpl implements CommonsSecurityManager {
     private ToolManager toolManager;
 
     public boolean canCurrentUserCommentOnPost(Post post) {
-
+if(sakaiProxy.getToolContext() != null){ return canUserXXOnContext(); }
         log.debug("canCurrentUserCommentOnPost()");
 
         // This acts as an override
@@ -74,7 +74,7 @@ public class CommonsSecurityManagerImpl implements CommonsSecurityManager {
     }
 
     public boolean canCurrentUserDeletePost(Post post) throws SecurityException {
-
+if(sakaiProxy.getToolContext() != null){ return canUserXXOnContext(); }
         String siteId = post.getSiteId();
 
         if (sakaiProxy.isAllowedFunction(CommonsFunctions.POST_DELETE_ANY, siteId)) {
@@ -93,7 +93,7 @@ public class CommonsSecurityManagerImpl implements CommonsSecurityManager {
     }
 
     public boolean canCurrentUserEditPost(Post post) {
-
+if(sakaiProxy.getToolContext() != null){ return canUserXXOnContext(); }
         // This acts as an override
         if (sakaiProxy.isAllowedFunction(CommonsFunctions.POST_UPDATE_ANY, post.getSiteId())) {
             return true;
@@ -114,7 +114,7 @@ public class CommonsSecurityManagerImpl implements CommonsSecurityManager {
     }
 
     public boolean canCurrentUserDeleteComment(String siteId, String embedder, String commentCreatorId, String postCreatorId) throws SecurityException {
-
+if(sakaiProxy.getToolContext() != null){ return canUserXXOnContext(); }
         String currentUserId = sakaiProxy.getCurrentUserId();
 
         if (sakaiProxy.isAllowedFunction(CommonsFunctions.COMMENT_DELETE_ANY, siteId)) {
@@ -139,7 +139,7 @@ public class CommonsSecurityManagerImpl implements CommonsSecurityManager {
      * that post out of the resulting list
      */
     public List<Post> filter(List<Post> posts, String siteId, String embedder) {
-
+//if(sakaiProxy.getToolContext() != null){ return canUserXXOnContext(); }
         if (posts != null && posts.size() > 0) {
             long now = (new Date()).getTime();
             posts = posts.stream().filter(p -> p.getReleaseDate() <= now).collect(Collectors.toList());
@@ -159,8 +159,8 @@ public class CommonsSecurityManagerImpl implements CommonsSecurityManager {
         }
     }
 
-    public boolean canCurrentUserReadPost(Post post) {
-
+    public boolean canCurrentUserReadPost(Post post) {//suponiendo que post.commonsId tiene el context (if equals ace_context or starts with region_) y que siempre se puedan leer de esos contextos -> return true
+if(sakaiProxy.getToolContext() != null){ return canUserXXOnContext(); }
         Site site = sakaiProxy.getSiteOrNull(post.getSiteId());
 
         if (site != null) {
@@ -170,7 +170,7 @@ public class CommonsSecurityManagerImpl implements CommonsSecurityManager {
         }
     }
 
-    public Site getSiteIfCurrentUserCanAccessTool(String siteId) {
+    public Site getSiteIfCurrentUserCanAccessTool(String siteId) {//no se llama? y mejor q sea asi
 
         Site site;
         try {
@@ -178,7 +178,7 @@ public class CommonsSecurityManagerImpl implements CommonsSecurityManager {
         } catch (Exception e) {
             return null;
         }
-
+if(sakaiProxy.getToolContext() != null){ return site; }
         //check user can access the tool, it might be hidden
         ToolConfiguration toolConfig = site.getToolForCommonId("sakai.commons");
         if(!toolManager.isVisible(site, toolConfig)) {
@@ -187,4 +187,16 @@ public class CommonsSecurityManagerImpl implements CommonsSecurityManager {
 
         return site;
     }
+	
+	private boolean canUserXXOnContext(){//TODO revisar permisos : tendran mismos permisos para todos los contexts? depende de si es su region, etc... llamar a regionService ?
+		//TODO2 lo más seguro es que isAceContext no tenga placement en estas llamadas y no funcione...
+		String context = sakaiProxy.getToolContext();
+		if(context.equals(CommonsConstants.ACE)){//?
+			return true;
+		} else if(context.equals(CommonsConstants.REGION)){
+			//TODO check if user belongs to region? //regionService.getUserRegions o isUserInRegion
+			return true;
+		}
+		return true;
+	}
 }
