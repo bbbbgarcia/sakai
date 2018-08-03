@@ -89,7 +89,8 @@ public class TagStorageTest extends BaseStorageTest {
             assertThat(e.getMessage(), startsWith("Failure in database action: Create a tag"));
             // some credit to http://stackoverflow.com/a/39221730
             assertThat(e.getCause(), allOf(instanceOf(SQLException.class),
-                    hasProperty("message", startsWith("integrity constraint violation"))));
+			//hasProperty("message", startsWith("integrity constraint violation"))));
+                    hasProperty("message", startsWith("viola"))));
         }
 
         verify(tagsEventTrackingService, never()).newEvent(anyString(), anyString(), anyBoolean());

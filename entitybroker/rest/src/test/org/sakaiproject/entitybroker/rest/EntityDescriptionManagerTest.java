@@ -117,6 +117,7 @@ public class EntityDescriptionManagerTest extends TestCase {
       assertTrue(content.length() > 80);
       assertTrue(content.contains(TestData.PREFIX7));
       assertTrue(content.contains("describe-prefix test description of an entity"));
+	  //assertTrue(content.contains("test de un prefijo "));
       assertTrue(content.contains("This is a test description of Createable"));
 
       // XML
