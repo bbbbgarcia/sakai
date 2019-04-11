@@ -92,6 +92,12 @@
       <groupId>org.quartz-scheduler</groupId>
       <artifactId>quartz</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.sakaiproject.office365</groupId>
+      <artifactId>sakai-office365-api</artifactId>
+      <version>0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
   <build>
     <resources>

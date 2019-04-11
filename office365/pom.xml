@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <name>Sakai Office365 Integration - BASE</name>
+    <groupId>org.sakaiproject.office365</groupId>
+    <artifactId>sakai-office365</artifactId>
+    <packaging>pom</packaging>
+    <version>0.1-SNAPSHOT</version>
+
+    <parent>
+        <groupId>org.sakaiproject</groupId>
+        <artifactId>master</artifactId>
+        <version>20-SNAPSHOT</version>
+        <relativePath>../master/pom.xml</relativePath>
+    </parent>
+
+    <modules>
+        <module>api</module>
+        <module>impl</module>
+    </modules>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jackson.version>2.9.5</jackson.version>
+		<commons.lang.version>3.7</commons.lang.version>
+		<httpclient.version>4.5.5</httpclient.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- project dependencies -->
+            <dependency>
+                  <groupId>org.sakaiproject.office365</groupId>
+                  <artifactId>sakai-office365-api</artifactId>
+                  <version>${project.version}</version>
+                  <scope>provided</scope>
+            </dependency>
+            <dependency>
+                  <groupId>org.sakaiproject.office365</groupId>
+                  <artifactId>sakai-office365-impl</artifactId>
+                  <version>${project.version}</version>
+                  <scope>runtime</scope>
+            </dependency>
+            
+            <!-- third party dependencies -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.16.22</version>
+            </dependency>			
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>${commons.lang.version}</version>
+			</dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

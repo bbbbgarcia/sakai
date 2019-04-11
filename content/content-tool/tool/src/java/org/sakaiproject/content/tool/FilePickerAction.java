@@ -29,6 +29,7 @@ import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -48,7 +49,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import lombok.extern.slf4j.Slf4j;
-
+import org.apache.commons.lang3.StringUtils;
 import org.sakaiproject.antivirus.api.VirusFoundException;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
@@ -94,6 +95,10 @@ import org.sakaiproject.exception.OverQuotaException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.exception.ServerOverloadException;
 import org.sakaiproject.exception.TypeException;
+import org.sakaiproject.office365.model.OfficeItem;
+import org.sakaiproject.office365.model.OfficeItemComparator;
+import org.sakaiproject.office365.model.OfficeUser;
+import org.sakaiproject.office365.service.Office365Service;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.time.api.Time;
@@ -143,7 +148,7 @@ public class FilePickerAction extends PagedResourceHelperAction
 	private static ToolManager toolManager = ComponentManager.get(ToolManager.class);
 	private static UserDirectoryService userDirectoryService = ComponentManager.get(UserDirectoryService.class);
 	private static TimeService timeService = ComponentManager.get(TimeService.class);
-
+	private static Office365Service office365Service = ComponentManager.get(Office365Service.class);
 
 	/** State attribute for where there is at least one attachment before invoking attachment tool */
 	public static final String STATE_HAS_ATTACHMENT_BEFORE = "attachment.has_attachment_before";
@@ -156,6 +161,9 @@ public class FilePickerAction extends PagedResourceHelperAction
 	private String resourceClass = ServerConfigurationService.getString(RESOURCECLASS, DEFAULT_RESOURCECLASS);
 	private String resourceBundle = ServerConfigurationService.getString(RESOURCEBUNDLE, DEFAULT_RESOURCEBUNDLE);
 	private ResourceLoader srb = new Resource().getLoader(resourceClass, resourceBundle);
+	
+	/** Office 365 **/
+	private boolean officeOn = ServerConfigurationService.getBoolean(Office365Service.OFFICE_ENABLED, Boolean.FALSE);
 
 	protected static final String PREFIX = "filepicker.";
 
@@ -170,6 +178,7 @@ public class FilePickerAction extends PagedResourceHelperAction
 	protected static final String MODE_ATTACHMENT_SELECT = "mode_attachment_select";
 	protected static final String MODE_ATTACHMENT_SELECT_INIT = "mode_attachment_select_init";
 	protected static final String MODE_HELPER = "mode_helper";
+	protected static final String MODE_OFFICE = "mode_office";
 
 	/** The null/empty string */
 	private static final String NULL_STRING = "";
@@ -220,6 +229,7 @@ public class FilePickerAction extends PagedResourceHelperAction
 	protected static final String STATE_SESSION_INITIALIZED = PREFIX + "session_initialized";
 	protected static final String STATE_SHOW_ALL_SITES = PREFIX + "show_all_sites";
 	protected static final String STATE_SHOW_OTHER_SITES = PREFIX + "show_other_sites";
+	//protected static final String STATE_SHOW_OFFICE = PREFIX + "show_office";
 	public static final String SAK_PROP_SHOW_ALL_SITES = PREFIX + "show_all_collections";
 
 	/** The sort by */
@@ -227,6 +237,8 @@ public class FilePickerAction extends PagedResourceHelperAction
 	
 	protected static final String STATE_TOP_MESSAGE_INDEX = PREFIX + "top_message_index";
 
+	public static final String STATE_OFFICE_CHILDREN = PREFIX + "state_office_children";
+	public static final String STATE_OFFICE_ITEMS = PREFIX + "state_office_items";
 
 	/** The sort ascending or decending */
 	private static final String STATE_SORT_ASC = PREFIX + "sort_asc";
@@ -323,6 +335,14 @@ public class FilePickerAction extends PagedResourceHelperAction
 		else if(MODE_ADD_METADATA.equals(helper_mode))
 		{
 			template = buildAddMetadataContext(portlet, context, data, state);
+		}
+
+		context.put("officeOn", officeOn);
+		if(officeOn) {
+			OfficeUser ou = office365Service.getOfficeUser(userDirectoryService.getCurrentUser().getId());
+			if(ou != null) {
+				context.put("officeUserAccount", ou.getOfficeName());
+			}
 		}
 
 		return template;
@@ -880,9 +900,31 @@ public class FilePickerAction extends PagedResourceHelperAction
 			// user wants copies in hidden attachments area
 			template = TEMPLATE_ATTACH;
 		}
+		
+		////////////// OFFICE /////////////			
+		if(officeOn) {
+			List<OfficeItem> officeItems = new ArrayList<>();
+			if(toolSession.getAttribute(STATE_OFFICE_ITEMS) == null){
+				officeItems = office365Service.getDriveRootItems(userDirectoryService.getCurrentUser().getId());
+			} else {
+				officeItems = (List<OfficeItem>) toolSession.getAttribute(STATE_OFFICE_ITEMS);
+			}
+			if(state.getAttribute(STATE_OFFICE_CHILDREN) != null){
+				List<OfficeItem> childrenIt = (List<OfficeItem>) state.getAttribute(STATE_OFFICE_CHILDREN);
+				for(OfficeItem oi : childrenIt) {
+					if(!officeItems.contains(oi)) {
+						officeItems.add(oi);
+					}
+				}
+			}
+			if(officeItems != null) {
+				Collections.sort(officeItems, new OfficeItemComparator());
+				toolSession.setAttribute(STATE_OFFICE_ITEMS, officeItems);
+				context.put("officeItems", officeItems);
+			}
+		}
 
 		return template;
-	    //return TEMPLATE_SELECT;
     }
     
     /**
@@ -937,7 +979,7 @@ public class FilePickerAction extends PagedResourceHelperAction
 	protected void cleanup(SessionState state)
 	{
 		ToolSession toolSession = sessionManager.getCurrentToolSession();
-		
+
 		Enumeration<String> attributeNames = toolSession.getAttributeNames();
 		while(attributeNames.hasMoreElements())
 		{
@@ -948,14 +990,14 @@ public class FilePickerAction extends PagedResourceHelperAction
 			}
 		}
 		
-		if (toolSession != null) 
+		if (toolSession != null)
 		{
 			state.removeAttribute(FilePickerHelper.FILE_PICKER_MAX_ATTACHMENTS);
 			state.removeAttribute(FilePickerHelper.FILE_PICKER_RESOURCE_FILTER);
 			state.removeAttribute(FilePickerHelper.DEFAULT_COLLECTION_ID);
 			state.removeAttribute(FilePickerHelper.FILE_PICKER_ATTACH_LINKS);
 		}
-		
+
  	}	// cleanup
 
 	/**
@@ -1077,7 +1119,7 @@ public class FilePickerAction extends PagedResourceHelperAction
 			toolSession.setAttribute(STATE_FILE_UPLOAD_MAX_SIZE, ServerConfigurationService.getString(ResourcesConstants.SAK_PROP_MAX_UPLOAD_FILE_SIZE, 
 																									  ResourcesConstants.DEFAULT_MAX_FILE_SIZE_STRING));
 		}
-		
+
 		return MODE_HELPER;
 	}
 
@@ -1162,16 +1204,33 @@ public class FilePickerAction extends PagedResourceHelperAction
 		    log.warn("UTF-8 unsupported???");
 		    itemId = params.getString("itemId");
 		}
+		
+		String officeItemId = params.getString("officeItemId");
 
-		Object attach_links = toolSession.getAttribute(STATE_ATTACH_LINKS);
+		if(StringUtils.isNotBlank(itemId)) {
+			Object attach_links = toolSession.getAttribute(STATE_ATTACH_LINKS);
 
-		if(attach_links == null)
-		{
-			attachCopy(itemId, state);
-		}
-		else
-		{
-			attachLink(itemId, state);
+			if(attach_links == null)
+			{
+				attachCopy(itemId, state);
+			}
+			else
+			{
+				attachLink(itemId, state);
+			}
+		} else if (officeOn && officeItemId != null) {
+			boolean officeItemClone = params.getBoolean("officeItemClone");
+			List<OfficeItem> items = (List<OfficeItem>) toolSession.getAttribute(STATE_OFFICE_ITEMS);
+			OfficeItem oi = null;
+			for(OfficeItem off : items) {
+				if(officeItemId.equals(off.getOfficeItemId())) {
+					oi = off;
+					break;
+				}
+			}
+			if(oi != null) {
+				doAttachOffice(oi, state, officeItemClone);
+			}
 		}
 
 		List<AttachItem> removed = (List<AttachItem>) toolSession.getAttribute(STATE_REMOVED_ITEMS);
@@ -1624,6 +1683,91 @@ public class FilePickerAction extends PagedResourceHelperAction
 
 	}
 
+	@SuppressWarnings("unchecked")
+	public void doAttachOffice(OfficeItem officeItem, SessionState state, boolean officeItemClone) {
+		ToolSession toolSession = sessionManager.getCurrentToolSession();
+		ContentHostingService contentService = (ContentHostingService) toolSession.getAttribute (STATE_CONTENT_SERVICE);
+		ResourceTypeRegistry registry = (ResourceTypeRegistry) toolSession.getAttribute(STATE_RESOURCES_TYPE_REGISTRY);
+		List<AttachItem> new_items = (List<AttachItem>) toolSession.getAttribute(STATE_ADDED_ITEMS);
+		if(new_items == null) {
+			new_items = new Vector<AttachItem>();
+			toolSession.setAttribute(STATE_ADDED_ITEMS, new_items);
+		}
+		
+		try {
+			ContentResource attachment = null;
+			ResourcePropertiesEdit newprops = contentService.newResourceProperties();
+			String officeUrl = officeItem.getDownloadUrl();			
+			String contentType = officeItem.getFile().getMimeType();
+			String filename = officeItem.getName();
+			String resourceId = Validator.escapeResourceName(filename);
+			String siteId = toolManager.getCurrentPlacement().getContext();
+			String toolName = (String) toolSession.getAttribute(STATE_ATTACH_TOOL_NAME);
+			if(toolName == null) {
+				toolName = toolManager.getCurrentPlacement().getTitle();
+			}
+			enableSecurityAdvisor();
+			String typeId = ResourceType.TYPE_UPLOAD;
+			newprops.addProperty(ResourceProperties.PROP_DISPLAY_NAME, filename);
+			newprops.addProperty(ResourceProperties.PROP_DESCRIPTION, filename);
+			if(officeItemClone) {
+				String max_file_size_mb = (String) toolSession.getAttribute(STATE_FILE_UPLOAD_MAX_SIZE);
+				long max_bytes = 1024L * 1024L;
+				try {
+					max_bytes = Long.parseLong(max_file_size_mb) * 1024L * 1024L;
+				} catch(Exception e) {
+					max_file_size_mb = "1";
+					max_bytes = 1024L * 1024L;
+				}
+				if(officeItem.getSize() >= max_bytes) {
+					addAlert(state, trb.getFormattedMessage("size.exceeded", new Object[]{ max_file_size_mb }));
+					return;
+				}
+				InputStream contentStream = new URL(officeUrl).openStream();
+				attachment = contentService.addAttachmentResource(resourceId, siteId, toolName, contentType, contentStream, newprops);
+			} else {
+				//typeId = ResourceType.TYPE_URL;
+				contentType = ResourceProperties.TYPE_URL;
+				attachment = contentService.addAttachmentResource(resourceId, siteId, toolName, contentType, officeUrl.getBytes(), newprops);
+			}
+
+			/*if(attachment == null || attachment.getContentLength() == 0) {
+				log.warn("Error while trying to upload file from Office");
+				addAlert(state, trb.getFormattedMessage("dragndrop.upload.error",new Object[]{filename}));//podria ser otro
+				return;
+			}*/
+			String displayName = filename;
+			String containerId = contentService.getContainingCollectionId(attachment.getId());
+			String accessUrl = attachment.getUrl();
+			log.debug("Office item accessUrl {}", accessUrl);
+			AttachItem item = new AttachItem(attachment.getId(), displayName, containerId, accessUrl);
+			item.setContentType(contentType);
+			typeId = attachment.getResourceType();
+			item.setResourceType(typeId);
+			ResourceType typedef = registry.getType(typeId);
+			item.setHoverText(typedef.getLocalizedHoverText(attachment));
+			item.setIconLocation(typedef.getIconLocation(attachment));
+			item.setIconClass(typedef.getIconClass(attachment));
+			new_items.add(item);
+			toolSession.setAttribute(STATE_HELPER_CHANGED, Boolean.TRUE.toString());
+			disableSecurityAdvisors();
+		} catch(Exception e) {
+			log.error("doAttachOffice : {}", e.getMessage());
+		}
+		toolSession.setAttribute(STATE_ADDED_ITEMS, new_items);
+	}
+
+	public void doRevokeOffice(RunData data) {
+		office365Service.revokeOfficeConfiguration(userDirectoryService.getCurrentUser().getId());
+	}
+
+	public void doRefreshOffice(RunData data) {
+		SessionState state = ((JetspeedRunData)data).getPortletSessionState (((JetspeedRunData)data).getJs_peid ());
+		state.removeAttribute(STATE_OFFICE_ITEMS);
+		state.removeAttribute(STATE_OFFICE_CHILDREN);
+		office365Service.cleanOfficeCacheForUser(userDirectoryService.getCurrentUser().getId());
+	}
+
 	/**
 	 * @param itemId
 	 * @param state
@@ -1937,7 +2081,18 @@ public class FilePickerAction extends PagedResourceHelperAction
 			return;
 		}
 
-		if (MODE_ATTACHMENT_DONE.equals(toolSession.getAttribute(STATE_FILEPICKER_MODE)))
+		if (officeOn && MODE_OFFICE.equals(toolSession.getAttribute(STATE_FILEPICKER_MODE))) {
+			try {
+				cleanup(state);
+				log.debug("Requesting Office access data for this user");
+				String officeUrl = office365Service.authenticate();
+				res.sendRedirect(officeUrl);
+			} catch (IOException e) {
+				log.warn("IOException: ", e);
+			}
+			return;
+		}
+		else if (MODE_ATTACHMENT_DONE.equals(toolSession.getAttribute(STATE_FILEPICKER_MODE)))
 		{
 			// canceled, so restore the original list 
 			List attachments = (List) toolSession.getAttribute(STATE_ATTACHMENT_ORIGINAL_LIST);
@@ -2489,7 +2644,17 @@ public class FilePickerAction extends PagedResourceHelperAction
 		toolSession.setAttribute(STATE_EXPAND_ALL_FLAG, Boolean.FALSE.toString());
 
 	}	// doUnexpandall
-	
+
+	/**
+	 * @param data
+	 */
+	@SuppressWarnings("unchecked")
+	public void doOffice(RunData data)
+	{
+		ToolSession toolSession = sessionManager.getCurrentToolSession();
+		toolSession.setAttribute(STATE_FILEPICKER_MODE, MODE_OFFICE);
+	}
+
 	/**
 	 * @param data
 	 */
@@ -3178,46 +3343,59 @@ public class FilePickerAction extends PagedResourceHelperAction
 		}
 		state.setAttribute(STATE_LIST_SELECTIONS, selectedSet);
 
-		String collectionId = data.getParameters().getString ("collectionId");
+		String collectionId = data.getParameters().getString ("collectionId");		
+		String officeCollectionId = data.getParameters().getString ("officeCollectionId");
 		String navRoot = data.getParameters().getString("navRoot");
 		state.setAttribute(STATE_NAVIGATION_ROOT, navRoot);
 
 		// the exception message
-		ContentHostingService contentService = (ContentHostingService) state.getAttribute (STATE_CONTENT_SERVICE);
-		try
-		{
-			contentService.checkCollection(collectionId);
-			toolSession.setAttribute(STATE_DEFAULT_COLLECTION_ID, collectionId);
-		}
-		catch(PermissionException e)
-		{
-			addAlert(state, rb.getString("notpermis3"));
-		}
-		catch (IdUnusedException e)
-		{
-			addAlert(state, rb.getString("notexist2"));
-		}
-		catch (TypeException e)
-		{
-			addAlert(state, rb.getString("notexist2"));
-		}
-
-		if (state.getAttribute(STATE_MESSAGE) == null)
-		{
-			state.setAttribute(STATE_COLLECTION_ID, collectionId);
-			Set<String> currentMap = getExpandedCollections(toolSession);
-			SortedSet<String> newCurrentMap = new TreeSet<String>();
-			for(String id: currentMap)
+		if(StringUtils.isNotBlank(collectionId)) {
+			ContentHostingService contentService = (ContentHostingService) state.getAttribute (STATE_CONTENT_SERVICE);
+			try
 			{
-				if(!id.startsWith(collectionId))
-				{
-					newCurrentMap.add(id);
-				}
+				contentService.checkCollection(collectionId);
+				toolSession.setAttribute(STATE_DEFAULT_COLLECTION_ID, collectionId);
+			}
+			catch(PermissionException e)
+			{
+				addAlert(state, rb.getString("notpermis3"));
+			}
+			catch (IdUnusedException e)
+			{
+				addAlert(state, rb.getString("notexist2"));
+			}
+			catch (TypeException e)
+			{
+				addAlert(state, rb.getString("notexist2"));
 			}
 			
-			newCurrentMap.add(collectionId);
-			currentMap.clear();
-			currentMap.addAll(newCurrentMap);
+			if (state.getAttribute(STATE_MESSAGE) == null)
+			{
+				state.setAttribute(STATE_COLLECTION_ID, collectionId);
+				Set<String> currentMap = getExpandedCollections(toolSession);
+				SortedSet<String> newCurrentMap = new TreeSet<String>();
+				for(String id: currentMap)
+				{
+					if(!id.startsWith(collectionId))
+					{
+						newCurrentMap.add(id);
+					}
+				}
+				
+				newCurrentMap.add(collectionId);
+				currentMap.clear();
+				currentMap.addAll(newCurrentMap);
+			}
+		} else if (officeOn && officeCollectionId != null){
+			int depth = data.getParameters().getInt("officeCollectionDepth");
+			List<OfficeItem> children = office365Service.getDriveChildrenItems(userDirectoryService.getCurrentUser().getId(), officeCollectionId, depth);
+			state.setAttribute(STATE_OFFICE_CHILDREN, children);
+			List<OfficeItem> items = (List<OfficeItem>) toolSession.getAttribute(STATE_OFFICE_ITEMS);
+			items.forEach( it -> { 
+				if (officeCollectionId.equals(it.getOfficeItemId())) {
+					it.setExpanded(true);
+				}
+			});
 		}
 
 	}	// doNavigate

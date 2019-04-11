@@ -48,12 +48,22 @@
 	<form name="doattachitem" style="display:none" id="doattachitem" action="#toolForm("FilePickerAction" "Main")" method=post enctype="multipart/form-data">
 	<input type="hidden" name="sakai_action" value="doAttachitem">
 	<input type="hidden" name="itemId" id="doattachitemid" />
+	<input type="hidden" name="officeItemId" id="doattachofficeitemid" />
+	<input type="hidden" name="officeItemClone" id="officeitemidclone" />
 	<input type="hidden" name="sakai_csrf_token" value="$sakai_csrf_token" />
 	</form>
 
 	<script type="text/javascript">
 	function doattachsubmit(itemId) {
 	   document.getElementById('doattachitemid').setAttribute('value',itemId);
+	   var f = document.getElementById('doattachitem');
+	   f.submit();
+	   return false;
+	}
+	
+	function doattachsubmitoffice(itemId, cloneObject) {
+	   document.getElementById('doattachofficeitemid').setAttribute('value',itemId);
+	   document.getElementById('officeitemidclone').setAttribute('value',cloneObject);
 	   var f = document.getElementById('doattachitem');
 	   f.submit();
 	   return false;
@@ -108,7 +118,7 @@
 				    <label for="upload">$tlang.getString("att.upl")</label>
 				    <input type="file" name="upload" id="upload" class="upload" onchange="showNotif('submitnotifxxx','attachButton1','attachForm'); document.getElementById('attachForm').action='#toolLinkParam("FilePickerAction" "doAttachupload" "special=upload&sakai_csrf_token=$validator.escapeUrl($sakai_csrf_token)")';submitform('attachForm');" #if($disable_attach_links) disabled="disabled"#end />
 					<span id="submitnotifxxx" class="messageProgress" style="visibility:hidden">$tlang.getString("processmessage.file")</span>
-				</div>	
+				</div>
 				<div class="form-group">
 					<span id="submitnotifxxx" class="messageProgress" style="visibility:hidden">$tlang.getString("processmessage.file")</span>
 				</div>
@@ -118,7 +128,7 @@
 				<div class="form-group">
 					<label for="url">$tlang.getString("addi.or.url")</label>
 					<input type="text" size="40" name="url" id="url" onkeypress="document.getElementById('add_url').disabled=false;" onchange="document.getElementById('add_url').disabled=true;document.getElementById('attachForm').action='#toolLinkParam("FilePickerAction" "doAttachurl" "special=upload")';submitform('attachForm');" #if($disable_attach_links) disabled="disabled"#end />
-				</div>	
+				</div>
 				<div class="form-group">
 					<span class="act"><input type="button" class="button" name="add_url" id="add_url" value="$tlang.getString("gen.add")" onclick="document.getElementById('attachForm').action='#toolLinkParam("FilePickerAction" "doAttachurl" "special=upload")';submitform('attachForm');" disabled="disabled" /></span>
 				</div>
@@ -134,7 +144,7 @@
 					value="$tlang.getString("att.cancel")"  />
 			</p>
 			
-		</div>	
+		</div>
 
 		<hr class="itemSeparator" />
         ###################### Find top level
@@ -498,8 +508,76 @@
 				#end
 			#end
 			############################################# end of "Other sites" section 
-
 		</table>
+
+			############################################# Begin Office section
+			#if($!officeOn)
+				<h4>
+					<span class="fa fa-windows" aria-hidden="true"></span>
+					$tlang.getString('office.integration')
+				</h4>
+				#if(!$!officeUserAccount)
+					<span aria-hidden="true"> $tlang.getString('office.set_account')</span>
+					<a href="#toolLink("FilePickerAction" "doOffice")" title= "$tlang.getString('office.set_account')">
+						<input type="button" aria-hidden="true" value="$tlang.getString('office.configure')" />
+					</a>
+				#else
+					<span aria-hidden="true"> $tlang.getFormattedMessage('office.configured', $!officeUserAccount)</span>
+					<input type="button" name="refreshOfficeButton" id="refreshOfficeButton" class="refreshOfficeButton" onclick="document.getElementById('attachForm').action='#toolLink("FilePickerAction" "doRefreshOffice")'; submitform('attachForm');" value="$tlang.getString('office.refresh')" />
+					<input type="button" name="revokeOfficeButton" id="revokeOfficeButton" class="revokeOfficeButton" onclick="document.getElementById('attachForm').action='#toolLink("FilePickerAction" "doRevokeOffice")'; submitform('attachForm');" value="$tlang.getString('office.revoke')" />
+					<table class="listHier lines" cellspacing="0" border="0" summary="$tlang.getString("office.table_summary")">
+						<tr>
+							<th id="title">
+								$tlang.getString("office.title")
+							</th>
+							<th id="action-clone">
+								$tlang.getString("office.clone")
+							</th>
+							<th id="action-link">
+								$tlang.getString("office.link")
+							</th>
+						</tr>
+						#foreach($officeItem in $officeItems)
+							#set($itemcount = $itemcount + 1)
+							#set ($width = "$!{officeItem.depth}${unit}")
+							<tr
+								#if ($itemcount % 2==0)
+									class="odd"
+								#else
+									class="even"
+								#end>
+								<td headers="title" style="text-indent: $width" class="specialLink">
+									#if ($officeItem.isFolder())
+										#set($folderClass = "fa fa-folder-o")
+										#if($officeItem.hasChildren() && !$officeItem.isExpanded())
+											#set($folderClass = "fa fa-folder")
+										#elseif($officeItem.hasChildren() && $officeItem.isExpanded())
+											#set($folderClass = "fa fa-folder-open")
+										#end
+										<a	#if($officeItem.hasChildren() && !$officeItem.isExpanded()) href="#toolLinkParam("FilePickerAction" "doNavigate" "officeCollectionId=${validator.escapeUrl(${officeItem.officeItemId})}&officeCollectionDepth=${officeItem.depth}")" title="$tlang.getString('sh.go')" #end
+										><span class="$folderClass" aria-hidden="true"></span>
+										<span class="sr-only">$tlang.getString('gen.folder1')</span>
+									#else
+										##$officeItem.file.mimeType
+										<a href="$officeItem.downloadUrl"><span class="$contentTypeImageService.getContentTypeImageClass($officeItem.file.mimeType)" aria-hidden="true"></span>
+									#end
+									$validator.escapeHtml(${officeItem.name})</a>
+								</td>
+								<td headers="action-clone">
+									#if (!$officeItem.isFolder())
+										<a href="#" onclick="return doattachsubmitoffice('$validator.escapeUrl(${officeItem.officeItemId})',true)" title ="$tlang.getString('att.copy')">$tlang.getString("att.copy") <span class="skip">$validator.escapeHtml($officeItem.name)</span></a>
+									#end
+								<td headers="action-link">
+									#if (!$officeItem.isFolder())
+										<a href="#" onclick="return doattachsubmitoffice('$validator.escapeUrl(${officeItem.officeItemId})',false)" title ="$tlang.getString('office.attach_link')">$tlang.getString('office.attach_link') <span class="skip">$validator.escapeHtml($officeItem.name)</span></a>
+									#end
+								</td>
+							</tr>
+						#end
+					</table>
+				#end
+			#end
+			############################################# end of Office section 
 		
 		<p class="act" >
 			<input type="button" name="attachButton2" id="attachButton2"  accesskey="s"
