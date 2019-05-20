@@ -486,6 +486,12 @@ public interface AssignmentService extends EntityProducer {
     public String getSubmissionStatus(String submissionId);
 
     /**
+     * @param submissionId
+     * @return
+     */
+    public AssignmentConstants.SubmissionStatus getSubmissionCannonicalStatus(AssignmentSubmission s);
+
+    /**
      * Return a sorted list of users representing a group.
      */
     public List<User> getSortedGroupUsers(Group g);

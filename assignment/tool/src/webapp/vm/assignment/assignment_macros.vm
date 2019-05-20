@@ -356,4 +356,38 @@
         #end
     #end
 #end
-<!-- end:  assignment_macros.vm -->
+
+## macro for rendering student's progress bar
+#macro( progressBar $assignmentHonor $submission $submStatus)
+    #set($totalBars = 2)
+    #if($!assignmentHonor)
+        #set($totalBars = $totalBars + 1)
+    #end
+    #set($dynWidth = 100 / $totalBars)
+    #set($halfWidth = $dynWidth / 2)
+    #set($widthRest = $dynWidth + (100 % $totalBars))
+    <div class="progress">
+        #if($!assignmentHonor)
+			#if($!submission.HonorPledge)
+				<div class="progress-bar" role="progressbar" style="width: $dynWidth%" aria-valuenow="$dynWidth" aria-valuemin="0" aria-valuemax="$dynWidth">$tlang.getString("submission.progress.honor")</div>
+			#else
+				<div class="progress-bar" role="progressbar" style="width: $dynWidth%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="$dynWidth">$tlang.getString("submission.progress.honor")</div>
+			#end
+        #end
+		#if($submStatus == "NOT_STARTED" || $submStatus == "HONOR_ACCEPTED")
+			<div class="progress-bar progress-bar-empty" role="progressbar" style="width: $dynWidth%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="$dynWidth">$tlang.getString("gen.notsta")</div>
+			<div class="progress-bar progress-bar-empty" role="progressbar" style="width: $widthRest%" aria-valuenow="$widthRest" aria-valuemin="0" aria-valuemax="100">$tlang.getString("submission.progress.graded")</div>
+		#elseif($submStatus == "DRAFT")
+			<div class="progress-bar" role="progressbar" style="width: $halfWidth%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="$dynWidth">$tlang.getString("submission.progress.complete")</div>
+			<div class="progress-bar progress-bar-empty" role="progressbar" style="width: $halfWidth%" aria-valuenow="$halfWidth" aria-valuemin="0" aria-valuemax="100"></div>
+			<div class="progress-bar progress-bar-empty" role="progressbar" style="width: $widthRest%" aria-valuenow="$widthRest" aria-valuemin="0" aria-valuemax="100">$tlang.getString("submission.progress.graded")</div>
+		#elseif($submStatus == "SUBMITTED" || $submStatus == "RESUBMITTED" || $submStatus == "LATE")
+			<div class="progress-bar" role="progressbar" style="width: $dynWidth%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="$dynWidth">$tlang.getString("submission.progress.complete")</div>
+			<div class="progress-bar progress-bar-empty" role="progressbar" style="width: $widthRest%" aria-valuenow="$widthRest" aria-valuemin="0" aria-valuemax="100">$tlang.getString("submission.progress.graded")</div>
+		#elseif($submStatus == "GRADED" || $submStatus == "COMMENTED" || $submStatus == "RETURNED")
+			<div class="progress-bar" role="progressbar" style="width: $dynWidth%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="$dynWidth">$tlang.getString("submission.progress.complete")</div>
+			<div class="progress-bar" role="progressbar" style="width: $widthRest%" aria-valuenow="$widthRest" aria-valuemin="0" aria-valuemax="100">$tlang.getString("submission.progress.graded")</div>
+		#end
+    </div>
+#end
+<!-- end: assignment_macros.vm -->

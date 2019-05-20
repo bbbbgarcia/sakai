@@ -15,6 +15,7 @@
             $tlang.getString('confirm.submission.success')
         #else
             $tlang.getString('confirm.savesubmission.success')
+            #progressBar($assignment.HonorPledge $submission $!service.getSubmissionCannonicalStatus($!submission))
         #end
 	#if ($!email_confirmation && $!submission.Submitted)
         #if ($!user_email)

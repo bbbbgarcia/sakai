@@ -1,11 +1,26 @@
-<!-- start: chef_assignments_student_preview_submission.vm -->
+<!-- start: chef_assignments_student_confirm_submission.vm -->
+###header_append("<script type=${quote}text/javascript${quote}>includeWebjarLibrary(${quote}bootstrap${quote});</script>")
+
+<script>
+	$(document).ready(function(){
+		$(".submissionConfirmCheck").click(function () {
+			if($('.submissionConfirmCheck:checked').length == $('.submissionConfirmCheck').length)
+				$('#post').prop("disabled", false);
+			else
+				$('#post').prop("disabled", true);
+		});
+	});
+</script>
+
 <div class="portletBody">
     <h3>
-        $tlang.getString("gen.assig")<span class="highlight"> - $tlang.getString("gen.pre")</span>
+		$tlang.getString("subm.conf")
     </h3>
-
+	
     #progressBar($assignment.HonorPledge $submission $!service.getSubmissionCannonicalStatus($!submission))
 
+	<div class="alertMessage">  <strong>$tlang.getString("gen.alert")</strong> $!confirmSubmissionAlert</div>
+	
     #set($allowUpdateAssignment = $!service.allowUpdateAssignment($assignmentReference))
     #if ($alertMessage)
         <div class="alertMessage"><strong>$tlang.getString("gen.alert")</strong> $alertMessage</div>
@@ -144,6 +159,22 @@
         </ul>
     #end
 
+	<h4>
+		$tlang.getString("subm.notif")
+	</h4>
+	<p>$!studentConfirmMessage</p>
+
+	#foreach ($item in $!submissionConfirmCheckList)
+		<ul id="submissionConfirmList">
+		#if($!submissionConfirmChecks)
+			<input type="checkbox" name ="submissionConfirmCheck" class="submissionConfirmCheck" />
+			<label for="submissionConfirmCheck">$item</label>
+		#else
+			<li>$item</li>
+		#end
+		</ul>
+	#end
+	
     <p></p>
     <form id="addSubmissionForm" name="addSubmissionForm" action="#toolForm("AssignmentAction")" method="post" onsubmit="return true;">
 	    #if ($plagiarismNote)
@@ -187,7 +218,7 @@
         ## submission information
         <div class="act">
             #if (!$!canSubmit)
-                <input name="eventSubmit_doSave_submission" type="submit" value="$tlang.getString("gen.sav")" disabled="disabled"/>
+                <!--<input name="eventSubmit_doSave_submission" type="submit" value="$tlang.getString("gen.sav")" disabled="disabled"/>-->
                 <input name="eventSubmit_doPost_submission" type="submit" value="$tlang.getString("gen.subm3")" disabled="disabled"/>
                 <input name="eventSubmit_doCancel_show_submission" type="submit" value="$tlang.getString("gen.revi")" disabled="disabled"/>
             #else
@@ -196,11 +227,12 @@
                 #else
                     #set($name=$tlang.getString("gen.subm3"))
                 #end
-                <input type="button" class="active" name="confirm" accesskey="s" id="confirm" value="$!name"
-                       onclick="SPNR.disableControlsAndSpin( this, null ); ASN.submitForm( 'addSubmissionForm', 'confirm', null, null ); return false;"/>
-                <input class="disableme" type="button" accesskey="d" name="save" id="save"
+                <input type="button" class="active" name="post" accesskey="s" id="post" value="$!name"
+                       onclick="SPNR.disableControlsAndSpin( this, null ); ASN.submitForm( 'addSubmissionForm', 'post', null, null ); return false;" 
+					    #if ($!submissionConfirmChecks) disabled="disabled" #end />
+                <!--<input class="disableme" type="button" accesskey="d" name="save" id="save"
                        value="$tlang.getString("gen.savdra")"
-                       onclick="SPNR.disableControlsAndSpin( this, null ); ASN.submitForm( 'addSubmissionForm', 'save', null, null ); return false;"/>
+                       onclick="SPNR.disableControlsAndSpin( this, null ); ASN.submitForm( 'addSubmissionForm', 'save', null, null ); return false;"/>-->
                 <input class="disableme" type="button" name="revise" accesskey="r" id="revise"
                        value="$tlang.getString("gen.revi")"
                        onclick="SPNR.disableControlsAndSpin( this, null ); ASN.submitForm( 'addSubmissionForm', 'revise', null, null ); return false;"/>
@@ -209,4 +241,4 @@
         <input type="hidden" name="sakai_csrf_token" value="$sakai_csrf_token"/>
     </form>
 </div>
-<!-- end: chef_assignments_student_preview_submission.vm -->
+<!-- end: chef_assignments_student_confirm_submission.vm -->

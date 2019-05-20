@@ -636,6 +636,7 @@ public class AssignmentServiceTest extends AbstractTransactionalJUnit4SpringCont
         // gen.inpro         = In progress
         // gen.commented     = Commented
         // grad3             = Graded
+        // gen.hpsta         = Honor Accepted
 
         String context = UUID.randomUUID().toString();
         String submitterId = UUID.randomUUID().toString();
@@ -645,6 +646,8 @@ public class AssignmentServiceTest extends AbstractTransactionalJUnit4SpringCont
                                         AssignmentReferenceReckoner.reckoner().submission(submission).reckon().getReference())).thenReturn(true);
             String status = assignmentService.getSubmissionStatus(submission.getId());
             Assert.assertEquals("Draft - In progress", status);
+            AssignmentConstants.SubmissionStatus subStatus = assignmentService.getSubmissionCannonicalStatus(submission);
+            Assert.assertEquals(AssignmentConstants.SubmissionStatus.DRAFT, subStatus);
             Assert.assertFalse(submission.getSubmitted());
 
             String reference = AssignmentReferenceReckoner.reckoner().submission(submission).reckon().getReference();
@@ -654,6 +657,8 @@ public class AssignmentServiceTest extends AbstractTransactionalJUnit4SpringCont
             assignmentService.updateSubmission(submission);
             status = assignmentService.getSubmissionStatus(submission.getId());
             Assert.assertEquals("Submitted " + assignmentService.getUsersLocalDateTimeString(submission.getDateSubmitted()), status);
+            subStatus = assignmentService.getSubmissionCannonicalStatus(submission);
+            Assert.assertEquals(AssignmentConstants.SubmissionStatus.SUBMITTED, subStatus);
         } catch (Exception e) {
             Assert.fail("Could not create/update submission\n" + e.toString());
         }

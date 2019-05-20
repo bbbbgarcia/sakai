@@ -235,7 +235,24 @@ public final class AssignmentConstants {
         CLOSED,
         DUE
     }
-    
+
+    public enum SubmissionStatus {
+		NOT_STARTED,
+        HONOR_ACCEPTED,
+		//IN_PROGRESS,
+		DRAFT,
+        SUBMITTED,
+		RESUBMITTED,
+        LATE,
+        NO_SUBMISSION,
+		UNGRADED,
+		RETURNED,
+		COMMENTED,
+		GRADED,
+		_
+
+    }
+
     public static final String SUBMISSION_OPTION_RELEASE = "release";
     public static final String SUBMISSION_OPTION_RETURN = "return";
     public static final String SUBMISSION_OPTION_SAVE = "save";

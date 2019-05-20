@@ -48,7 +48,7 @@
             <span class="highlight"> - $tlang.getString("gen.subm4")</span>
         #end
     </h3>
-
+    #progressBar($assignment.HonorPledge $submission $!service.getSubmissionCannonicalStatus($!submission))
     #if ($alertMessage)
         <div class="alertMessage"><strong>$tlang.getString("gen.alert")</strong> $alertMessage</div>
     #end
