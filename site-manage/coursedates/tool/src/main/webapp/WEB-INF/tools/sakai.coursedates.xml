@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+<registration>
+	<tool id="sakai.coursedates"
+		title="Course Dates Helper"
+		description="Site Course Dates Helper Tool">
+		<category name="sakai.helper" />
+		<configuration name="functions.require" value="site.upd" />
+	</tool>	
+</registration>

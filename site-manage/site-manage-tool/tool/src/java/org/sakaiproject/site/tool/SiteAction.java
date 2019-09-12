@@ -4402,7 +4402,22 @@ public class SiteAction extends PagedResourceActionII {
 		// launch the helper
 		startHelper(data.getRequest(), "sakai-site-pageorder-helper");
 	}
-	
+
+	public void doCourseDatesHelper(RunData data) {
+		/*SessionState state = ((JetspeedRunData) data)
+				.getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+
+
+		// pass in the siteId of the site to be ordered (so it can configure
+		// sites other then the current site)
+		SessionManager.getCurrentToolSession().setAttribute(
+				HELPER_ID + ".siteId", ((Site) getStateSite(state)).getId());*/
+
+		// launch the helper
+		startHelper(data.getRequest(), "sakai.coursedates.helper");
+
+	} // doCourseDatesHelper
+
 	/**
 	 * Launch the participant Helper Tool -- for adding participant
 	 * 
