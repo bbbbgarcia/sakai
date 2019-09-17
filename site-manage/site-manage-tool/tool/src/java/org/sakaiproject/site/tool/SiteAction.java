@@ -4414,7 +4414,7 @@ public class SiteAction extends PagedResourceActionII {
 				HELPER_ID + ".siteId", ((Site) getStateSite(state)).getId());*/
 
 		// launch the helper
-		startHelper(data.getRequest(), "sakai.coursedates.helper");
+		startHelper(data.getRequest(), "sakai.coursedates");
 
 	} // doCourseDatesHelper
 

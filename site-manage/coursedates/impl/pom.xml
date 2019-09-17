@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.sakaiproject.sitemanage</groupId>
+		<artifactId>sakai-site-coursedates-base</artifactId>
+		<version>20-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<name>sakai-site-coursedates-impl</name>
+	<groupId>org.sakaiproject.coursedates.impl</groupId>
+	<artifactId>sakai-site-coursedates-impl</artifactId>
+	<packaging>sakai-component</packaging>
+
+	<dependencies>
+		<!-- Project dependencies -->
+		<dependency>
+			<groupId>org.sakaiproject.coursedates.api</groupId>
+			<artifactId>sakai-site-coursedates-api</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<!-- Sakai dependencies -->
+		<dependency>
+			<groupId>org.sakaiproject.kernel</groupId>
+			<artifactId>sakai-kernel-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.sakaiproject.kernel</groupId>
+			<artifactId>sakai-component-manager</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.sakaiproject.kernel</groupId>
+			<artifactId>sakai-kernel-util</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.sakaiproject.assignment</groupId>
+			<artifactId>sakai-assignment-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<!-- Third dependencies -->
+		<dependency>
+			<groupId>com.googlecode.json-simple</groupId>
+			<artifactId>json-simple</artifactId>
+			<version>${json.simple.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+	</dependencies>
+</project>

@@ -16,23 +16,23 @@ import org.springframework.web.servlet.DispatcherServlet;
 
 public class WebAppConfiguration implements WebApplicationInitializer {
 
-    @Override
-    public void onStartup(ServletContext servletContext) throws ServletException {
-        AnnotationConfigWebApplicationContext rootContext = new AnnotationConfigWebApplicationContext();
-        rootContext.setServletContext(servletContext);
-        rootContext.register(ThymeleafConfig.class);
+	@Override
+	public void onStartup(ServletContext servletContext) throws ServletException {
+		AnnotationConfigWebApplicationContext rootContext = new AnnotationConfigWebApplicationContext();
+		rootContext.setServletContext(servletContext);
+		rootContext.register(ThymeleafConfig.class);
 
-        servletContext.addListener(new ToolListener());
-        servletContext.addListener(new SakaiContextLoaderListener(rootContext));
+		servletContext.addListener(new ToolListener());
+		servletContext.addListener(new SakaiContextLoaderListener(rootContext));
 
-        servletContext.addFilter("sakai.request", RequestFilter.class)
-                .addMappingForUrlPatterns(
-                        EnumSet.of(DispatcherType.REQUEST, DispatcherType.FORWARD, DispatcherType.INCLUDE),
-                        true,
-                        "/*");
+		servletContext.addFilter("sakai.request", RequestFilter.class)
+			.addMappingForUrlPatterns(
+				EnumSet.of(DispatcherType.REQUEST, DispatcherType.FORWARD, DispatcherType.INCLUDE),
+				true,
+				"/*");
 
-        Dynamic servlet = servletContext.addServlet("sakai.coursedates", new DispatcherServlet(rootContext));
-        servlet.addMapping("/");
-        servlet.setLoadOnStartup(1);
-    }
+		Dynamic servlet = servletContext.addServlet("sakai.coursedates", new DispatcherServlet(rootContext));
+		servlet.addMapping("/");
+		servlet.setLoadOnStartup(1);
+	}
 }

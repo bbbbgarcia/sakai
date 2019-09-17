@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="org.sakaiproject.coursedates.api.SakaiProxy"
+		class="org.sakaiproject.coursedates.impl.SakaiProxyImpl">
+		<property name="toolManager" ref="org.sakaiproject.tool.api.ToolManager"/>
+		<property name="sessionManager" ref="org.sakaiproject.tool.api.SessionManager"/>
+		<property name="prefService" ref="org.sakaiproject.user.api.PreferencesService"/>
+		<property name="assignmentService" ref="org.sakaiproject.assignment.api.AssignmentService"/>
+	</bean>
+</beans>

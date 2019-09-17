@@ -30,6 +30,75 @@
 		min-width: 100%;
 		padding-right: 0.5em;
 	}
+	#date-manager-form {
+		.panel-title {
+			a {
+				text-decoration: none;
+
+				&::before {
+					font-family: FontAwesome;
+					margin-right: 5px;
+					width: 15px;
+					display: inline-block;
+				}
+				&.collapsed {
+					&::before {
+						content: "\f061";
+					}
+				}
+				&:not(.collapsed) {
+					&::before {
+						content: "\f063";
+					}	
+				}
+
+				span {
+					text-decoration: underline;
+				}
+			}
+		}
+
+		.table-coursedates {
+			margin-bottom: 0;
+
+			.datepicker {
+				width: calc(100% - 35px);
+				display: inline-block;
+				min-width: 200px;
+			}
+
+			.ui-datepicker-trigger {
+				margin-top: 1px;
+			}
+
+			.day-of-week {
+				text-transform: capitalize;
+			}
+
+			.ajax-error {
+				background-color: $errorBanner-bgcolor;
+			}
+		}
+
+		.modal {
+			.modal-header {
+				.close {
+					opacity: 1;
+				}
+			}
+			.modal-body {
+				#modified-dates {
+					margin-bottom: 0;
+				}
+			}
+			.modal-footer {
+				&.act {
+					margin-top: 0;
+					margin-bottom: 0;
+				}
+			}
+		}
+	}
 }
 
 #toolSelectionList{

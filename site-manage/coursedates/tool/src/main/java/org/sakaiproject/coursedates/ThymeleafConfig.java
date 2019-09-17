@@ -1,6 +1,7 @@
 package org.sakaiproject.coursedates;
 
 import org.sakaiproject.util.ResourceLoaderMessageSource;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.MessageSource;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.spring4.SpringTemplateEngine;
 import org.thymeleaf.spring4.templateresolver.SpringResourceTemplateResolver;
@@ -21,44 +23,45 @@ import org.thymeleaf.templateresolver.ITemplateResolver;
 @EnableWebMvc
 @ComponentScan("org.sakaiproject.coursedates")
 public class ThymeleafConfig extends WebMvcConfigurerAdapter implements ApplicationContextAware {
-    private static final String UTF8 = "UTF-8";
 
-    private ApplicationContext applicationContext;
+	private static final String UTF8 = "UTF-8";
 
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-    }
+	private ApplicationContext applicationContext;
 
-    @Bean
-    public MessageSource messageSource() {
-        ResourceLoaderMessageSource messages = new ResourceLoaderMessageSource();
-        messages.setBasename("Messages");
-        return messages;
-    }
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) {
+		this.applicationContext = applicationContext;
+	}
 
-    @Bean
-    public ViewResolver viewResolver() {
-        ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
-        viewResolver.setTemplateEngine(templateEngine());
-        viewResolver.setCharacterEncoding(UTF8);
-        return viewResolver;
-    }
+	@Bean
+	public MessageSource messageSource() {
+		ResourceLoaderMessageSource messages = new ResourceLoaderMessageSource();
+		messages.setBasename("Messages");
+		return messages;
+	}
 
-    private TemplateEngine templateEngine() {
-        SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-        templateEngine.setEnableSpringELCompiler(true);
-        templateEngine.setMessageSource(messageSource());
-        templateEngine.setTemplateResolver(templateResolver());
-        return templateEngine;
-    }
+	@Bean
+	public ViewResolver viewResolver() {
+		ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+		viewResolver.setTemplateEngine(templateEngine());
+		viewResolver.setCharacterEncoding(UTF8);
+		return viewResolver;
+	}
 
-    private ITemplateResolver templateResolver() {
-        SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
-        templateResolver.setApplicationContext(applicationContext);
-        templateResolver.setPrefix("/WEB-INF/templates/");
-        templateResolver.setSuffix(".html");
-        templateResolver.setTemplateMode(TemplateMode.HTML);
-        return templateResolver;
-    }
+	private TemplateEngine templateEngine() {
+		SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+		templateEngine.setEnableSpringELCompiler(true);
+		templateEngine.setMessageSource(messageSource());
+		templateEngine.setTemplateResolver(templateResolver());
+		return templateEngine;
+	}
+
+	private ITemplateResolver templateResolver() {
+		SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
+		templateResolver.setApplicationContext(applicationContext);
+		templateResolver.setPrefix("/WEB-INF/templates/");
+		templateResolver.setSuffix(".html");
+		templateResolver.setTemplateMode(TemplateMode.HTML);
+		return templateResolver;
+	}
 }
