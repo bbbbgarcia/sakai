@@ -29,10 +29,10 @@
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
-						<a data-toggle="collapse" data-parent="#accordion" href="#collapse1"><span th:text="#{tool.assignments.title}">Assignments</span></a>
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-assignments"><span th:text="#{tool.assignments.title}">Assignments</span></a>
 					</h4>
 				</div>
-				<div id="collapse1" class="panel-collapse collapse in">
+				<div id="collapse-assignments" class="panel-collapse collapse in">
 					<div class="panel-body">
 						<table class="table table-condensed table-striped table-bordered table-coursedates">
 							<thead>
@@ -119,7 +119,11 @@
 					$('.datepicker').each(function (idx, elt) {
 						var $td = $(elt).closest('td');
 						var $hidden = $td.find('input:hidden');
-						$td.attr('id', 'cell_' + $hidden.data('field') + '_' + $hidden.data('idx'));
+
+						var dataTool = $hidden.data('tool');
+						var dataField = $hidden.data('field');
+						var dataIdx = $hidden.data('idx');
+						$td.attr('id', 'cell_' + dataTool + '_' + dataField + '_' + dataIdx);
 
 						$hidden.on('change', function () {
 							var idx = $(this).data('idx');
@@ -129,9 +133,10 @@
 							updates[tool][idx][field] = $(this).val().split('+')[0];
 							updates[tool][idx][field + '_label'] = $(this).siblings('input.datepicker').val();
 							updates[tool][idx][field + '_day_of_week'] = moment(updates[tool][idx][field]).format('dddd');
-							$('#cell_' + field + '_' + idx + ' .day-of-week').text(updates[tool][idx][field + '_day_of_week']);
+							$(this).parent().find('.day-of-week').text(updates[tool][idx][field + '_day_of_week']);
 
 							if (notModified.includes(tool + idx + field)) {
+								updates[tool][idx].idx = idx;
 								updates[tool + 'Upd'][idx] = updates[tool][idx];
 								$('#submit-form-button').prop('disabled', false);
 							}
@@ -139,15 +144,17 @@
 						});
 
 						$hidden.attr('id', 'hidden_datepicker_' + idx);
-						localDatePicker({
+						var datepickerOpts = {
 							input: elt,
 							useTime: 1,
 							parseFormat: 'YYYY-MM-DD HH:mm:ss',
-							val: $hidden.val(),
+							allowEmptyDate: false,
 							ashidden: {
 								iso8601: 'hidden_datepicker_' + idx,
 							}
-						});
+						};
+						if ($hidden.val() != '') datepickerOpts.val = $hidden.val();
+						localDatePicker(datepickerOpts);
 					});
 
 					function printErrors() {
@@ -156,7 +163,7 @@
 						$('#form-errors').removeClass('hidden');
 						$('#form-errors').find('ul').empty();
 						$(errors).each(function (idx, elt) {
-							var id = ['cell', elt.field, elt.idx].join('_');
+							var id = ['cell', elt.toolId, elt.field, elt.idx].join('_');
 							var $cell = $('#' + id);
 							$cell.addClass('ajax-error');
 							$cell.find('.errors').text(elt.msg);
@@ -169,8 +176,10 @@
 							e.preventDefault();
 							$("#modal-confirm").modal('show');
 							$('#modified-dates').empty();
-							$(updates.assignmentsUpd).each(function(idx, elt) {
-								$('#modified-dates').append('<li>' + elt.tool_title + ' - ' + elt.title + '</li>');
+							$.each([updates.assignmentsUpd.filter(el=>el)], function(idx, elt) {
+								$.each(elt, function(idx, elt) {
+									$('#modified-dates').append('<li>' + elt.tool_title + ' - ' + elt.title + '</li>');
+								});
 							});
 						});
 
@@ -192,7 +201,7 @@
 					function confirmFormSubmit() {
 						var $form = $('#date-manager-form');
 						var formData = new FormData();
-						var assignmentsStr = JSON.stringify(updates.assignmentsUpd);
+						var assignmentsStr = JSON.stringify(updates.assignmentsUpd.filter(el=>el));
 						var json = '{"assignments": ' + assignmentsStr + '}';
 						formData.append('json', json);
 

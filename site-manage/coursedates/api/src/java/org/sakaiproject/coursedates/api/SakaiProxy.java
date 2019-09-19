@@ -18,5 +18,5 @@ public interface SakaiProxy {
 	// Assignments methods
 	public JSONArray getAssignmentsForContext(String siteId);
 	public CourseDatesValidation validateAssignments(String siteId, JSONArray assignments) throws Exception;
-	public void updateAssignments(CourseDatesValidation assignmentsValidate) throws Exception;
+	public void updateAssignments(CourseDatesValidation assignmentsValidation) throws Exception;
 }

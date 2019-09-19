@@ -41,14 +41,14 @@
 					width: 15px;
 					display: inline-block;
 				}
-				&.collapsed {
-					&::before {
-						content: "\f061";
-					}
-				}
-				&:not(.collapsed) {
+				&[aria-expanded=true] {
 					&::before {
 						content: "\f063";
+					}
+				}
+				&:not([aria-expanded=true]) {
+					&::before {
+						content: "\f061";
 					}	
 				}
 

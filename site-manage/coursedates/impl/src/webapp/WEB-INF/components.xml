@@ -5,7 +5,8 @@
 		http://www.springframework.org/schema/beans/spring-beans.xsd">
 
 	<bean id="org.sakaiproject.coursedates.api.SakaiProxy"
-		class="org.sakaiproject.coursedates.impl.SakaiProxyImpl">
+		class="org.sakaiproject.coursedates.impl.SakaiProxyImpl"
+		init-method="init">
 		<property name="toolManager" ref="org.sakaiproject.tool.api.ToolManager"/>
 		<property name="sessionManager" ref="org.sakaiproject.tool.api.SessionManager"/>
 		<property name="prefService" ref="org.sakaiproject.user.api.PreferencesService"/>
