@@ -56,10 +56,13 @@ public class MainController {
 		Locale locale = sakaiProxy.getUserLocale();
 		String siteId = sakaiProxy.getCurrentSiteId();
 		JSONArray assignmentsJson = sakaiProxy.getAssignmentsForContext(siteId);
+		JSONArray assessmentsJson = sakaiProxy.getAssessmentsForContext(siteId);
+
 		model.addAttribute("userCountry", locale.getCountry());
 		model.addAttribute("userLanguage", locale.getLanguage());
 		model.addAttribute("userLocale", locale.toString());
 		model.addAttribute("assignments", assignmentsJson);
+		model.addAttribute("assessments", assessmentsJson);
 		return "index";
 	}
 
@@ -79,15 +82,19 @@ public class MainController {
 
 			JSONArray assignments = (JSONArray) ((JSONObject) json).get("assignments");
 			CourseDatesValidation assignmentValidate = sakaiProxy.validateAssignments(siteId, assignments);
+			JSONArray assessments = (JSONArray) ((JSONObject) json).get("assessments");
+			CourseDatesValidation assessmentValidate = sakaiProxy.validateAssessments(siteId, assessments);
 
-			if (assignmentValidate.getErrors().isEmpty()) {
+			if (assignmentValidate.getErrors().isEmpty() && assessmentValidate.getErrors().isEmpty()) {
 				sakaiProxy.updateAssignments(assignmentValidate);
+				sakaiProxy.updateAssessments(assessmentValidate);
 				jsonResponse = "{\"status\": \"OK\"}";
 
 			} else {
 				JSONArray errorReport = new JSONArray();
 				List<CourseDatesError> errors = new ArrayList<>();
 				errors.addAll(assignmentValidate.getErrors());
+				errors.addAll(assessmentValidate.getErrors());
 
 				for (CourseDatesError error : errors) {
 					JSONObject jsonError = new JSONObject();

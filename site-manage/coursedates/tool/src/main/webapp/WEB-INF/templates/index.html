@@ -69,7 +69,53 @@
 								</th:block>
 							</tbody>
 						</table>
+					</div>
+				</div>
+			</div>
 
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-assessments"><span th:text="#{tool.assessments.title}">Tests & Quizzes</span></a>
+					</h4>
+				</div>
+				<div id="collapse-assessments" class="panel-collapse collapse in">
+					<div class="panel-body">
+						<table class="table table-condensed table-striped table-bordered table-coursedates">
+							<thead>
+								<tr>
+									<th th:text="#{column.title}">Title</th>
+									<th th:text="#{column.start.date}">Start Date</th>
+									<th th:text="#{column.start.due.date}">End/Due Date</th>
+									<th th:text="#{column.accept.until.date}">Accept Until Date</th>
+								</tr>
+							</thead>
+							<tbody>
+								<th:block th:each="assessment, iter : ${assessments}">
+									<tr>
+										<td th:text="${assessment.title}">Assessment title</span>
+										<td>
+											<input type="text" class="form-control datepicker" />
+											<input type="hidden" th:value="${assessment.open_date}" th:attr="data-idx=${iter.index}" data-field="open_date" data-tool="assessments" />
+											<div><small class="text-muted day-of-week"></small></div>
+											<div><small class="errors"></small></div>
+										</td>
+										<td>
+											<input type="text" class="form-control datepicker" />
+											<input type="hidden" th:value="${assessment.due_date}" th:attr="data-idx=${iter.index}" data-field="due_date" data-tool="assessments" />
+											<div><small class="text-muted day-of-week"></small></div>
+											<div><small class="errors"></small></div>
+										</td>
+										<td>
+											<input type="text" class="form-control datepicker" />
+											<input type="hidden" th:value="${assessment.accept_until}" th:attr="data-idx=${iter.index}" data-field="accept_until" data-tool="assessments" />
+											<div><small class="text-muted day-of-week"></small></div>
+											<div><small class="errors"></small></div>
+										</td>
+									</tr>
+								</th:block>
+							</tbody>
+						</table>
 					</div>
 				</div>
 			</div>
@@ -105,6 +151,8 @@
 					var updates = [];
 					updates.assignments = [];
 					updates.assignmentsUpd = [];
+					updates.assessments = [];
+					updates.assessmentsUpd = [];
 					var errors = [];
 
 					/*[# th:each="assignment : ${assignments}"]*/
@@ -113,6 +161,14 @@
 						assignmentJson.due_date_day_of_week = undefined;
 						assignmentJson.accept_until_day_of_week = undefined;
 						updates.assignments.push(assignmentJson);
+					/*[/]*/
+
+					/*[# th:each="assessment : ${assessments}"]*/
+						var assessmentJson = /*[[${assessment}]]*/;
+						assessmentJson.open_date_day_of_week = undefined;
+						assessmentJson.due_date_day_of_week = undefined;
+						assessmentJson.accept_until_day_of_week = undefined;
+						updates.assessments.push(assessmentJson);
 					/*[/]*/
 
 					var notModified = [];
@@ -132,8 +188,11 @@
 
 							updates[tool][idx][field] = $(this).val().split('+')[0];
 							updates[tool][idx][field + '_label'] = $(this).siblings('input.datepicker').val();
-							updates[tool][idx][field + '_day_of_week'] = moment(updates[tool][idx][field]).format('dddd');
-							$(this).parent().find('.day-of-week').text(updates[tool][idx][field + '_day_of_week']);
+							// Show day of the week in case there is a date selected
+							if ($(this).parent().find('.datepicker').val() !== '') {
+								updates[tool][idx][field + '_day_of_week'] = moment(updates[tool][idx][field]).format('dddd');
+								$(this).parent().find('.day-of-week').text(updates[tool][idx][field + '_day_of_week']);
+							}
 
 							if (notModified.includes(tool + idx + field)) {
 								updates[tool][idx].idx = idx;
@@ -155,6 +214,13 @@
 						};
 						if ($hidden.val() != '') datepickerOpts.val = $hidden.val();
 						localDatePicker(datepickerOpts);
+
+						// Disable accept_until date input if no late submissions (assessments) allowed
+						if (dataTool == 'assessments' && dataField == 'accept_until') {
+							var disabled = !updates[dataTool][dataIdx].late_handling;
+							$(elt).prop('disabled', disabled);
+							$td.find('.ui-datepicker-trigger').prop('disabled', disabled);
+						}
 					});
 
 					function printErrors() {
@@ -176,7 +242,7 @@
 							e.preventDefault();
 							$("#modal-confirm").modal('show');
 							$('#modified-dates').empty();
-							$.each([updates.assignmentsUpd.filter(el=>el)], function(idx, elt) {
+							$.each([updates.assignmentsUpd.filter(el=>el), updates.assessmentsUpd.filter(el=>el)], function(idx, elt) {
 								$.each(elt, function(idx, elt) {
 									$('#modified-dates').append('<li>' + elt.tool_title + ' - ' + elt.title + '</li>');
 								});
@@ -202,7 +268,8 @@
 						var $form = $('#date-manager-form');
 						var formData = new FormData();
 						var assignmentsStr = JSON.stringify(updates.assignmentsUpd.filter(el=>el));
-						var json = '{"assignments": ' + assignmentsStr + '}';
+						var assessmentsStr = JSON.stringify(updates.assessmentsUpd.filter(el=>el));
+						var json = '{"assignments": ' + assignmentsStr + ', "assessments": ' + assessmentsStr + '}';
 						formData.append('json', json);
 
 						$.ajax({

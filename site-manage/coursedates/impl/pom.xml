@@ -40,6 +40,21 @@
 			<artifactId>sakai-assignment-api</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.sakaiproject.samigo</groupId>
+			<artifactId>samigo-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.sakaiproject.samigo</groupId>
+			<artifactId>samigo-services</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.sakaiproject.samigo</groupId>
+			<artifactId>samigo-hibernate</artifactId>
+			<scope>provided</scope>
+		</dependency>
 		<!-- Third dependencies -->
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
