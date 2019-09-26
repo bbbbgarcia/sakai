@@ -1,0 +1,53 @@
+<div th:fragment="tool_fragment" th:id="${collapseId}" class="panel-collapse collapse in">
+	<div class="panel-body">
+		<table class="table table-condensed table-striped table-bordered table-coursedates">
+			<thead>
+				<tr>
+					<th th:text="#{column.title}">Title</th>
+					<th th:text="#{column.start.date}">Start Date</th>
+					<th th:text="#{column.start.due.date}">End/Due Date</th>
+					<th th:text="#{column.accept.until.date}">Accept Until Date</th>
+				</tr>
+			</thead>
+			<tbody>
+				<th:block th:each="item, iter : ${items}">
+					<tr>
+						<td>
+							<span th:text="${item.title}">Item title</span>
+							<span th:if="${toolId == 'resources' or toolId == 'forums'}" th:text="${'(' + item.extraInfo + ')'}">Extra</span><!-- th:if="${toolExtra == true}" -->
+						</td>
+						<td th:switch="${toolId}">
+							<div th:case="'gradebookItems'"></div>
+							<div th:case="*">
+								<input type="text" class="form-control datepicker" />
+								<input type="hidden" th:value="${item.open_date}" th:attr="data-idx=${iter.index},data-tool=${toolId}" data-field="open_date" />
+								<div><small class="text-muted day-of-week"></small></div>
+								<div><small class="errors"></small></div>
+							</div>
+						</td>						
+						<td>
+							<input type="text" class="form-control datepicker" />
+							<input type="hidden" th:value="${item.due_date}" th:attr="data-idx=${iter.index},data-tool=${toolId}" data-field="due_date" />
+							<div><small class="text-muted day-of-week"></small></div>
+							<div><small class="errors"></small></div>
+						</td>
+						<td th:switch="${toolId}">
+							<div th:case="'gradebookItems'"></div>
+							<div th:case="'signupMeetings'"></div>
+							<div th:case="'resources'"></div>
+							<div th:case="'calendarEvents'"></div>
+							<div th:case="'forums'"></div>
+							<div th:case="'announcements'"></div>
+							<div th:case="*">
+								<input type="text" class="form-control datepicker" />
+								<input type="hidden" th:value="${item.accept_until}" th:attr="data-idx=${iter.index},data-tool=${toolId}" data-field="accept_until" />
+								<div><small class="text-muted day-of-week"></small></div>
+								<div><small class="errors"></small></div>
+							</div>
+						</td>
+					</tr>
+				</th:block>
+			</tbody>
+		</table>
+	</div>
+</div>

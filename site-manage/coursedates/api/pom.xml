@@ -21,10 +21,6 @@
 
 	<dependencies>
 		<!-- Sakai dependencies -->
-		<dependency>
-			<groupId>org.sakaiproject.assignment</groupId>
-			<artifactId>sakai-assignment-api</artifactId>
-		</dependency>
 		<!-- Third dependencies -->
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>

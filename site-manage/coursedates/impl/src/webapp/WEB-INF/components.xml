@@ -12,5 +12,13 @@
 		<property name="prefService" ref="org.sakaiproject.user.api.PreferencesService"/>
 		<property name="assignmentService" ref="org.sakaiproject.assignment.api.AssignmentService"/>
 		<property name="assessmentPersistenceService" ref="PersistenceService"/>
+		<property name="gradebookService" ref="org.sakaiproject.service.gradebook.GradebookService"/>
+		<property name="signupService" ref="org.sakaiproject.signup.logic.SignupMeetingService"/>
+		<property name="contentHostingService" ref="org.sakaiproject.content.api.ContentHostingService"/>
+		<property name="calendarService" ref="org.sakaiproject.calendar.api.CalendarService" />	
+		<property name="timeService" ref="org.sakaiproject.time.api.TimeService" />
+		<property name="forumManager" ref="org.sakaiproject.api.app.messageforums.MessageForumsForumManager" />
+		<property name="announcementService" ref="org.sakaiproject.announcement.api.AnnouncementService" />
+		<!--<property name="messageService" ref="org.sakaiproject.message.api.MessageService" />-->
 	</bean>
 </beans>

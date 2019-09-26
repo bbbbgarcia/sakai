@@ -55,14 +55,33 @@ public class MainController {
 	public String showIndex(@RequestParam(required=false) String code, Model model) {
 		Locale locale = sakaiProxy.getUserLocale();
 		String siteId = sakaiProxy.getCurrentSiteId();
-		JSONArray assignmentsJson = sakaiProxy.getAssignmentsForContext(siteId);
-		JSONArray assessmentsJson = sakaiProxy.getAssessmentsForContext(siteId);
 
 		model.addAttribute("userCountry", locale.getCountry());
 		model.addAttribute("userLanguage", locale.getLanguage());
 		model.addAttribute("userLocale", locale.toString());
+
+		JSONArray assignmentsJson = sakaiProxy.getAssignmentsForContext(siteId);
 		model.addAttribute("assignments", assignmentsJson);
+		JSONArray assessmentsJson = sakaiProxy.getAssessmentsForContext(siteId);
 		model.addAttribute("assessments", assessmentsJson);
+		//System.out.println("assessments " + assessmentsJson);
+		JSONArray gradebookItemsJson = sakaiProxy.getGradebookItemsForContext(siteId);
+		model.addAttribute("gradebookItems", gradebookItemsJson);//TODO CONTROLAR SI EXISTE LA TOOOOOL
+		JSONArray signupMeetingsJson = sakaiProxy.getSignupMeetingsForContext(siteId);
+		model.addAttribute("signupMeetings", signupMeetingsJson);
+		JSONArray resourcesJson = sakaiProxy.getResourcesForContext(siteId);
+		//System.out.println("resourcesJson " + resourcesJson);
+		model.addAttribute("resources", resourcesJson);
+		JSONArray calendarJson = sakaiProxy.getCalendarEventsForContext(siteId);
+		model.addAttribute("calendarEvents", calendarJson);
+		JSONArray forumsJson = sakaiProxy.getForumsForContext(siteId);
+		model.addAttribute("forums", forumsJson);
+		//System.out.println("forums " + forumsJson);
+		JSONArray announcementsJson = sakaiProxy.getAnnouncementsForContext(siteId);
+		model.addAttribute("announcements", announcementsJson);
+		//System.out.println("announcementsJson " + announcementsJson);
+		// and lessons
+
 		return "index";
 	}
 
@@ -84,17 +103,41 @@ public class MainController {
 			CourseDatesValidation assignmentValidate = sakaiProxy.validateAssignments(siteId, assignments);
 			JSONArray assessments = (JSONArray) ((JSONObject) json).get("assessments");
 			CourseDatesValidation assessmentValidate = sakaiProxy.validateAssessments(siteId, assessments);
+			JSONArray gradebookItems = (JSONArray) ((JSONObject) json).get("gradebookItems");
+			CourseDatesValidation gradebookValidate = sakaiProxy.validateGradebookItems(siteId, gradebookItems);
+			JSONArray signupMeetings = (JSONArray) ((JSONObject) json).get("signupMeetings");
+			CourseDatesValidation signupValidate = sakaiProxy.validateSignupMeetings(siteId, signupMeetings);
+			JSONArray resources = (JSONArray) ((JSONObject) json).get("resources");
+			CourseDatesValidation resourcesValidate = sakaiProxy.validateResources(siteId, resources);
+			JSONArray calendarEvents = (JSONArray) ((JSONObject) json).get("calendarEvents");
+			CourseDatesValidation calendarValidate = sakaiProxy.validateCalendarEvents(siteId, calendarEvents);
+			JSONArray forums = (JSONArray) ((JSONObject) json).get("forums");
+			CourseDatesValidation forumValidate = sakaiProxy.validateForums(siteId, forums);
+			JSONArray announcements = (JSONArray) ((JSONObject) json).get("announcements");
+			CourseDatesValidation announcementValidate = sakaiProxy.validateAnnouncements(siteId, announcements);
 
-			if (assignmentValidate.getErrors().isEmpty() && assessmentValidate.getErrors().isEmpty()) {
-				sakaiProxy.updateAssignments(assignmentValidate);
+			if (assignmentValidate.getErrors().isEmpty() && assessmentValidate.getErrors().isEmpty() && gradebookValidate.getErrors().isEmpty() && signupValidate.getErrors().isEmpty() && resourcesValidate.getErrors().isEmpty()
+					 && calendarValidate.getErrors().isEmpty() && forumValidate.getErrors().isEmpty() && announcementValidate.getErrors().isEmpty()) {
+				sakaiProxy.updateAssignments(assignmentValidate);//if !empty
 				sakaiProxy.updateAssessments(assessmentValidate);
+				sakaiProxy.updateGradebookItems(gradebookValidate);//if !empty
+				sakaiProxy.updateSignupMeetings(signupValidate);//if !empty
+				sakaiProxy.updateResources(resourcesValidate);//if !empty
+				sakaiProxy.updateCalendarEvents(calendarValidate);//if !empty
+				sakaiProxy.updateForums(forumValidate);//if !empty
+				sakaiProxy.updateAnnouncements(announcementValidate);//if !empty
 				jsonResponse = "{\"status\": \"OK\"}";
-
 			} else {
 				JSONArray errorReport = new JSONArray();
 				List<CourseDatesError> errors = new ArrayList<>();
 				errors.addAll(assignmentValidate.getErrors());
 				errors.addAll(assessmentValidate.getErrors());
+				errors.addAll(gradebookValidate.getErrors());
+				errors.addAll(signupValidate.getErrors());
+				errors.addAll(resourcesValidate.getErrors());
+				errors.addAll(calendarValidate.getErrors());
+				errors.addAll(forumValidate.getErrors());
+				errors.addAll(announcementValidate.getErrors());
 
 				for (CourseDatesError error : errors) {
 					JSONObject jsonError = new JSONObject();

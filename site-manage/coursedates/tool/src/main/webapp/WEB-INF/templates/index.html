@@ -32,92 +32,56 @@
 						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-assignments"><span th:text="#{tool.assignments.title}">Assignments</span></a>
 					</h4>
 				</div>
-				<div id="collapse-assignments" class="panel-collapse collapse in">
-					<div class="panel-body">
-						<table class="table table-condensed table-striped table-bordered table-coursedates">
-							<thead>
-								<tr>
-									<th th:text="#{column.title}">Title</th>
-									<th th:text="#{column.start.date}">Start Date</th>
-									<th th:text="#{column.start.due.date}">End/Due Date</th>
-									<th th:text="#{column.accept.until.date}">Accept Until Date</th>
-								</tr>
-							</thead>
-							<tbody>
-								<th:block th:each="assignment, iter : ${assignments}">
-									<tr>
-										<td th:text="${assignment.title}">Assignment title</span>
-										<td>
-											<input type="text" class="form-control datepicker" />
-											<input type="hidden" th:value="${assignment.open_date}" th:attr="data-idx=${iter.index}" data-field="open_date" data-tool="assignments" />
-											<div><small class="text-muted day-of-week"></small></div>
-											<div><small class="errors"></small></div>
-										</td>
-										<td>
-											<input type="text" class="form-control datepicker" />
-											<input type="hidden" th:value="${assignment.due_date}" th:attr="data-idx=${iter.index}" data-field="due_date" data-tool="assignments" />
-											<div><small class="text-muted day-of-week"></small></div>
-											<div><small class="errors"></small></div>
-										</td>
-										<td>
-											<input type="text" class="form-control datepicker" />
-											<input type="hidden" th:value="${assignment.accept_until}" th:attr="data-idx=${iter.index}" data-field="accept_until" data-tool="assignments" />
-											<div><small class="text-muted day-of-week"></small></div>
-											<div><small class="errors"></small></div>
-										</td>
-									</tr>
-								</th:block>
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
+				<div th:replace="tool_fragment :: tool_fragment(items=${assignments}, toolId='assignments', collapseId='collapse-assignments')"></div>
 
-			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
 						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-assessments"><span th:text="#{tool.assessments.title}">Tests & Quizzes</span></a>
 					</h4>
 				</div>
-				<div id="collapse-assessments" class="panel-collapse collapse in">
-					<div class="panel-body">
-						<table class="table table-condensed table-striped table-bordered table-coursedates">
-							<thead>
-								<tr>
-									<th th:text="#{column.title}">Title</th>
-									<th th:text="#{column.start.date}">Start Date</th>
-									<th th:text="#{column.start.due.date}">End/Due Date</th>
-									<th th:text="#{column.accept.until.date}">Accept Until Date</th>
-								</tr>
-							</thead>
-							<tbody>
-								<th:block th:each="assessment, iter : ${assessments}">
-									<tr>
-										<td th:text="${assessment.title}">Assessment title</span>
-										<td>
-											<input type="text" class="form-control datepicker" />
-											<input type="hidden" th:value="${assessment.open_date}" th:attr="data-idx=${iter.index}" data-field="open_date" data-tool="assessments" />
-											<div><small class="text-muted day-of-week"></small></div>
-											<div><small class="errors"></small></div>
-										</td>
-										<td>
-											<input type="text" class="form-control datepicker" />
-											<input type="hidden" th:value="${assessment.due_date}" th:attr="data-idx=${iter.index}" data-field="due_date" data-tool="assessments" />
-											<div><small class="text-muted day-of-week"></small></div>
-											<div><small class="errors"></small></div>
-										</td>
-										<td>
-											<input type="text" class="form-control datepicker" />
-											<input type="hidden" th:value="${assessment.accept_until}" th:attr="data-idx=${iter.index}" data-field="accept_until" data-tool="assessments" />
-											<div><small class="text-muted day-of-week"></small></div>
-											<div><small class="errors"></small></div>
-										</td>
-									</tr>
-								</th:block>
-							</tbody>
-						</table>
-					</div>
+				<div th:replace="tool_fragment :: tool_fragment(items=${assessments}, toolId='assessments', collapseId='collapse-assessments')"></div>
+
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-signup"><span th:text="#{tool.signup.title}">Sign up</span></a>
+					</h4>
 				</div>
+				<div th:replace="tool_fragment :: tool_fragment(items=${signupMeetings}, toolId='signupMeetings', collapseId='collapse-signup')"></div>				
+
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-gradebook" ><span th:text="#{tool.gradebook.title}">Gradebook</span></a>
+					</h4>
+				</div>
+				<div th:replace="tool_fragment :: tool_fragment(items=${gradebookItems}, toolId='gradebookItems', collapseId='collapse-gradebook')"></div>
+
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-resources" ><span th:text="#{tool.resources.title}">Resources</span></a>
+					</h4>
+				</div>
+				<div th:replace="tool_fragment :: tool_fragment(items=${resources}, toolId='resources', collapseId='collapse-resources')"></div>
+
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-calendar" ><span th:text="#{tool.calendar.title}">Calendar</span></a>
+					</h4>
+				</div>
+				<div th:replace="tool_fragment :: tool_fragment(items=${calendarEvents}, toolId='calendarEvents', collapseId='collapse-calendar')"></div>
+
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-forums" ><span th:text="#{tool.forums.title}">Forums</span></a>
+					</h4>
+				</div>
+				<div th:replace="tool_fragment :: tool_fragment(items=${forums}, toolId='forums', collapseId='collapse-forums')"></div>
+
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-announcements" ><span th:text="#{tool.announcements.title}">Forums</span></a>
+					</h4>
+				</div>
+				<div th:replace="tool_fragment :: tool_fragment(items=${announcements}, toolId='announcements', collapseId='collapse-announcements')"></div>
 			</div>
 
 			<div class="act">
@@ -153,6 +117,18 @@
 					updates.assignmentsUpd = [];
 					updates.assessments = [];
 					updates.assessmentsUpd = [];
+					updates.gradebookItems = [];
+					updates.gradebookItemsUpd = [];
+					updates.signupMeetings = [];
+					updates.signupMeetingsUpd = [];
+					updates.resources = [];
+					updates.resourcesUpd = [];
+					updates.calendarEvents = [];
+					updates.calendarEventsUpd = [];
+					updates.forums = [];
+					updates.forumsUpd = [];
+					updates.announcements = [];
+					updates.announcementsUpd = [];					
 					var errors = [];
 
 					/*[# th:each="assignment : ${assignments}"]*/
@@ -169,6 +145,54 @@
 						assessmentJson.due_date_day_of_week = undefined;
 						assessmentJson.accept_until_day_of_week = undefined;
 						updates.assessments.push(assessmentJson);
+					/*[/]*/
+
+					/*[# th:each="gbitem : ${gradebookItems}"]*/
+						var itemJson = /*[[${gbitem}]]*/;
+						itemJson.open_date_day_of_week = undefined;
+						itemJson.due_date_day_of_week = undefined;
+						itemJson.accept_until_day_of_week = undefined;
+						updates.gradebookItems.push(itemJson);
+					/*[/]*/
+
+					/*[# th:each="meeting : ${signupMeetings}"]*/
+						var meetingJson = /*[[${meeting}]]*/;
+						meetingJson.open_date_day_of_week = undefined;
+						meetingJson.due_date_day_of_week = undefined;
+						meetingJson.accept_until_day_of_week = undefined;
+						updates.signupMeetings.push(meetingJson);
+					/*[/]*/
+
+					/*[# th:each="resource : ${resources}"]*/
+						var resourceJson = /*[[${resource}]]*/;
+						resourceJson.open_date_day_of_week = undefined;
+						resourceJson.due_date_day_of_week = undefined;
+						resourceJson.accept_until_day_of_week = undefined;
+						updates.resources.push(resourceJson);
+					/*[/]*/
+
+					/*[# th:each="calEvent : ${calendarEvents}"]*/
+						var calJson = /*[[${calEvent}]]*/;
+						calJson.open_date_day_of_week = undefined;
+						calJson.due_date_day_of_week = undefined;
+						calJson.accept_until_day_of_week = undefined;
+						updates.calendarEvents.push(calJson);
+					/*[/]*/
+
+					/*[# th:each="forum : ${forums}"]*/
+						var forumJson = /*[[${forum}]]*/;
+						forumJson.open_date_day_of_week = undefined;
+						forumJson.due_date_day_of_week = undefined;
+						forumJson.accept_until_day_of_week = undefined;
+						updates.forums.push(forumJson);
+					/*[/]*/
+
+					/*[# th:each="announcement : ${announcements}"]*/
+						var announcementJson = /*[[${announcement}]]*/;
+						announcementJson.open_date_day_of_week = undefined;
+						announcementJson.due_date_day_of_week = undefined;
+						announcementJson.accept_until_day_of_week = undefined;
+						updates.announcements.push(announcementJson);
 					/*[/]*/
 
 					var notModified = [];
@@ -203,10 +227,16 @@
 						});
 
 						$hidden.attr('id', 'hidden_datepicker_' + idx);
+						var dateFormat = 'YYYY-MM-DD HH:mm:ss';
+						var toolTime = 1;
+						if(dataTool == 'gradebookItems') {
+							dateFormat = 'YYYY-MM-DD';
+							toolTime = 0;
+						}
 						var datepickerOpts = {
 							input: elt,
-							useTime: 1,
-							parseFormat: 'YYYY-MM-DD HH:mm:ss',
+							useTime: toolTime,
+							parseFormat: dateFormat,
 							allowEmptyDate: false,
 							ashidden: {
 								iso8601: 'hidden_datepicker_' + idx,
@@ -242,7 +272,8 @@
 							e.preventDefault();
 							$("#modal-confirm").modal('show');
 							$('#modified-dates').empty();
-							$.each([updates.assignmentsUpd.filter(el=>el), updates.assessmentsUpd.filter(el=>el)], function(idx, elt) {
+							$.each([updates.assignmentsUpd.filter(el=>el), updates.assessmentsUpd.filter(el=>el), updates.gradebookItemsUpd.filter(el=>el), updates.signupMeetingsUpd.filter(el=>el), 
+							updates.resourcesUpd.filter(el=>el), updates.calendarEventsUpd.filter(el=>el), updates.forumsUpd.filter(el=>el), updates.announcementsUpd.filter(el=>el)], function(idx, elt) {
 								$.each(elt, function(idx, elt) {
 									$('#modified-dates').append('<li>' + elt.tool_title + ' - ' + elt.title + '</li>');
 								});
@@ -269,7 +300,14 @@
 						var formData = new FormData();
 						var assignmentsStr = JSON.stringify(updates.assignmentsUpd.filter(el=>el));
 						var assessmentsStr = JSON.stringify(updates.assessmentsUpd.filter(el=>el));
-						var json = '{"assignments": ' + assignmentsStr + ', "assessments": ' + assessmentsStr + '}';
+						var gradebookStr = JSON.stringify(updates.gradebookItemsUpd.filter(el=>el));
+						var signupStr = JSON.stringify(updates.signupMeetingsUpd.filter(el=>el));
+						var resourcesStr = JSON.stringify(updates.resourcesUpd.filter(el=>el));
+						var calendarStr = JSON.stringify(updates.calendarEventsUpd.filter(el=>el));
+						var forumsStr = JSON.stringify(updates.forumsUpd.filter(el=>el));
+						var announcementsStr = JSON.stringify(updates.announcementsUpd.filter(el=>el));
+						var json = '{"assignments": ' + assignmentsStr + ', "assessments": ' + assessmentsStr + ', "gradebookItems": ' + gradebookStr + ', "signupMeetings": ' + signupStr + ', "resources": ' + resourcesStr 
+									+ ', "calendarEvents": ' + calendarStr + ', "forums": ' + forumsStr + ', "announcements": ' + announcementsStr + '}';
 						formData.append('json', json);
 
 						$.ajax({
