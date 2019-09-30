@@ -62,25 +62,31 @@ public class MainController {
 
 		JSONArray assignmentsJson = sakaiProxy.getAssignmentsForContext(siteId);
 		model.addAttribute("assignments", assignmentsJson);
+		log.debug("assignments {}", assignmentsJson);
 		JSONArray assessmentsJson = sakaiProxy.getAssessmentsForContext(siteId);
 		model.addAttribute("assessments", assessmentsJson);
-		//System.out.println("assessments " + assessmentsJson);
+		log.debug("assessments {}", assessmentsJson);
 		JSONArray gradebookItemsJson = sakaiProxy.getGradebookItemsForContext(siteId);
-		model.addAttribute("gradebookItems", gradebookItemsJson);//TODO CONTROLAR SI EXISTE LA TOOOOOL
+		model.addAttribute("gradebookItems", gradebookItemsJson);
+		log.debug("gradebookItemsJson {}", gradebookItemsJson);
 		JSONArray signupMeetingsJson = sakaiProxy.getSignupMeetingsForContext(siteId);
 		model.addAttribute("signupMeetings", signupMeetingsJson);
+		log.debug("signupMeetingsJson {}", signupMeetingsJson);
 		JSONArray resourcesJson = sakaiProxy.getResourcesForContext(siteId);
-		//System.out.println("resourcesJson " + resourcesJson);
 		model.addAttribute("resources", resourcesJson);
+		log.debug("resourcesJson {}", resourcesJson);
 		JSONArray calendarJson = sakaiProxy.getCalendarEventsForContext(siteId);
 		model.addAttribute("calendarEvents", calendarJson);
+		log.debug("calendarJson {}", calendarJson);
 		JSONArray forumsJson = sakaiProxy.getForumsForContext(siteId);
 		model.addAttribute("forums", forumsJson);
-		//System.out.println("forums " + forumsJson);
+		log.debug("forums {}", forumsJson);
 		JSONArray announcementsJson = sakaiProxy.getAnnouncementsForContext(siteId);
 		model.addAttribute("announcements", announcementsJson);
-		//System.out.println("announcementsJson " + announcementsJson);
-		// and lessons
+		log.debug("announcementsJson {}", announcementsJson);
+		JSONArray lessonsJson = sakaiProxy.getLessonsForContext(siteId);
+		model.addAttribute("lessons", lessonsJson);
+		log.debug("lessonsJson {}", lessonsJson);		
 
 		return "index";
 	}
@@ -115,17 +121,20 @@ public class MainController {
 			CourseDatesValidation forumValidate = sakaiProxy.validateForums(siteId, forums);
 			JSONArray announcements = (JSONArray) ((JSONObject) json).get("announcements");
 			CourseDatesValidation announcementValidate = sakaiProxy.validateAnnouncements(siteId, announcements);
+			JSONArray lessons = (JSONArray) ((JSONObject) json).get("lessons");
+			CourseDatesValidation lessonsValidate = sakaiProxy.validateLessons(siteId, lessons);
 
 			if (assignmentValidate.getErrors().isEmpty() && assessmentValidate.getErrors().isEmpty() && gradebookValidate.getErrors().isEmpty() && signupValidate.getErrors().isEmpty() && resourcesValidate.getErrors().isEmpty()
-					 && calendarValidate.getErrors().isEmpty() && forumValidate.getErrors().isEmpty() && announcementValidate.getErrors().isEmpty()) {
-				sakaiProxy.updateAssignments(assignmentValidate);//if !empty
+					 && calendarValidate.getErrors().isEmpty() && forumValidate.getErrors().isEmpty() && announcementValidate.getErrors().isEmpty() && lessonsValidate.getErrors().isEmpty()) {
+				sakaiProxy.updateAssignments(assignmentValidate);//check if empty ?
 				sakaiProxy.updateAssessments(assessmentValidate);
-				sakaiProxy.updateGradebookItems(gradebookValidate);//if !empty
-				sakaiProxy.updateSignupMeetings(signupValidate);//if !empty
-				sakaiProxy.updateResources(resourcesValidate);//if !empty
-				sakaiProxy.updateCalendarEvents(calendarValidate);//if !empty
-				sakaiProxy.updateForums(forumValidate);//if !empty
-				sakaiProxy.updateAnnouncements(announcementValidate);//if !empty
+				sakaiProxy.updateGradebookItems(gradebookValidate);
+				sakaiProxy.updateSignupMeetings(signupValidate);
+				sakaiProxy.updateResources(resourcesValidate);
+				sakaiProxy.updateCalendarEvents(calendarValidate);
+				sakaiProxy.updateForums(forumValidate);
+				sakaiProxy.updateAnnouncements(announcementValidate);
+				sakaiProxy.updateLessons(lessonsValidate);
 				jsonResponse = "{\"status\": \"OK\"}";
 			} else {
 				JSONArray errorReport = new JSONArray();
@@ -138,6 +147,7 @@ public class MainController {
 				errors.addAll(calendarValidate.getErrors());
 				errors.addAll(forumValidate.getErrors());
 				errors.addAll(announcementValidate.getErrors());
+				errors.addAll(lessonsValidate.getErrors());
 
 				for (CourseDatesError error : errors) {
 					JSONObject jsonError = new JSONObject();

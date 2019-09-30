@@ -29,59 +29,74 @@
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
-						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-assignments"><span th:text="#{tool.assignments.title}">Assignments</span></a>
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-assignments" aria-expanded="true"><span th:text="#{tool.assignments.title}">Assignments</span></a>
 					</h4>
 				</div>
 				<div th:replace="tool_fragment :: tool_fragment(items=${assignments}, toolId='assignments', collapseId='collapse-assignments')"></div>
-
+			</div>
+			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
-						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-assessments"><span th:text="#{tool.assessments.title}">Tests & Quizzes</span></a>
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-assessments" aria-expanded="true"><span th:text="#{tool.assessments.title}">Tests & Quizzes</span></a>
 					</h4>
 				</div>
 				<div th:replace="tool_fragment :: tool_fragment(items=${assessments}, toolId='assessments', collapseId='collapse-assessments')"></div>
-
+			</div>
+			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
-						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-signup"><span th:text="#{tool.signup.title}">Sign up</span></a>
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-signup" aria-expanded="true"><span th:text="#{tool.signup.title}">Sign up</span></a>
 					</h4>
 				</div>
 				<div th:replace="tool_fragment :: tool_fragment(items=${signupMeetings}, toolId='signupMeetings', collapseId='collapse-signup')"></div>				
-
+			</div>
+			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
-						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-gradebook" ><span th:text="#{tool.gradebook.title}">Gradebook</span></a>
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-gradebook" aria-expanded="true"><span th:text="#{tool.gradebook.title}">Gradebook</span></a>
 					</h4>
 				</div>
 				<div th:replace="tool_fragment :: tool_fragment(items=${gradebookItems}, toolId='gradebookItems', collapseId='collapse-gradebook')"></div>
-
+			</div>
+			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
-						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-resources" ><span th:text="#{tool.resources.title}">Resources</span></a>
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-resources" aria-expanded="true"><span th:text="#{tool.resources.title}">Resources</span></a>
 					</h4>
 				</div>
 				<div th:replace="tool_fragment :: tool_fragment(items=${resources}, toolId='resources', collapseId='collapse-resources')"></div>
-
+			</div>
+			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
-						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-calendar" ><span th:text="#{tool.calendar.title}">Calendar</span></a>
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-calendar" aria-expanded="true"><span th:text="#{tool.calendar.title}">Calendar</span></a>
 					</h4>
 				</div>
 				<div th:replace="tool_fragment :: tool_fragment(items=${calendarEvents}, toolId='calendarEvents', collapseId='collapse-calendar')"></div>
-
+			</div>
+			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
-						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-forums" ><span th:text="#{tool.forums.title}">Forums</span></a>
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-forums" aria-expanded="true"><span th:text="#{tool.forums.title}">Forums</span></a>
 					</h4>
 				</div>
 				<div th:replace="tool_fragment :: tool_fragment(items=${forums}, toolId='forums', collapseId='collapse-forums')"></div>
-
+			</div>
+			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
-						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-announcements" ><span th:text="#{tool.announcements.title}">Forums</span></a>
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-announcements" aria-expanded="true"><span th:text="#{tool.announcements.title}">Announcements</span></a>
 					</h4>
 				</div>
 				<div th:replace="tool_fragment :: tool_fragment(items=${announcements}, toolId='announcements', collapseId='collapse-announcements')"></div>
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" data-parent="#accordion" href="#collapse-lessons" aria-expanded="true"><span th:text="#{tool.lessons.title}">Lessons</span></a>
+					</h4>
+				</div>
+				<div th:replace="tool_fragment :: tool_fragment(items=${lessons}, toolId='lessons', collapseId='collapse-lessons')"></div>
 			</div>
 
 			<div class="act">
@@ -94,7 +109,7 @@
 					<div class="modal-content">
 						<div class="modal-header">
 							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span class="fa fa-times" aria-hidden="true"></span></button>
-							<h4 class="modal-title">Confirm</h4>
+							<h4 th:text="#{modal.confirm}" class="modal-title">Confirm</h4>
 						</div>
 						<div class="modal-body">
 							<p th:text="#{modal.confirm.instruction}">You are about to modify the next course dates:</p>
@@ -128,7 +143,9 @@
 					updates.forums = [];
 					updates.forumsUpd = [];
 					updates.announcements = [];
-					updates.announcementsUpd = [];					
+					updates.announcementsUpd = [];
+					updates.lessons = [];
+					updates.lessonsUpd = [];
 					var errors = [];
 
 					/*[# th:each="assignment : ${assignments}"]*/
@@ -195,6 +212,14 @@
 						updates.announcements.push(announcementJson);
 					/*[/]*/
 
+					/*[# th:each="lesson : ${lessons}"]*/
+						var lessonsJson = /*[[${lesson}]]*/;
+						lessonsJson.open_date_day_of_week = undefined;
+						lessonsJson.due_date_day_of_week = undefined;
+						lessonsJson.accept_until_day_of_week = undefined;
+						updates.lessons.push(lessonsJson);
+					/*[/]*/
+
 					var notModified = [];
 					$('.datepicker').each(function (idx, elt) {
 						var $td = $(elt).closest('td');
@@ -214,7 +239,7 @@
 							updates[tool][idx][field + '_label'] = $(this).siblings('input.datepicker').val();
 							// Show day of the week in case there is a date selected
 							if ($(this).parent().find('.datepicker').val() !== '') {
-								updates[tool][idx][field + '_day_of_week'] = moment(updates[tool][idx][field]).format('dddd');
+								updates[tool][idx][field + '_day_of_week'] = moment(updates[tool][idx][field]).locale(sakai.locale.userLocale).format('dddd');
 								$(this).parent().find('.day-of-week').text(updates[tool][idx][field + '_day_of_week']);
 							}
 
@@ -251,6 +276,11 @@
 							$(elt).prop('disabled', disabled);
 							$td.find('.ui-datepicker-trigger').prop('disabled', disabled);
 						}
+						if (dataTool == 'forums' && (dataField == 'open_date' || dataField == 'due_date')) {
+							var disabled = !updates[dataTool][dataIdx].restricted;
+							$(elt).prop('disabled', disabled);
+							$td.find('.ui-datepicker-trigger').prop('disabled', disabled);
+						}
 					});
 
 					function printErrors() {
@@ -265,6 +295,7 @@
 							$cell.find('.errors').text(elt.msg);
 							$('#form-errors').find('ul').append('<li>' + elt.toolTitle + ' - ' + updates[elt.toolId][elt.idx].title + ' - ' + elt.msg + '</li>');
 						});
+						$("html, body").animate({ scrollTop: 0 }, "fast");
 					}
 
 					var modalConfirm = function(callback){
@@ -273,7 +304,7 @@
 							$("#modal-confirm").modal('show');
 							$('#modified-dates').empty();
 							$.each([updates.assignmentsUpd.filter(el=>el), updates.assessmentsUpd.filter(el=>el), updates.gradebookItemsUpd.filter(el=>el), updates.signupMeetingsUpd.filter(el=>el), 
-							updates.resourcesUpd.filter(el=>el), updates.calendarEventsUpd.filter(el=>el), updates.forumsUpd.filter(el=>el), updates.announcementsUpd.filter(el=>el)], function(idx, elt) {
+							updates.resourcesUpd.filter(el=>el), updates.calendarEventsUpd.filter(el=>el), updates.forumsUpd.filter(el=>el), updates.announcementsUpd.filter(el=>el), updates.lessonsUpd.filter(el=>el)], function(idx, elt) {
 								$.each(elt, function(idx, elt) {
 									$('#modified-dates').append('<li>' + elt.tool_title + ' - ' + elt.title + '</li>');
 								});
@@ -306,8 +337,9 @@
 						var calendarStr = JSON.stringify(updates.calendarEventsUpd.filter(el=>el));
 						var forumsStr = JSON.stringify(updates.forumsUpd.filter(el=>el));
 						var announcementsStr = JSON.stringify(updates.announcementsUpd.filter(el=>el));
+						var lessonsStr = JSON.stringify(updates.lessonsUpd.filter(el=>el));
 						var json = '{"assignments": ' + assignmentsStr + ', "assessments": ' + assessmentsStr + ', "gradebookItems": ' + gradebookStr + ', "signupMeetings": ' + signupStr + ', "resources": ' + resourcesStr 
-									+ ', "calendarEvents": ' + calendarStr + ', "forums": ' + forumsStr + ', "announcements": ' + announcementsStr + '}';
+									+ ', "calendarEvents": ' + calendarStr + ', "forums": ' + forumsStr + ', "announcements": ' + announcementsStr + ', "lessons": ' + lessonsStr + '}';
 						formData.append('json', json);
 
 						$.ajax({

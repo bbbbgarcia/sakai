@@ -81,11 +81,16 @@
 			<artifactId>sakai-announcement-api</artifactId>
 			<scope>provided</scope>
 		</dependency>
-        <dependency>
-            <groupId>org.sakaiproject.message</groupId>
-            <artifactId>sakai-message-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
+		<dependency>
+			<groupId>org.sakaiproject.message</groupId>
+			<artifactId>sakai-message-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.sakaiproject.lessonbuilder</groupId>
+			<artifactId>lessonbuilder-api</artifactId>
+			<scope>provided</scope>
+		</dependency>		
 		<!-- Third dependencies -->
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>

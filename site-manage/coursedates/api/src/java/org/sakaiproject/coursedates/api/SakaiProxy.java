@@ -54,4 +54,9 @@ public interface SakaiProxy {
 	public JSONArray getAnnouncementsForContext(String siteId);
 	public CourseDatesValidation validateAnnouncements(String siteId, JSONArray announcements) throws Exception;
 	public void updateAnnouncements(CourseDatesValidation announcementValidation) throws Exception;
+
+	// Lessons methods
+	public JSONArray getLessonsForContext(String siteId);
+	public CourseDatesValidation validateLessons(String siteId, JSONArray lessons) throws Exception;
+	public void updateLessons(CourseDatesValidation lessonsValidation) throws Exception;
 }

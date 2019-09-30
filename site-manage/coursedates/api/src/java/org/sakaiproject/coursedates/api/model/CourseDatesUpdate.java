@@ -10,9 +10,6 @@ public class CourseDatesUpdate {
 	public Instant dueDate;
 	public Instant acceptUntilDate;
 
-	@Getter @Setter
-	public String extraInfo;//forum_topic, draft_published, folder_file
-
 	public CourseDatesUpdate(Object object, Instant openDate, Instant dueDate, Instant acceptUntilDate) {
 		this.object = object;
 		this.openDate = openDate;

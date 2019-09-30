@@ -13,8 +13,10 @@
 				<th:block th:each="item, iter : ${items}">
 					<tr>
 						<td>
-							<span th:text="${item.title}">Item title</span>
-							<span th:if="${toolId == 'resources' or toolId == 'forums'}" th:text="${'(' + item.extraInfo + ')'}">Extra</span><!-- th:if="${toolExtra == true}" -->
+							<a th:href="@{${item.url}}" target="_blank">
+								<span th:text="${item.title}">Item title</span>
+								<span th:if="${item.extraInfo != 'false'}" th:text="${'(' + item.extraInfo + ')'}">Extra</span>
+							</a>
 						</td>
 						<td th:switch="${toolId}">
 							<div th:case="'gradebookItems'"></div>
@@ -25,11 +27,14 @@
 								<div><small class="errors"></small></div>
 							</div>
 						</td>						
-						<td>
-							<input type="text" class="form-control datepicker" />
-							<input type="hidden" th:value="${item.due_date}" th:attr="data-idx=${iter.index},data-tool=${toolId}" data-field="due_date" />
-							<div><small class="text-muted day-of-week"></small></div>
-							<div><small class="errors"></small></div>
+						<td th:switch="${toolId}">
+							<div th:case="'lessons'"></div>
+							<div th:case="*">
+								<input type="text" class="form-control datepicker" />
+								<input type="hidden" th:value="${item.due_date}" th:attr="data-idx=${iter.index},data-tool=${toolId}" data-field="due_date" />
+								<div><small class="text-muted day-of-week"></small></div>
+								<div><small class="errors"></small></div>
+							</div>
 						</td>
 						<td th:switch="${toolId}">
 							<div th:case="'gradebookItems'"></div>
@@ -38,6 +43,7 @@
 							<div th:case="'calendarEvents'"></div>
 							<div th:case="'forums'"></div>
 							<div th:case="'announcements'"></div>
+							<div th:case="'lessons'"></div>
 							<div th:case="*">
 								<input type="text" class="form-control datepicker" />
 								<input type="hidden" th:value="${item.accept_until}" th:attr="data-idx=${iter.index},data-tool=${toolId}" data-field="accept_until" />
