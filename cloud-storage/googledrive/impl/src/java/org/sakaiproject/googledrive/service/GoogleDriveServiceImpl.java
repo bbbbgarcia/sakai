@@ -116,13 +116,14 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
 	private Map<String, GoogleAuthorizationCodeFlow> googleAuthorizationCodeFlowMap = new HashMap<>();
 
 	public void init() {
+		System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 		log.debug("GoogleDriveServiceImpl init");
 		OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
+		System.out.println("BBBBBBBBBBBBBBBBBBBBBBBBB");
 		// Set the portal redirect URI
 		redirectUri = serverConfigurationService.getServerUrl() + "/sakai-googledrive-tool";
 		log.info("Google redirect URI set to {}", redirectUri);
-		
+		System.out.println("CCCCCCCCCCCCCCCCCCCCCCCCCCCCC");
 		String defaultClientId = serverConfigurationService.getString(GOOGLEDRIVE_PREFIX + GOOGLEDRIVE_CLIENT_ID, null);
 		String defaultClientSecret = serverConfigurationService.getString(GOOGLEDRIVE_PREFIX + GOOGLEDRIVE_CLIENT_SECRET, null);
 
@@ -166,7 +167,9 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
 
 	// Checks if the user's tenant has Google credentials.
 	public boolean isGoogleDriveEnabledForUser() {
+		System.out.println("Aqui estoy antes de reventaR!!!!!!!!!!!" + this);
 		String userId = this.getCurrentUserId();
+		System.out.println("printlnprintlnprintln " + userId);
 		String userGoogleOrganization = this.getUserGoogleOrganization(userId);
 		boolean isGoogleDriveEnabledForUser = googleAuthorizationCodeFlowMap.get(userGoogleOrganization) != null;
 		log.debug("The user {} organization is {}, Google integration is {}.", userId, userGoogleOrganization, isGoogleDriveEnabledForUser ? "ENABLED" : "DISABLED");
