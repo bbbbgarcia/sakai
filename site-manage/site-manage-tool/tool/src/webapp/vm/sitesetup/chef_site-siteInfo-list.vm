@@ -285,6 +285,17 @@
             </tr>
             #end
 
+            #if ($isGradebookGroupEnabledForSite)
+            <tr class="summary-subnav-enabled">
+                <th>
+                    $tlang.getString("sinfo.gradebookgroupvnav.name")
+                </th>
+                <td>
+                    $tlang.getString("sinfo.gradebookgroupvnav.enabled")
+                </td>
+            </tr>
+            #end
+
 		#if ($siteJoinable && $allowUnjoin)
 			<tr>
 				<th>
