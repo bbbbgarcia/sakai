@@ -91,7 +91,6 @@ public class SaveAssessmentSettings
     assessment.setTitle(TextFormat.convertPlaintextToFormattedTextNoHighUnicode(assessmentSettings.getTitle()));
     assessment.setDescription(assessmentSettings.getDescription());
     assessment.updateAssessmentMetaData(AssessmentMetaDataIfc.AUTHORS, TextFormat.convertPlaintextToFormattedTextNoHighUnicode(assessmentSettings.getAuthors()));
-
     // #2 - set AssessmentAccessControl
     AssessmentAccessControl control = (AssessmentAccessControl)assessment.getAssessmentAccessControl();
     if (control == null){
@@ -294,15 +293,17 @@ public class SaveAssessmentSettings
 			evaluation.setToGradeBook(Integer.toString(EvaluationModelIfc.NOT_TO_GRADEBOOK));
 		}
 	}
-    
+
+  System.out.println("SaveAssessmentSettings CATEGORIA SELECCIONADA: " + assessmentSettings.getCategorySelected());
+
     if (assessmentSettings.getScoringType()!=null)
       evaluation.setScoringType(new Integer(assessmentSettings.getScoringType()));
     assessment.setEvaluationModel(evaluation);
 
     // Add category unless unassigned (-1) is selected or defaulted. CategoryId comes
     // from the web page as a string representation of a the long cat id.
-    if (!StringUtils.equals(assessmentSettings.getCategorySelected(), "-1")) {
-		assessment.setCategoryId(Long.parseLong((assessmentSettings.getCategorySelected())));
+    if (!StringUtils.equals(assessmentSettings.getCategorySelected(), "-1") && !StringUtils.isEmpty(assessmentSettings.getCategorySelected())) {
+		  assessment.setCategoryId(Long.parseLong((assessmentSettings.getCategorySelected())));
     }
 
     // h. update ValueMap: it contains value for teh checkboxes in
@@ -313,6 +314,7 @@ public class SaveAssessmentSettings
     Map <String, String> h = assessmentSettings.getValueMap();
     updateMetaWithValueMap(assessment, h);
 
+    // TODO: https://github.com/sakaiproject/sakai/commit/e9635ea4ec2cf05c07662d7c8e7bd29a1946560d#diff-c3555f437c75f6d93d735ae9[…]e2faf2004ed0b2a13dd0f5e6417089
     if (EvaluationModelIfc.TO_SELECTED_GRADEBOOK.toString().equals(evaluation.getToGradeBook())) {
         assessment.updateAssessmentToGradebookNameMetaData(assessmentSettings.getGradebookName());
     } else {

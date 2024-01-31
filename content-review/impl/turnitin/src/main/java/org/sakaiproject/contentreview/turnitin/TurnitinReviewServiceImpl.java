@@ -69,6 +69,7 @@ import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.exception.TypeException;
 import org.sakaiproject.grading.api.Assignment;
 import org.sakaiproject.grading.api.GradingService;
+import org.sakaiproject.grading.api.SortType;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.tool.api.Session;
@@ -570,11 +571,20 @@ public class TurnitinReviewServiceImpl extends BaseContentReviewService {
 
 		SecurityAdvisor advisor = pushAdvisor();
 		try {
-			List<Assignment> allGbItems = gradingService.getAssignments(siteId);
+			// TODO s2u-26 review perf and qa
+			List<String> gradebookUids = Arrays.asList(siteId);
+			if (gradingService.isGradebookGroupEnabled(siteId)) {
+				gradebookUids = gradingService.getGradebookGroupInstancesIds(siteId);
+			}
+			List<Assignment> allGbItems = new ArrayList<>();
+			for (String gradebookUid : gradebookUids) {
+				allGbItems.addAll(gradingService.getAssignments(gradebookUid, siteId, SortType.SORT_BY_NONE));
+			}
 			for (Assignment assign : allGbItems) {
 				// Match based on External ID / Assignment title
 				if (taskId.equals(assign.getExternalId()) || assign.getName().equals(taskTitle)) {
 					assignment = assign;
+					break;
 				}
 			}
 		} finally {
@@ -737,12 +747,19 @@ public class TurnitinReviewServiceImpl extends BaseContentReviewService {
 		try {
 			if (grade != null) {
 				try {
+					// TODO s2u-26 review perf + qa
+					List<String> gradebookUids = Arrays.asList(siteId);
+					if (gradingService.isGradebookGroupEnabled(siteId)) {
+						gradebookUids = gradingService.getGradebookGroupInstancesIds(siteId);
+					}
 					if (data.containsKey("assignment1")) {
-						gradingService.updateExternalAssessmentScore(siteId,
-								assignment.getExternalId(), tiiExternalId, grade);
+						for (String gradebookUid : gradebookUids) {
+							gradingService.updateExternalAssessmentScore(gradebookUid, siteId, assignment.getExternalId(), tiiExternalId, grade);
+						}
 					} else {
-						gradingService.setAssignmentScoreString(siteId, data.get("taskTitle").toString(),
-								tiiExternalId, grade, "SYNC");
+						for (String gradebookUid : gradebookUids) {
+							gradingService.setAssignmentScoreString(gradebookUid, siteId, data.get("taskTitle").toString(), tiiExternalId, grade, "SYNC");
+						}
 					}
 					log.info("UPDATED GRADE (" + grade + ") FOR USER (" + tiiExternalId + ") IN ASSIGNMENT ("
 							+ assignment.getName() + ")");

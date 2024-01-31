@@ -18,10 +18,12 @@
 package org.sakaiproject.tool.assessment.integration.helper.integrated;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Locale;
 
 
@@ -35,6 +37,8 @@ import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.grading.api.AssessmentNotFoundException;
+import org.sakaiproject.grading.api.GradingService;
+import org.sakaiproject.grading.api.model.Gradebook;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SitePage;
 import org.sakaiproject.site.api.ToolConfiguration;
@@ -47,7 +51,6 @@ import org.sakaiproject.tool.assessment.data.ifc.assessment.PublishedAssessmentI
 import org.sakaiproject.tool.assessment.facade.AgentFacade;
 import org.sakaiproject.tool.assessment.facade.GradebookFacade;
 import org.sakaiproject.tool.assessment.integration.helper.ifc.GradebookServiceHelper;
-import org.sakaiproject.tool.assessment.services.GradingService;
 import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
 import org.sakaiproject.user.api.PreferencesService;
 /**
@@ -93,17 +96,16 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     * @param publishedAssessmentId the id of the published assessment
     * @throws java.lang.Exception
     */
-    public void removeExternalAssessment(String gradebookUId, String publishedAssessmentId, org.sakaiproject.grading.api.GradingService g)
+    public void removeExternalAssessment(String gradebookUId, String publishedAssessmentId, GradingService g)
         throws Exception {
-
-        g.removeExternalAssignment(gradebookUId, publishedAssessmentId);
+        g.removeExternalAssignment(null, publishedAssessmentId, getAppName());
     }
 
   public boolean isAssignmentDefined(String assessmentTitle,
-		  org.sakaiproject.grading.api.GradingService g)
+		  GradingService g)
   {
     String gradebookUId = GradebookFacade.getGradebookUId();
-    return g.isAssignmentDefined(gradebookUId, assessmentTitle);
+    return g.isAssignmentDefined(gradebookUId, gradebookUId, assessmentTitle);
   }
   
   public String getAppName()
@@ -118,21 +120,23 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
    * @return false: cannot add to gradebook
    * @throws java.lang.Exception
    */
-  public boolean addToGradebook(PublishedAssessmentData publishedAssessment, Long categoryId,
-		  org.sakaiproject.grading.api.GradingService g) throws
+  public boolean addToGradebook(String gradebookUId, PublishedAssessmentData publishedAssessment, Long categoryId,
+		  GradingService g) throws
     Exception
   {
     boolean added = false;
-    String gradebookUId = GradebookFacade.getGradebookUId();
+    // TODO S2U-26 renombrar al menos
+    String siteId = GradebookFacade.getGradebookUId();
     if (gradebookUId == null)
     {
       return false;
     }
 
     String title = StringEscapeUtils.unescapeHtml4(publishedAssessment.getTitle());
-    if(!g.isAssignmentDefined(gradebookUId, title))
+    // TODO S2U-26 si son varios gUid se hace bucle y 1 llamada para cada
+    if(!g.isAssignmentDefined(gradebookUId, siteId, title))
     {
-      g.addExternalAssessment(gradebookUId,
+      g.addExternalAssessment(gradebookUId, siteId,
               publishedAssessment.getPublishedAssessmentId().toString(),
               null,
               title,
@@ -148,6 +152,35 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     return added;
   }
 
+  public boolean buildItemToGradebook(PublishedAssessmentData publishedAssessment,
+    List<String> selectedGroups, Long categoryId, GradingService g) throws Exception {
+
+    boolean isGradebookGroupEnabled = g.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
+
+    if (isGradebookGroupEnabled) {
+      List<Gradebook> gbList = g.getGradebookGroupInstances(AgentFacade.getCurrentSiteId());
+      List<String> existingGradebookUids = gbList.stream().map(Gradebook::getUid).collect(Collectors.toList());
+
+      List<String> selectedGradebookUids = new ArrayList<>();
+
+      if (existingGradebookUids.containsAll(selectedGroups)) {
+        selectedGradebookUids.addAll(selectedGroups);
+      } else {
+        System.out.println();
+      }
+
+      for (String gUid : selectedGradebookUids) {
+        addToGradebook(gUid, publishedAssessment, (categoryId != null ? categoryId : publishedAssessment.getCategoryId()), g);
+      }
+
+      return true;
+    } else {
+      System.out.println("NO TENGO GRUPOS DE GRADEBOOK: " + GradebookFacade.getGradebookUId());
+      return addToGradebook(GradebookFacade.getGradebookUId(), publishedAssessment,
+        (categoryId != null ? categoryId : publishedAssessment.getCategoryId()), g);
+    }
+  }
+
   /**
    * Update a gradebook.
    * @param publishedAssessment the published assessment
@@ -156,23 +189,28 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
    * @throws java.lang.Exception
    */
   public boolean updateGradebook(PublishedAssessmentIfc publishedAssessment,
-		  org.sakaiproject.grading.api.GradingService g) throws Exception
+		  GradingService g) throws Exception
   {
     log.debug("updateGradebook start");
+    // TODO S2U-26 uno de estos sera distinto, depende de como guardemos aqui
     String gradebookUId = GradebookFacade.getGradebookUId();
+    // TODO
+    String siteId = GradebookFacade.getGradebookUId();
     if (gradebookUId == null)
     {
       return false;
     }
 
-    log.debug("before g.isAssignmentDefined()");
+    log.debug("before g.updateExternalAssessment()");
 	g.updateExternalAssessment(gradebookUId,
             publishedAssessment.getPublishedAssessmentId().toString(),
             null,
             null,
             publishedAssessment.getTitle(),
+            null,
             publishedAssessment.getTotalScore(),
-            publishedAssessment.getAssessmentAccessControl().getDueDate());
+            publishedAssessment.getAssessmentAccessControl().getDueDate(),
+            null);
     return true;
   }
 
@@ -182,7 +220,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
    * @param g  the Gradebook Service
    * @throws java.lang.Exception
    */
-  public void updateExternalAssessmentScore(AssessmentGradingData ag, org.sakaiproject.grading.api.GradingService g) throws Exception {
+  public void updateExternalAssessmentScore(AssessmentGradingData ag, GradingService g) throws Exception {
     updateExternalAssessmentScore(ag, g, null);
   }
 
@@ -193,11 +231,12 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
    * @param assignmentId the Id of the gradebook assignment.
    * @throws java.lang.Exception
    */
-  public void updateExternalAssessmentScore(AssessmentGradingData ag, org.sakaiproject.grading.api.GradingService g, Long assignmentId) throws Exception {
+  public void updateExternalAssessmentScore(AssessmentGradingData ag, GradingService g, Long assignmentId) throws Exception {
     boolean testErrorHandling=false;
     PublishedAssessmentService pubService = new PublishedAssessmentService();
-    GradingService gradingService = new GradingService();
-
+    //TODO s2u-26 revisar y renombrar
+    String siteId = GradebookFacade.getGradebookUId();
+    //TODO s2u-26 revisar
     String gradebookUId = pubService.getPublishedAssessmentOwner(
             ag.getPublishedAssessmentId());
     if (gradebookUId == null)
@@ -216,7 +255,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     }
 
     if (assignmentId == null) {
-      g.updateExternalAssessmentScore(gradebookUId, ag.getPublishedAssessmentId().toString(), ag.getAgentId(), points);
+      g.updateExternalAssessmentScore(gradebookUId, siteId, ag.getPublishedAssessmentId().toString(), ag.getAgentId(), points);
     } else {
 
         // This is the student grading it's own submission, we need to grant permissions to the student temporarily.
@@ -228,7 +267,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 
         try {
             securityService.pushAdvisor(securityAdvisor);
-            g.setAssignmentScoreString(gradebookUId, assignmentId, ag.getAgentId(), points, null);
+            g.setAssignmentScoreString(gradebookUId, gradebookUId, assignmentId, ag.getAgentId(), points, null);
         } catch (Exception e) {
             log.error("Error while grading submission {} for agent {}", assignmentId, ag.getAgentId());
         } finally {
@@ -240,45 +279,18 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
       throw new Exception("Encountered an error in update ExternalAssessmentScore.");
     }
   }
-
-  public void updateExternalAssessmentScores(Long publishedAssessmentId, final Map<String, Double> studentUidsToScores,
-      org.sakaiproject.grading.api.GradingService g) throws Exception {
-    updateExternalAssessmentScores(publishedAssessmentId, studentUidsToScores, g, null);
-  }
-
-  public void updateExternalAssessmentScores(Long publishedAssessmentId, final Map<String, Double> studentUidsToScores,
-		  org.sakaiproject.grading.api.GradingService g, Long assignmentId) throws Exception {
-	  boolean testErrorHandling=false;
-	  PublishedAssessmentService pubService = new PublishedAssessmentService();
-	  String gradebookUId = pubService.getPublishedAssessmentOwner(publishedAssessmentId);
-	  if (gradebookUId == null) {
-		  return;
-	  }
-	  if (assignmentId == null) {
-		  g.updateExternalAssessmentScores(gradebookUId, publishedAssessmentId.toString(), studentUidsToScores);
-	  } else {
-		  Iterator it = studentUidsToScores.keySet().iterator();
-		  while (it.hasNext()) {
-			  String agentId = (String)it.next();
-			  Double score = (Double) studentUidsToScores.get(agentId);
-			  g.setAssignmentScoreString(gradebookUId, assignmentId, agentId, score.toString(), null);
-		  }
-	  }
-
-	  if (testErrorHandling){
-		  throw new Exception("Encountered an error in update ExternalAssessmentScore.");
-	  }
-  }
   
   public void updateExternalAssessmentComment(Long publishedAssessmentId, String studentUid, String comment,
-          org.sakaiproject.grading.api.GradingService g) throws Exception {
+          GradingService g) throws Exception {
 	  boolean testErrorHandling=false;
 	  PublishedAssessmentService pubService = new PublishedAssessmentService();
+	  // TODO S2U-26 uno de estos sera distinto, depende de como guardemos aqui
 	  String gradebookUId = pubService.getPublishedAssessmentOwner(publishedAssessmentId);
+	  String siteId = gradebookUId;
 	  if (gradebookUId == null) {
 		  return;
 	  }	
-	  g.updateExternalAssessmentComment(gradebookUId, publishedAssessmentId.toString(), studentUid, comment);
+	  g.updateExternalAssessmentComment(gradebookUId, siteId, publishedAssessmentId.toString(), studentUid, comment);
 
 	  if (testErrorHandling){
           throw new Exception("Encountered an error in update ExternalAssessmentComment.");
@@ -287,7 +299,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 
 
 	public Long getExternalAssessmentCategoryId(String gradebookUId,
-        String publishedAssessmentId, org.sakaiproject.grading.api.GradingService g) {
+        String publishedAssessmentId, GradingService g) {
         try {
             return g.getExternalAssessmentCategoryId(gradebookUId, publishedAssessmentId);
         }
@@ -297,7 +309,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 		return null;
 	}
 
-  private String getFormattedScore(Double score, String gradebookUId) {
+  private String getFormattedScore(Double score, String gradebookUId) {// TODO S2U-26 ojo cuidado aqui
     String currentLocaleStr = null;
     String userId = AgentFacade.getEid();
 
