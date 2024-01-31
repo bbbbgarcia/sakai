@@ -15,16 +15,28 @@ package org.sakaiproject.webapi.controllers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.sakaiproject.assignment.api.AssignmentServiceConstants;
 import org.sakaiproject.authz.api.Role;
+import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
+import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.grading.api.Assignment;
+import org.sakaiproject.grading.api.CategoryDefinition;
 import org.sakaiproject.grading.api.GradeDefinition;
 import org.sakaiproject.grading.api.GradingConstants;
+import org.sakaiproject.grading.api.SortType;
+import org.sakaiproject.grading.api.model.Gradebook;
 import org.sakaiproject.portal.api.PortalService;
+import org.sakaiproject.site.api.Group;
+import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.site.api.ToolConfiguration;
 import org.sakaiproject.tool.api.Session;
 import org.sakaiproject.user.api.UserNotDefinedException;
+import org.sakaiproject.user.api.UserDirectoryService;
+import org.sakaiproject.webapi.beans.GradebookItemRestBean;
+import org.sakaiproject.webapi.beans.GradebookRestBean;
 import org.sakaiproject.webapi.beans.GradeRestBean;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,10 +66,16 @@ public class GradesController extends AbstractSakaiApiController {
     @Resource
     private SiteService siteService;
 
+    @Resource
+    private SecurityService securityService;
+
+    @Resource
+    private UserDirectoryService userDirectoryService;
+
     private final Function<String, List<GradeRestBean>> gradeDataSupplierForSite = (siteId) -> {
 
-        List<org.sakaiproject.grading.api.Assignment> assignments = gradingService.getViewableAssignmentsForCurrentUser(siteId);
-        List<Long> assignmentIds = assignments.stream().map(org.sakaiproject.grading.api.Assignment::getId).collect(Collectors.toList());
+        List<Assignment> assignments = gradingService.getViewableAssignmentsForCurrentUser(siteId, siteId, SortType.SORT_BY_NONE);
+        List<Long> assignmentIds = assignments.stream().map(Assignment::getId).collect(Collectors.toList());
 
         // no need to continue if the site doesn't have gradebook items
         if (assignmentIds.isEmpty()) return Collections.emptyList();
@@ -76,11 +94,11 @@ public class GradesController extends AbstractSakaiApiController {
                             .collect(Collectors.toList())
                     : List.of(userId);
 
-            Map<Long, List<GradeDefinition>> gradeDefinitions = gradingService.getGradesWithoutCommentsForStudentsForItems(siteId, assignmentIds, userIds);
+            Map<Long, List<GradeDefinition>> gradeDefinitions = gradingService.getGradesWithoutCommentsForStudentsForItems(siteId, siteId, assignmentIds, userIds);
 
             List<GradeRestBean> beans = new ArrayList<>();
             // collect information for each gradebook item
-            for (org.sakaiproject.grading.api.Assignment a : assignments) {
+            for (Assignment a : assignments) {
                 GradeRestBean bean = new GradeRestBean(a);
                 bean.setSiteTitle(site.getTitle());
                 bean.setSiteRole(role.getId());
@@ -125,7 +143,18 @@ public class GradesController extends AbstractSakaiApiController {
                     url = entityManager.getUrl(a.getReference(), Entity.UrlType.PORTAL).orElse("");
                 }
                 if (StringUtils.isBlank(url)) {
-                    ToolConfiguration tc = site.getToolForCommonId("sakai.gradebookng");
+// TODO S2U-26 COMPROBAR LOS GB A LOS QUE PERTENECE EL USUARIO Y DEVOLVER NOTAS DE TODOS ELLOS?
+	// usado en 2 metodos q se llaman en SakaiGrades.js  que se llama en el dashboard solamente
+                    ToolConfiguration tc = null;
+                    Collection<ToolConfiguration> gbs = site.getTools("sakai.gradebookng");
+                    for (ToolConfiguration tool : gbs) {
+                        Properties props = tool.getPlacementConfig();
+                        if (props.getProperty("gb-group") == null) {
+                            // S2U-26 leaving backwards compatibility for the moment, it will always be a site=id situation until SAK-49493 is completed
+                            tc = tool;
+                            break;
+                        }
+                    }
                     url = tc != null ? "/portal/directtool/" + tc.getId() : "";
                 }
                 bean.setUrl(url);
@@ -152,6 +181,112 @@ public class GradesController extends AbstractSakaiApiController {
         checkSakaiSession();
 
         return gradeDataSupplierForSite.apply(siteId);
+    }
+
+    @GetMapping(value = {"/sites/{siteId}/items", "/sites/{siteId}/items/{userId}"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<GradebookRestBean> getSiteItems(@PathVariable String siteId, @PathVariable Optional<String> userId) throws UserNotDefinedException {
+        checkSakaiSession();
+
+        List<GradebookRestBean> gbWithItems = new ArrayList<>();
+        String user = userDirectoryService.getCurrentUser().getId();
+        if (userId.isPresent()) {
+            user = userId.get();
+        }
+
+        Map<String, String> gradebookGroupMap = returnFoundGradebooks(siteId, user);
+
+        for (Map.Entry<String, String> entry : gradebookGroupMap.entrySet()) {
+            List<GradebookItemRestBean> gbItems = new ArrayList<>();
+
+            String gbUid = entry.getKey();
+            String groupTitle = entry.getValue();
+
+            List<Assignment> gradebookAssignments = gradingService.getAssignments(gbUid, siteId, SortType.SORT_BY_NONE);
+
+            for (Assignment gAssignment : gradebookAssignments) {
+                //TODO S2U-26 revisar - esta comprobacion ahora mismo viene de tareas, faltan otras y luego cada tool tendra
+                if (!gAssignment.getExternallyMaintained() || gAssignment.getExternallyMaintained() && gAssignment.getExternalAppName().equals(AssignmentServiceConstants.ASSIGNMENT_TOOL_ID)) {
+                    // gradebook item has been associated or not
+                    // ANTIGUO MÉTODO Se cambia de Referencia / Ids a unicamente Ids, por lo que se recoge solo el id
+                    // String gaId = gAssignment.getExternallyMaintained() ? gAssignment.getExternalId() : gAssignment.getId().toString();
+                    String gaId = gAssignment.getId().toString();
+                    log.info("gaId " + gaId);
+                    // gradebook assignment label
+                    String label = gAssignment.getName();
+
+                    //gradebookAssignmentsLabel.put(formattedText.escapeHtml(gaId), label);
+                    GradebookItemRestBean itemDto = new GradebookItemRestBean(gaId, label, false);
+                    gbItems.add(itemDto);
+                } else
+					log.info("-----no");//TODO s2u-26
+            }
+
+            GradebookRestBean gbDto = new GradebookRestBean(gbUid, groupTitle, gbItems);
+            gbWithItems.add(gbDto);
+
+        }
+
+        return gbWithItems;
+    }
+
+    @GetMapping(value = "/sites/{siteId}/categories", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<GradebookRestBean> getGroupCategoriesList(@PathVariable String siteId) throws UserNotDefinedException {
+        checkSakaiSession();
+
+        List<GradebookRestBean> gbWithItems = new ArrayList<>();
+
+        Map<String, String> gradebookGroupMap = returnFoundGradebooks(siteId, userDirectoryService.getCurrentUser().getId());
+
+        for (Map.Entry<String, String> entry : gradebookGroupMap.entrySet()) {
+            List<GradebookItemRestBean> gbItems = new ArrayList<>();
+
+            String gbUid = entry.getKey();
+            String groupTitle = entry.getValue();
+
+            List<CategoryDefinition> categoryDefinitionList = gradingService.getCategoryDefinitions(gbUid, siteId);
+
+            for (CategoryDefinition category : categoryDefinitionList) {
+                Long categoryId = category.getId();
+                String categoryName = category.getName();
+
+                gbItems.add(new GradebookItemRestBean(categoryId.toString(), categoryName, false));
+            }
+
+            gbWithItems.add(new GradebookRestBean(gbUid, groupTitle, gbItems));
+        }
+
+        return gbWithItems;
+    }
+
+    private Map<String, String> returnFoundGradebooks(String siteId, String userId) {
+        try {
+            List<Gradebook> gradebookList = gradingService.getGradebookGroupInstances(siteId);
+            Map<String, String> gradebookGroupMap = new HashMap<>();
+
+            Site site = siteService.getSite(siteId);
+            Collection<Group> groupList = site.getGroups();
+
+            // a specific user id is sent in some cases like forums
+            boolean isInstructor = userId.equals(userDirectoryService.getCurrentUser().getId()) && (securityService.isSuperUser() || securityService.unlock("section.role.instructor", site.getReference()));
+            List<String> groupIds = site.getGroupsWithMember(userId).stream().map(Group::getId).collect(Collectors.toList());
+
+            gradebookList.forEach(gradebook -> {
+                String gradebookUid = gradebook.getUid();
+
+                Optional<Group> opGroup = groupList.stream()
+                                                .filter(group -> group.getId().equals(gradebookUid))
+                                                .findFirst();
+
+                if(opGroup.isPresent() && (isInstructor || groupIds.contains(opGroup.get().getId()))) {
+                    gradebookGroupMap.put(gradebookUid, opGroup.get().getTitle());
+                }
+            });
+
+            return gradebookGroupMap;
+        } catch (IdUnusedException e) {
+            log.error("Error while trying to get gradebooks for site {} : {}", siteId, e.getMessage());
+            return new HashMap<>();
+        }
     }
 
 }

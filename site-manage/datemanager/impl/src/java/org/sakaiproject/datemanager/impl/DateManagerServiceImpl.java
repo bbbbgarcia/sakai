@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -62,6 +63,8 @@ import org.sakaiproject.datemanager.api.model.DateManagerValidation;
 import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.event.api.NotificationService;
 import org.sakaiproject.grading.api.GradingService;
+import org.sakaiproject.grading.api.SortType;
+import org.sakaiproject.grading.api.model.Gradebook;
 import org.sakaiproject.lessonbuildertool.SimplePage;
 import org.sakaiproject.lessonbuildertool.SimplePageItem;
 import org.sakaiproject.lessonbuildertool.model.SimplePageToolDao;
@@ -396,6 +399,7 @@ public class DateManagerServiceImpl implements DateManagerService {
 			// if assignment sending grades to gradebook, update the due date in the gradebook
 			String associatedGradebookAssignment = assignment.getProperties().get(AssignmentConstants.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
 			if (StringUtils.isNotBlank(associatedGradebookAssignment)) {
+				// TODO S2U-26 actualizar los items relacionados..
 				// only update externally linked assignments since internal links are already handled
 				if (gradingService.isExternalAssignmentDefined(assignment.getContext(), associatedGradebookAssignment)) {
 					org.sakaiproject.grading.api.Assignment gAssignment = gradingService.getExternalAssignment(assignment.getContext(), associatedGradebookAssignment);
@@ -656,6 +660,7 @@ public class DateManagerServiceImpl implements DateManagerService {
 
 				// only updating if the gradebook item exists and is external
 				String siteId = assessment.getOwnerSiteId();
+				// TODO S2U-26 TODO actualizar los relacionados samigo
 				if (StringUtils.isNotBlank(siteId) && gradingService.isExternalAssignmentDefined(siteId, id)) {
 					org.sakaiproject.grading.api.Assignment gAssignment = gradingService.getExternalAssignment(siteId, id);
 					if (gAssignment != null) {
@@ -683,22 +688,35 @@ public class DateManagerServiceImpl implements DateManagerService {
 	@Override
 	public JSONArray getGradebookItemsForContext(String siteId) {
 		JSONArray jsonAssignments = new JSONArray();
-		if(!gradingService.currentUserHasEditPerm(getCurrentSiteId())) {
+		List<String> gradebookUids = Arrays.asList(getCurrentSiteId());
+		if (gradingService.isGradebookGroupEnabled(getCurrentSiteId())) {
+			gradebookUids = gradingService.getGradebookGroupInstancesIds(siteId);
+		}
+		boolean hasGradebookPermissions = false;
+		for (String gradebookUid : gradebookUids) {
+			if(gradingService.currentUserHasEditPerm(getCurrentSiteId())) {
+				hasGradebookPermissions = true;
+			}
+		}
+		if (!hasGradebookPermissions) {
 			return jsonAssignments;
 		}
-		Collection<org.sakaiproject.grading.api.Assignment> gbitems = gradingService.getAssignments(siteId);
-		String url = getUrlForTool(DateManagerConstants.COMMON_ID_GRADEBOOK);
-		String toolTitle = toolManager.getTool(DateManagerConstants.COMMON_ID_GRADEBOOK).getTitle();
-		for(org.sakaiproject.grading.api.Assignment gbitem : gbitems) {
-			if(!gbitem.getExternallyMaintained()) {
-				JSONObject gobj = new JSONObject();
-				gobj.put(DateManagerConstants.JSON_ID_PARAM_NAME, gbitem.getId());
-				gobj.put(DateManagerConstants.JSON_TITLE_PARAM_NAME, gbitem.getName());
-				gobj.put(DateManagerConstants.JSON_DUEDATE_PARAM_NAME, gbitem.getDueDate());
-				gobj.put(DateManagerConstants.JSON_TOOLTITLE_PARAM_NAME, toolTitle);
-				gobj.put(DateManagerConstants.JSON_URL_PARAM_NAME, url);
-				gobj.put(DateManagerConstants.JSON_EXTRAINFO_PARAM_NAME, "false");
-				jsonAssignments.add(gobj);
+		for (String gradebookUid : gradebookUids) {
+			Collection<org.sakaiproject.grading.api.Assignment> gbitems = gradingService.getAssignments(gradebookUid, siteId, SortType.SORT_BY_NONE);
+			String url = getUrlForTool(DateManagerConstants.COMMON_ID_GRADEBOOK);
+			String toolTitle = toolManager.getTool(DateManagerConstants.COMMON_ID_GRADEBOOK).getTitle();
+			for(org.sakaiproject.grading.api.Assignment gbitem : gbitems) {
+				if(!gbitem.getExternallyMaintained()) {
+					JSONObject gobj = new JSONObject();
+					gobj.put(DateManagerConstants.JSON_ID_PARAM_NAME, gbitem.getId());
+					//TODO identificar el nombre del gradebook de una forma que no sea muy costosa
+					gobj.put(DateManagerConstants.JSON_TITLE_PARAM_NAME, gbitem.getName());
+					gobj.put(DateManagerConstants.JSON_DUEDATE_PARAM_NAME, gbitem.getDueDate());
+					gobj.put(DateManagerConstants.JSON_TOOLTITLE_PARAM_NAME, toolTitle);
+					gobj.put(DateManagerConstants.JSON_URL_PARAM_NAME, url);
+					gobj.put(DateManagerConstants.JSON_EXTRAINFO_PARAM_NAME, "false");
+					jsonAssignments.add(gobj);
+				}
 			}
 		}
 		return orderJSONArrayByTitle(jsonAssignments);
@@ -740,7 +758,8 @@ public class DateManagerServiceImpl implements DateManagerService {
 					dueDate = userTimeService.parseISODateInUserTimezone(dueDateRaw).toInstant();
 				}
 
-				org.sakaiproject.grading.api.Assignment gbitem = gradingService.getAssignment(getCurrentSiteId(), itemId);
+				//TODO s2u-26 revisar
+				org.sakaiproject.grading.api.Assignment gbitem = gradingService.getAssignmentById(getCurrentSiteId(), itemId);
 				if (gbitem == null) {
 					errors.add(new DateManagerError("gbitem", rb.getFormattedMessage("error.item.not.found", new Object[]{rb.getString("tool.gradebook.item.name")}), "gradebookItems", toolTitle, idx));
 					continue;
@@ -769,7 +788,8 @@ public class DateManagerServiceImpl implements DateManagerService {
 			org.sakaiproject.grading.api.Assignment assignmentDefinition = (org.sakaiproject.grading.api.Assignment) update.object;
 			Date dueDateTemp = update.dueDate != null ? Date.from(update.dueDate) : null;
 			assignmentDefinition.setDueDate(dueDateTemp);
-			gradingService.updateAssignment(getCurrentSiteId(), assignmentDefinition.getId(), assignmentDefinition);
+			String gradebookUid = gradingService.getGradebookUidByAssignmentById(getCurrentSiteId(), assignmentDefinition.getId());
+			gradingService.updateAssignment(gradebookUid, getCurrentSiteId(), assignmentDefinition.getId(), assignmentDefinition);
 		}
 	}
 
@@ -1948,7 +1968,7 @@ public class DateManagerServiceImpl implements DateManagerService {
 						|| this.compareDates(control.getFeedbackEndDate(), (columns.length > 6? columns[6] : ""));
 			}
 		} else if (DateManagerConstants.COMMON_ID_GRADEBOOK.equals(toolId.replaceAll("\"", ""))) {
-			org.sakaiproject.grading.api.Assignment gbitem = gradingService.getAssignment(getCurrentSiteId(), Long.parseLong(id));
+			org.sakaiproject.grading.api.Assignment gbitem = gradingService.getAssignment(getCurrentSiteId(), getCurrentSiteId(), Long.parseLong(id));
 			changed = this.compareDates(gbitem.getDueDate(), columns[2]);
 		} else if (DateManagerConstants.COMMON_ID_SIGNUP.equals(toolId.replaceAll("\"", ""))) {
 			SignupMeeting meeting = signupService.loadSignupMeeting(Long.parseLong(id), getCurrentUserId(), siteId);
