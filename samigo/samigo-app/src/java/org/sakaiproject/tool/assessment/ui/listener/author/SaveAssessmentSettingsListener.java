@@ -76,8 +76,9 @@ public class SaveAssessmentSettingsListener
 
     AssessmentSettingsBean assessmentSettings = (AssessmentSettingsBean) ContextUtil.
         lookupBean("assessmentSettings");
+
     boolean error=false;
-    String assessmentId=String.valueOf(assessmentSettings.getAssessmentId()); 
+    String assessmentId=String.valueOf(assessmentSettings.getAssessmentId());
     AssessmentService assessmentService = new AssessmentService();
     SaveAssessmentSettings s = new SaveAssessmentSettings();
     String assessmentName = TextFormat.convertPlaintextToFormattedTextNoHighUnicode(assessmentSettings.getTitle());

@@ -56,7 +56,7 @@ public class GradebookHelperImpl implements GradebookHelper
    * @return the current gradebook uid.
    */
   public String getGradebookUId(String siteId)
-  {  
+  {// TODO S2U-26 esto habra que ver si lo dejamos o lo quitamos
     String context;
 
     Placement placement = null;
@@ -84,16 +84,6 @@ public class GradebookHelperImpl implements GradebookHelper
     }
     context = placement.getContext();
     return context;
-  }
-
-  /**
-   * Get the default gradebook uid.
-   * @return "Test Gradebook #1" (always)
-   */
-
-  public String getDefaultGradebookUId()
-  {
-    return "Test Gradebook #1";
   }
 
 }

@@ -21,6 +21,7 @@
 
 package org.sakaiproject.tool.assessment.integration.helper.ifc;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 import org.sakaiproject.grading.api.GradingService;
@@ -43,8 +44,11 @@ public interface GradebookServiceHelper extends Serializable
   public void removeExternalAssessment(String gradebookUId,
      String publishedAssessmentId, GradingService g) throws Exception;
 
-  public boolean addToGradebook(PublishedAssessmentData publishedAssessment, Long categoryId,
+  public boolean addToGradebook(String gradebookUId, PublishedAssessmentData publishedAssessment, Long categoryId,
 		  GradingService g) throws Exception;
+
+  public boolean buildItemToGradebook(PublishedAssessmentData publishedAssessment,
+    List<String> selectedGroups, Long categoryId, GradingService g) throws Exception;
 
   public boolean updateGradebook(PublishedAssessmentIfc publishedAssessment,
 		  GradingService g) throws Exception;
@@ -52,9 +56,6 @@ public interface GradebookServiceHelper extends Serializable
   public boolean isAssignmentDefined(String assessmentTitle, GradingService g);
 
   public void updateExternalAssessmentScore(AssessmentGradingData ag,
-		  GradingService g) throws Exception;
-  
-  public void updateExternalAssessmentScores(Long publishedAssessmentId, final Map<String, Double> studentUidsToScores,
 		  GradingService g) throws Exception;
   
   public void updateExternalAssessmentComment(Long publishedAssessmentId, String studentUid, String comment, 
@@ -66,6 +67,5 @@ public interface GradebookServiceHelper extends Serializable
   public String getAppName();
 
   public void updateExternalAssessmentScore(AssessmentGradingData ag, GradingService g, Long assignmentId) throws Exception;
-  public void updateExternalAssessmentScores(Long publishedAssessmentId, final Map<String, Double> studentUidsToScores, GradingService g, Long assignmentId) throws Exception;
 
 }

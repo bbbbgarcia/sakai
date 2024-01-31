@@ -324,7 +324,11 @@ public class SiteManageServiceImpl implements SiteManageService {
                 for (ToolConfiguration tc : fromSite.getTools(toolId)) {
                     try {
                         ToolConfiguration toTc = toSite.getToolForCommonId(toolId);
-                        toTc.getContainingPage().setTitle(tc.getContainingPage().getTitle());
+                        String title = tc.getContainingPage().getTitle();
+                        if (SiteManageConstants.GRADEBOOK_TOOL_ID.equals(toolId)) {
+                            title = toolManager.getLocalizedToolProperty(SiteManageConstants.GRADEBOOK_TOOL_ID, "title");
+                        }
+                        toTc.getContainingPage().setTitle(title);
                         toTc.getContainingPage().setTitleCustom(tc.getContainingPage().getTitleCustom());
                         toTc.setTitle(tc.getTitle());
                     } catch (Exception e) {

@@ -2408,7 +2408,7 @@ public class LTI13Servlet extends HttpServlet {
 		response.setContentType(Result.CONTENT_TYPE_CONTAINER);
 
 		// Look up the assignment so we can find the max points
-		GradingService g = (GradingService) ComponentManager
+		GradingService gradingService = (GradingService) ComponentManager
 				.get("org.sakaiproject.grading.api.GradingService");
 		Session sess = SessionManager.getCurrentSession();
 
@@ -2464,8 +2464,10 @@ public class LTI13Servlet extends HttpServlet {
 					}
 				}
 
+				//TODO S2U-26 aunque obtenga todos , solamente me deja meterlo en 1
+				//List<String> userGradebooks = gradingService.getGradebookInstancesForUser(context_id, user.getId());
 				try {
-					CommentDefinition commentDef = g.getAssignmentScoreComment(context_id, a.getId(), user.getId());
+					CommentDefinition commentDef = gradingService.getAssignmentScoreComment(context_id, a.getId(), user.getId());
 					if (commentDef != null) {
 						result.comment = commentDef.getCommentText();
 					}
@@ -2477,7 +2479,9 @@ public class LTI13Servlet extends HttpServlet {
 				String actualGrade = null;
 				result.resultScore = null;
 				try {
-					actualGrade = g.getAssignmentScoreString(context_id, a.getId(), user.getId());
+					//TODO S2U-26 aunque obtenga todos , solamente me deja meterlo en 1
+					//List<String> userGradebooks = gradingService.getGradebookInstancesForUser(context_id, user.getId());
+					actualGrade = gradingService.getAssignmentScoreString(context_id, context_id, a.getId(), user.getId());
 				} catch(AssessmentNotFoundException e) {
 					log.error(e.getMessage(), e);  // Unexpected
 					break;

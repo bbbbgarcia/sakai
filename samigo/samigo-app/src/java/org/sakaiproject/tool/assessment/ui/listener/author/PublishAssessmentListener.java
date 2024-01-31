@@ -256,7 +256,6 @@ public class PublishAssessmentListener
   }
 
   private void publish(AssessmentFacade assessment, AssessmentSettingsBean assessmentSettings) {
-
 	PublishedAssessmentService publishedAssessmentService = new PublishedAssessmentService();
     PublishedAssessmentFacade pub = null;
     boolean sendEmailNotification = false;
