@@ -91,7 +91,6 @@ public class SaveAssessmentSettings
     assessment.setTitle(TextFormat.convertPlaintextToFormattedTextNoHighUnicode(assessmentSettings.getTitle()));
     assessment.setDescription(assessmentSettings.getDescription());
     assessment.updateAssessmentMetaData(AssessmentMetaDataIfc.AUTHORS, TextFormat.convertPlaintextToFormattedTextNoHighUnicode(assessmentSettings.getAuthors()));
-
     // #2 - set AssessmentAccessControl
     AssessmentAccessControl control = (AssessmentAccessControl)assessment.getAssessmentAccessControl();
     if (control == null){
@@ -289,12 +288,21 @@ public class SaveAssessmentSettings
 			evaluation.setToGradeBook(EvaluationModelIfc.TO_DEFAULT_GRADEBOOK.toString());
 		} else if (EvaluationModelIfc.TO_SELECTED_GRADEBOOK.toString().equals(assessmentSettings.getToDefaultGradebook())) {
 			evaluation.setToGradeBook(EvaluationModelIfc.TO_SELECTED_GRADEBOOK.toString());
+      System.out.println("WELCOME TO JUNGLE: " + assessmentSettings.getGradebookName());
 			assessment.updateAssessmentToGradebookNameMetaData(assessmentSettings.getGradebookName());
 		} else {
 			evaluation.setToGradeBook(Integer.toString(EvaluationModelIfc.NOT_TO_GRADEBOOK));
 		}
 	}
-    
+
+  //HOLA
+    String gbTest = assessmentSettings.getGbTest();
+    String[] gbList = gbTest.split(",");
+
+    for (String gb : gbList) {
+      System.out.println("GB ENCONTRADO: " + gb);
+    }
+
     if (assessmentSettings.getScoringType()!=null)
       evaluation.setScoringType(new Integer(assessmentSettings.getScoringType()));
     assessment.setEvaluationModel(evaluation);

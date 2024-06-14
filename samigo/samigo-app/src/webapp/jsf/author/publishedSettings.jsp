@@ -61,6 +61,7 @@
               active: accordionPanel,
               collapsible: true
           });
+          window.syncGbSelectorInput("gb-selector", "assessmentSettingsAction:gb_selector");
           // This is a sub-accordion inside of the About the Assessment Panel
           $("#jqueryui-accordion-metadata").accordion({ heightStyle: "content",collapsible: true,active: false });
           // This is a sub-accordion inside of the Availability and Submission Panel
@@ -721,9 +722,13 @@
       <div class="col-md-10">
         <h:selectOneRadio id="toDefaultGradebook" value="#{publishedSettings.toDefaultGradebook}"  layout="pageDirection"
           onclick="enableDisableToGradebook();toggleCategories(this);">
-           <f:selectItem itemValue="2" itemLabel="#{assessmentSettingsMessages.to_no_gradebook}"/>
-           <f:selectItem itemValue="1" itemLabel="#{assessmentSettingsMessages.to_default_gradebook}"/>
-           <f:selectItem itemValue="3" itemLabel="#{assessmentSettingsMessages.to_selected_gradebook}" itemDisabled="#{empty publishedSettings.existingGradebook}"/>
+
+          <sakai-multi-gradebook id="gb-selector"></sakai-multi-gradebook>
+          <h:inputHidden id="gb_selector" />
+
+          <f:selectItem itemValue="2" itemLabel="#{assessmentSettingsMessages.to_no_gradebook}"/>
+          <f:selectItem itemValue="1" itemLabel="#{assessmentSettingsMessages.to_default_gradebook}"/>
+          <f:selectItem itemValue="3" itemLabel="#{assessmentSettingsMessages.to_selected_gradebook}" itemDisabled="#{empty publishedSettings.existingGradebook}"/>
         </h:selectOneRadio>
       </div>
       <h:panelGroup layout="block" id="toGradebookCategory" styleClass="col-md-10 col-md-offset-2" rendered="#{publishedSettings.categoriesEnabled}" style="display:#{(publishedSettings.toDefaultGradebook)?'block':'none'}">

@@ -5,6 +5,12 @@ This section contains the options for grading this assignment, including rubrics
 @author plukasew
 *#
 
+<script>
+	$(document).ready(function() {
+		window.syncGbSelectorInput("gb-selector", "gb_selector");
+	})
+</script>
+
 ## Anonymous Grading (SAK-17606)
 #if( $enableAnonGrading || $value_CheckAnonymousGrading.equals("true") )
 	<div class="checkbox">
@@ -111,6 +117,9 @@ This section contains the options for grading this assignment, including rubrics
 							</label>
 						</div>
 						<div id="gradebookList" class="indnt3" style="display: #if($!gradebookChoice.equals("$!gradebookChoice_associate"))block#else none#end;">
+							<sakai-multi-gradebook id="gb-selector"></sakai-multi-gradebook>
+							<input type="hidden" name="gb_selector" id="gb_selector" />
+
 							<label for="gradebookItemSelect" class="sr-only">$tlang.getString("grading.select")</label>
 							
 							#if ($isGradebookGroupEnabled)

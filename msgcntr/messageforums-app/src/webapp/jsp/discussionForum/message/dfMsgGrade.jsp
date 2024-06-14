@@ -96,19 +96,21 @@
 
             <script>
                 $(document).ready(function() {
-                  try {
-                    var sakaiReminder = new SakaiReminder();
-                    new Awesomplete($('.awesomplete')[0], {
-                      list: sakaiReminder.getAll()
-                    });
-                    $('#msgForum').submit(function (e) {
-                      $('textarea.awesomplete').each(function () {
-                        sakaiReminder.new($(this).val());
-                      });
-                    });
-                  } catch (err) {
-                      //Just ignore the exception, happens when a gradebook item is not selected.
-                  }
+                    window.syncGbSelectorInput("gb-selector", "msgForum:gb_selector");
+
+                    try {
+                        var sakaiReminder = new SakaiReminder();
+                        new Awesomplete($('.awesomplete')[0], {
+                            list: sakaiReminder.getAll()
+                        });
+                        $('#msgForum').submit(function (e) {
+                            $('textarea.awesomplete').each(function () {
+                                sakaiReminder.new($(this).val());
+                            });
+                        });
+                    } catch (err) {
+                        //Just ignore the exception, happens when a gradebook item is not selected.
+                    }
                 });
             </script>
 
@@ -195,6 +197,9 @@
                         rendered="#{!ForumTool.selGBItemRestricted}" readonly="#{!ForumTool.allowedToGradeItem}"/>
                 </h:panelGroup>
             </h:panelGrid>
+
+            <sakai-multi-gradebook id="gb-selector"></sakai-multi-gradebook>
+            <h:inputHidden id="gb_selector" />
 
             <% if (hasAssociatedRubric) { %>
                 <sakai-rubric-grading

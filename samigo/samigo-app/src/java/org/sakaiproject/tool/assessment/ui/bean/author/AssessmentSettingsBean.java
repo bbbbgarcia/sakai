@@ -181,6 +181,8 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
   private SelectItem[] secureDeliveryModuleSelections;
   private String secureDeliveryModule;
   private String secureDeliveryModuleExitPassword;
+  @Getter @Setter private String gbTest;
+  @Getter @Setter private String currentSiteId;
   @Setter private SelectItem[] sebConfigModeSelections;
   @Setter private SelectItem[] booleanSelections;
   @Getter @Setter private String sebConfigMode;
@@ -489,6 +491,7 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
           this.scoringType = evaluation.getScoringType().toString();
 
         String currentSiteId = AgentFacade.getCurrentSiteId();
+        this.currentSiteId = currentSiteId;
 
         this.categoriesSelectList = populateCategoriesSelectList();
         this.categorySelected = initializeCategorySelected(assessment.getData().getCategoryId());

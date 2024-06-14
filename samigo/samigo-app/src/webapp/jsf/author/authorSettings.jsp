@@ -61,6 +61,7 @@
               active: accordionPanel,
               collapsible: true
           });
+          window.syncGbSelectorInput("gb-selector", "assessmentSettingsAction:gb_selector");
           // This is a sub-accordion inside of the About the Assessment Panel
           $("#jqueryui-accordion-metadata").accordion({ heightStyle: "content",collapsible: true,active: false });
           // This is a sub-accordion inside of the Availability and Submission Panel
@@ -723,10 +724,17 @@
       <h:outputLabel for="toDefaultGradebook" styleClass="col-md-10 form-label mt-3" value="#{assessmentSettingsMessages.gradebook_options}"/>
       <div class="col-md-10">
         <h:selectOneRadio id="toDefaultGradebook" value="#{assessmentSettings.toDefaultGradebook}"  layout="pageDirection"
-          onclick="enableDisableToGradebook();toggleCategories(this);">
-           <f:selectItem itemValue="2" itemLabel="#{assessmentSettingsMessages.to_no_gradebook}"/>
-           <f:selectItem itemValue="1" itemLabel="#{assessmentSettingsMessages.to_default_gradebook}"/>
-           <f:selectItem itemValue="3" itemLabel="#{assessmentSettingsMessages.to_selected_gradebook}" itemDisabled="#{empty assessmentSettings.existingGradebook}"/>
+        onclick="enableDisableToGradebook();toggleCategories(this);">
+
+          <sakai-multi-gradebook
+            id="gb-selector"
+            site-id='<h:outputText value="#{assessmentSettings.currentSiteId}" />'
+          ></sakai-multi-gradebook>
+          <h:inputHidden id="gb_selector" value="#{assessmentSettings.gbTest}" />
+
+          <f:selectItem itemValue="2" itemLabel="#{assessmentSettingsMessages.to_no_gradebook}"/>
+          <f:selectItem itemValue="1" itemLabel="#{assessmentSettingsMessages.to_default_gradebook}"/>
+          <f:selectItem itemValue="3" itemLabel="#{assessmentSettingsMessages.to_selected_gradebook}" itemDisabled="#{empty assessmentSettings.existingGradebook}"/>
         </h:selectOneRadio>
       </div>
       <h:panelGroup layout="block" id="toGradebookCategory" styleClass="col-md-10 col-md-offset-2" rendered="#{assessmentSettings.categoriesEnabled}" style="display:#{(assessmentSettings.toDefaultGradebook)?'block':'none'}">
