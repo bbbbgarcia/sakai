@@ -126,7 +126,6 @@ export default {
 	},
 	mixins: [i18nMixin],
 	props: {
-		gradebookList: String,
 		collectionId: { type: String },
 		itemId: { type: String },
 		siteId: { type: String },
@@ -136,11 +135,10 @@ export default {
 		isCategory: { type: Boolean },
 	},
 	data(props) {
-		console.log("PROPS: ", props.gradebookList);
-		    return {
-				value: [],
-				options: [],
-			};
+		return {
+			value: [],
+			options: [],
+		};
 	},
 	computed: {},
 	watch: {
@@ -177,11 +175,20 @@ export default {
         	throw new Error(`Failed to get items for site ` + this.siteId);
       	})
       	.then((data) => {
-        	console.log("DATA", data);
 			this.options = data;
       	})
       	.catch ((error) => console.error(error));
-		console.log("TEST 2");
+
+		this.selectedTemp.split(',').forEach((element) => {
+			this.options.map((option) => {
+				const foundTag = option.items.find((item) => item.id === element );
+
+				if (foundTag) {
+					this.value.push(foundTag);
+					break;
+				}
+			});
+      	});
 	},
 };
 </script>

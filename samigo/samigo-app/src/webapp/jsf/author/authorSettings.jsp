@@ -729,6 +729,7 @@
           <sakai-multi-gradebook
             id="gb-selector"
             site-id='<h:outputText value="#{assessmentSettings.currentSiteId}" />'
+            selected-temp='<h:outputText value="#{assessmentSettings.gradebookName}" />'
           ></sakai-multi-gradebook>
           <h:inputHidden id="gb_selector" value="#{assessmentSettings.gbTest}" />
 
