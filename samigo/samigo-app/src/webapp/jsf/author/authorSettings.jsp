@@ -43,6 +43,15 @@
       <script src="/samigo-app/js/authoringSecureDeliverySettings.js"></script>
       <script src="/library/js/spinner.js"></script>
       <script>includeWebjarLibrary('bootstrap-multiselect');</script>
+      <f:verbatim rendered="#{assessmentSettingsAction.gradebookGroupEnabled}">
+      <script>
+        // Initialize input sync
+        window.addEventListener("load", () => {
+          window.syncGbSelectorInput("gb-selector", "assessmentSettingsAction\\:gb_selector");
+        });
+      </script>
+      </f:verbatim>
+
       <script>
         $(document).ready(function() {
           // set up the accordion for settings
@@ -61,7 +70,6 @@
               active: accordionPanel,
               collapsible: true
           });
-          window.syncGbSelectorInput("gb-selector", "assessmentSettingsAction:gb_selector");
           // This is a sub-accordion inside of the About the Assessment Panel
           $("#jqueryui-accordion-metadata").accordion({ heightStyle: "content",collapsible: true,active: false });
           // This is a sub-accordion inside of the Availability and Submission Panel

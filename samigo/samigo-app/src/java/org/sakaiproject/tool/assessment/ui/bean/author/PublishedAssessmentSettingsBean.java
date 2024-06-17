@@ -192,6 +192,8 @@ public class PublishedAssessmentSettingsBean extends SpringBeanAutowiringSupport
   @Getter @Setter private Boolean sebAllowAudioControl;
   @Getter @Setter private Boolean sebAllowSpellChecking;
 
+  @Getter @Setter private String currentSiteId;
+
   // properties of PublishedFeedback
   private String feedbackDelivery; // immediate, on specific date , no feedback
   private String feedbackComponentOption; // 2 = select options, 1 = total scores only 
@@ -472,7 +474,7 @@ public class PublishedAssessmentSettingsBean extends SpringBeanAutowiringSupport
         if (evaluation.getScoringType()!=null)
           this.scoringType = evaluation.getScoringType().toString();
         
-        String currentSiteId = AgentFacade.getCurrentSiteId();
+        this.currentSiteId = AgentFacade.getCurrentSiteId();
 
         this.categoriesSelectList = populateCategoriesSelectList();
         this.categorySelected = getCategoryForAssessmentName(assessment.getTitle());

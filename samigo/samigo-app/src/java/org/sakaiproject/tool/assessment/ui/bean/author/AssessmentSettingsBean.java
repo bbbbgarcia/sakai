@@ -303,6 +303,8 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
   private ServerConfigurationService serverConfigurationService;
   private boolean backgroundColorEnabled = serverConfigurationService.getBoolean(SAMIGO_SETTINGS_BACKGROUNDCOLOR_ENABLED, false);
   
+  private boolean gradebookGroupEnabled = false;
+  
   public boolean isBackgroundColorEnabled() {
 	return backgroundColorEnabled;
   }
@@ -490,8 +492,7 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
         if (evaluation.getScoringType()!=null)
           this.scoringType = evaluation.getScoringType().toString();
 
-        String currentSiteId = AgentFacade.getCurrentSiteId();
-        this.currentSiteId = currentSiteId;
+        this.currentSiteId = AgentFacade.getCurrentSiteId();
 
         this.categoriesSelectList = populateCategoriesSelectList();
         this.categorySelected = initializeCategorySelected(assessment.getData().getCategoryId());
@@ -2143,6 +2144,7 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
                 }
             }
 
+//TODO S2U-26 rellenar solamente si !group?
             List<Assignment> gradebookAssignmentList = gradingService.getAssignments(AgentFacade.getCurrentSiteId(), AgentFacade.getCurrentSiteId(), SortType.SORT_BY_NONE);
             for (Assignment gradebookAssignment : gradebookAssignmentList) {
                 boolean isExternallyMaintained = gradebookAssignment.getExternallyMaintained();
@@ -2178,6 +2180,16 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
             this.setExistingGradebook(this.populateExistingGradebookItems());
         }
         return this.existingGradebook;
+    }
+  
+    public boolean getGradebookGroupEnabled() {
+        //TODO Cache aqui o dentro del gb?
+        this.gradebookGroupEnabled = gradingService.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
+        return this.gradebookGroupEnabled;
+    }
+
+    public void setGradebookGroupEnabled(boolean gradebookGroupEnabled) {
+        this.gradebookGroupEnabled = gradebookGroupEnabled;
     }
 
 }
