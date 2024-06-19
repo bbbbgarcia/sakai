@@ -784,7 +784,8 @@ public class PublishedAssessmentFacadeQueries extends HibernateDaoSupport implem
                     String ref = SamigoReferenceReckoner.reckoner().site(site.getId()).subtype("p")
                                     .id(publishedAssessmentFacade.getPublishedAssessmentId().toString()).reckon().getReference();
                     publishedAssessment.setReference(ref);
-					gbsHelper.addToGradebook(publishedAssessment, publishedAssessment.getCategoryId(), g);
+// TODO JUANMA publishAssessment - sustituir null for gradebook uids obtenidos de la property
+					gbsHelper.addToGradebook(null, publishedAssessment, publishedAssessment.getCategoryId(), g);
 				} catch (Exception e) {
 					log.error("Removing published assessment: " + e);
 					delete(publishedAssessment);

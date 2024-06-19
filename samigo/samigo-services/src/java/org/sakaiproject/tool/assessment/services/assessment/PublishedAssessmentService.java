@@ -759,7 +759,8 @@ public class PublishedAssessmentService extends AssessmentService{
                 gbsHelper.updateGradebook(assessment, gradingService);
             } else {
                 log.warn("Gradebook item does not exist for assessment {}, creating a new gradebook item", assessment.getAssessmentId());
-                gbsHelper.addToGradebook(assessment, null, gradingService);
+// TODO JUANMA ?? - sustituir null for gradebook uids obtenidos de la property
+                gbsHelper.addToGradebook(null, assessment, null, gradingService);
             }
         }
 

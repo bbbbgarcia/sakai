@@ -43,7 +43,7 @@ public interface GradebookServiceHelper extends Serializable
   public void removeExternalAssessment(String gradebookUId,
      String publishedAssessmentId, GradingService g) throws Exception;
 
-  public boolean addToGradebook(PublishedAssessmentData publishedAssessment, Long categoryId,
+  public boolean addToGradebook(String gradebookUId, PublishedAssessmentData publishedAssessment, Long categoryId,
 		  GradingService g) throws Exception;
 
   public boolean updateGradebook(PublishedAssessmentIfc publishedAssessment,

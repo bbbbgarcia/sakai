@@ -95,8 +95,8 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     */
     public void removeExternalAssessment(String gradebookUId, String publishedAssessmentId, GradingService g)
         throws Exception {
-
-        g.removeExternalAssignment(gradebookUId, publishedAssessmentId);
+// TODO S2U-26 
+        g.removeExternalAssignment(null, publishedAssessmentId);
     }
 
   public boolean isAssignmentDefined(String assessmentTitle,
@@ -118,13 +118,11 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
    * @return false: cannot add to gradebook
    * @throws java.lang.Exception
    */
-  public boolean addToGradebook(PublishedAssessmentData publishedAssessment, Long categoryId,
+  public boolean addToGradebook(String gradebookUId, PublishedAssessmentData publishedAssessment, Long categoryId,
 		  GradingService g) throws
     Exception
   {
     boolean added = false;
-    // TODO S2U-26 uno de estos sera distinto, depende de como guardemos aqui
-    String gradebookUId = GradebookFacade.getGradebookUId();
     String siteId = GradebookFacade.getGradebookUId();
     if (gradebookUId == null)
     {

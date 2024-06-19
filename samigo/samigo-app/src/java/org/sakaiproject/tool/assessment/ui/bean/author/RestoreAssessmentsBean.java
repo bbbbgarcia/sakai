@@ -152,7 +152,8 @@ public class RestoreAssessmentsBean implements Serializable {
                 String ref = SamigoReferenceReckoner.reckoner().site(AgentFacade.getCurrentSiteId()).subtype("p")
                         .id(assessment.getPublishedAssessmentId().toString()).reckon().getReference();
                 data.setReference(ref);
-                gbsHelper.addToGradebook(data, data.getCategoryId(), g);
+// TODO JUANMA restore - sustituir null for gradebook uids obtenidos de la property
+                gbsHelper.addToGradebook(null, data, data.getCategoryId(), g);
             }
         } catch (Exception e1) {
             log.warn("RestoreAssessmentsBean - Exception thrown in updateGB():" + e1.getMessage());
