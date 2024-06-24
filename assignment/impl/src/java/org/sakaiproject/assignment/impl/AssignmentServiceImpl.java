@@ -3303,13 +3303,11 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
         }
     }
 
+    // for regular task deletion this has no effect as it has already been done on doDelete_assignment, it only works when it comes from import content + replace
     private void removeAssociatedGradebookItem(Assignment assignment) {
-
-        String context = assignment.getContext();
         String associatedGradebookAssignment = assignment.getProperties().get(AssignmentConstants.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
-// TODO S2U-26 funciona sin cambios, pero volver a verificar (solamente para el caso en el que se crea el gb item desde tareas)
-        if (StringUtils.isNotBlank(associatedGradebookAssignment) && gradingService.isExternalAssignmentDefined(context, associatedGradebookAssignment)) {
-            gradingService.removeExternalAssignment(context, associatedGradebookAssignment);
+        if (StringUtils.isNotBlank(associatedGradebookAssignment)) {
+            gradingService.removeExternalAssignment(null, associatedGradebookAssignment, getToolId());
         }
     }
 

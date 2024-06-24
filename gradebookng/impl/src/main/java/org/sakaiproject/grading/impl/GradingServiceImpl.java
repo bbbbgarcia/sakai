@@ -3755,29 +3755,41 @@ public class GradingServiceImpl implements GradingService {
 
     @Override
     @Transactional
-    public void removeExternalAssignment(String gradebookUid, String externalId) throws AssessmentNotFoundException {
+    public void removeExternalAssignment(String gradebookUid, String externalId, String externalApp) throws AssessmentNotFoundException {
 
-        // Get the external assignment
-        final Optional<GradebookAssignment> optAsn = getDbExternalAssignment(gradebookUid, externalId);
-        if (optAsn.isEmpty()) {
-            throw new AssessmentNotFoundException("There is no external assessment id=" + externalId + " in gradebook uid=" + gradebookUid);
+        List<GradebookAssignment> gas = new ArrayList<>();
+        if (gradebookUid == null) {
+            gas = gradingPersistenceManager.getGradebookUidByExternalId(externalId);
+        } else {
+            // Get the external assignment
+            final Optional<GradebookAssignment> optAsn = getDbExternalAssignment(gradebookUid, externalId);
+            if (optAsn.isEmpty()) {
+                throw new AssessmentNotFoundException("There is no external assessment id=" + externalId + " in gradebook uid=" + gradebookUid);
+            }
+
+            gas.add(optAsn.get());
         }
 
-        GradebookAssignment asn = optAsn.get();
+        for (GradebookAssignment asn : gas) {
+            if (externalApp != null && !externalApp.equals(asn.getExternalAppName())) {
+                log.debug("Skipping gradebook item with id {} from app {}", externalId, asn.getExternalAppName());
+                continue;
+            }
 
-        int numDeleted = gradingPersistenceManager.deleteGradingEventsForAssignment(asn);
-        log.debug("Deleted {} records from gb_grading_event_t", numDeleted);
+            int numDeleted = gradingPersistenceManager.deleteGradingEventsForAssignment(asn);
+            log.debug("Deleted {} records from gb_grading_event_t", numDeleted);
 
-        numDeleted = gradingPersistenceManager.deleteGradeRecordsForAssignment(asn);
-        log.info("Deleted {} externally defined scores", numDeleted);
+            numDeleted = gradingPersistenceManager.deleteGradeRecordsForAssignment(asn);
+            log.info("Deleted {} externally defined scores", numDeleted);
 
-        numDeleted = gradingPersistenceManager.deleteCommentsForAssignment(asn);
-        log.info("Deleted {} externally defined comments", numDeleted);
+            numDeleted = gradingPersistenceManager.deleteCommentsForAssignment(asn);
+            log.info("Deleted {} externally defined comments", numDeleted);
 
-        // Delete the assessment.
-        gradingPersistenceManager.deleteAssignment(asn);
+            // Delete the assessment.
+            gradingPersistenceManager.deleteAssignment(asn);
 
-        log.info("External assessment removed from gradebookUid={}, externalId={} by userUid={}", gradebookUid, externalId, getUserUid());
+            log.info("External assessment removed from gradebookUid={}, externalId={}, externalApp={} by userUid={}", gradebookUid, externalId, externalApp, getUserUid());
+        }
     }
 
     private Optional<GradebookAssignment> getDbExternalAssignment(String gradebookUid, String externalId) {

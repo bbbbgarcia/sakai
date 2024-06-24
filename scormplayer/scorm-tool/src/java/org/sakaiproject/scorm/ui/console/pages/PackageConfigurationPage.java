@@ -48,6 +48,7 @@ import org.sakaiproject.grading.api.AssignmentHasIllegalPointsException;
 import org.sakaiproject.grading.api.ConflictingAssignmentNameException;
 
 import org.sakaiproject.grading.api.GradingService;
+import org.sakaiproject.scorm.api.ScormConstants;
 import org.sakaiproject.scorm.dao.api.ContentPackageManifestDao;
 import org.sakaiproject.scorm.model.api.Attempt;
 import org.sakaiproject.scorm.model.api.ContentPackage;
@@ -310,7 +311,7 @@ public class PackageConfigurationPage extends ConsoleBasePage
 							else if (!has && on)
 							{
 								gradingService.addExternalAssessment(context, context, assessmentExternalId, null, fixedTitle, assessmentSetup.numberOffPoints,
-																							gradebookSetup.getContentPackage().getDueOn(), "SCORM player", null, false, null, null);
+																							gradebookSetup.getContentPackage().getDueOn(), ScormConstants.SCORM_DFLT_TOOL_NAME, null, false, null, null);
 
 								// Push grades on creation of gradebook item
 								ContentPackage contentPackage = contentService.getContentPackage(contentPackageId);
@@ -326,7 +327,7 @@ public class PackageConfigurationPage extends ConsoleBasePage
 							}
 							else if (has && !on)
 							{
-								gradingService.removeExternalAssignment(context, assessmentExternalId);
+								gradingService.removeExternalAssignment(context, assessmentExternalId, ScormConstants.SCORM_DFLT_TOOL_NAME);
 							}
 						}
 						catch (AssessmentNotFoundException ex)

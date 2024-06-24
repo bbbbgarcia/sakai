@@ -788,7 +788,7 @@ System.out.println("toolutils integrateGradebook caso3 ");
         return assignmentService.getGradeDisplay(grade, Assignment.GradeType.SCORE_GRADE_TYPE, factor);
     }
 
-    private void removeNonAssociatedExternalGradebookEntry(String context, String assignmentReference, String associateGradebookAssignment, String gradebookUid) {
+    public void removeNonAssociatedExternalGradebookEntry(String context, String assignmentReference, String associateGradebookAssignment, String gradebookUid) {
         boolean isExternalAssignmentDefined = gradingService.isExternalAssignmentDefined(gradebookUid, associateGradebookAssignment);
         if (isExternalAssignmentDefined) {
             boolean found = false;
@@ -804,7 +804,7 @@ System.out.println("toolutils integrateGradebook caso3 ");
             }
             // so if none of the assignment in this site is associated with the entry, remove the entry
             if (!found) {
-                gradingService.removeExternalAssignment(gradebookUid, associateGradebookAssignment);
+                gradingService.removeExternalAssignment(gradebookUid, associateGradebookAssignment, assignmentService.getToolId());
             }
         }
     }

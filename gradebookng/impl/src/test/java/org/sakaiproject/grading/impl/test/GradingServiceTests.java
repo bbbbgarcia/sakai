@@ -291,7 +291,7 @@ public class GradingServiceTests extends AbstractTransactionalJUnit4SpringContex
 
         assertNotNull(assignment);
 
-        gradingService.removeExternalAssignment(gradebook.getUid(), externalId);
+        gradingService.removeExternalAssignment(gradebook.getUid(), externalId, null);
 
         assertThrows(IllegalArgumentException.class, () -> gradingService.getExternalAssignment(gradebook.getUid(), externalId));
     }

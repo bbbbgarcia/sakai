@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.sakaiproject.grading.api.ConflictingAssignmentNameException;
 import org.sakaiproject.grading.api.GradingService;
+import org.sakaiproject.lessonbuildertool.api.LessonBuilderConstants;
 
 /**
  * Interface to Gradebook
@@ -75,7 +76,8 @@ public class GradebookIfc {
 
     public boolean removeExternalAssessment(final String gradebookUid, final String externalId) {
 	try {
-	    gradingService.removeExternalAssignment(gradebookUid, externalId);
+	    // TODO S2U-26 revisar - en principio ya no borramos por gUid, si no por id externo + herramienta
+	    gradingService.removeExternalAssignment(null, externalId, LessonBuilderConstants.TOOL_ID);
 	} catch (Exception e) {
 	    log.info("failed remove " + e);
 	    return false;

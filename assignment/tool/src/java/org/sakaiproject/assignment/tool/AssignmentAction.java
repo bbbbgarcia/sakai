@@ -9433,13 +9433,13 @@ System.out.println("initIntegrateWithGradebook se cambia asoc");
                         addAlerts(state, assignmentToolUtils.integrateGradebook(stateToMap(state), gradebookUid, assignmentReference, oAssociateGradebookAssignment, null, null, null, -1, null, null, "remove", category));
 
                         // if the old associated assignment entry in GB is an external one, but doesn't have anything assoicated with it in Assignment tool, remove it
-                        removeNonAssociatedExternalGradebookEntry(context, assignmentReference, oAssociateGradebookAssignment, gradebookUid);
+                        assignmentToolUtils.removeNonAssociatedExternalGradebookEntry(context, assignmentReference, oAssociateGradebookAssignment, gradebookUid);
                     }
                 } catch (NumberFormatException nE) {
                     alertInvalidPoint(state, gradePoints, assignment.getScaleFactor());
                     log.warn(this + ":initIntegrateWithGradebook " + nE.getMessage());
                 }
-            } else {
+            } else {// TODO S2U-26 we dont know when this happens
                 addAlerts(state, assignmentToolUtils.integrateGradebook(stateToMap(state), gradebookUid, assignmentReference, associateGradebookAssignment, "remove", null, null, -1, null, null, null, category));
             }
         } else {
@@ -9447,27 +9447,7 @@ System.out.println("initIntegrateWithGradebook se cambia asoc");
             addAlerts(state, assignmentToolUtils.integrateGradebook(stateToMap(state), gradebookUid, assignmentReference, oAssociateGradebookAssignment, null, null, null, -1, null, null, "remove", category));
 
             // need to remove the associated gradebook entry if 1) it is external and 2) no other assignment are associated with it
-            removeNonAssociatedExternalGradebookEntry(context, assignmentReference, oAssociateGradebookAssignment, gradebookUid);
-        }
-    }
-
-   private void removeNonAssociatedExternalGradebookEntry(String context, String assignmentReference, String associateGradebookAssignment, String gradebookUid) {
-        boolean isExternalAssignmentDefined = gradingService.isExternalAssignmentDefined(gradebookUid, associateGradebookAssignment);
-        if (isExternalAssignmentDefined) {
-            boolean found = false;
-            // iterate through all assignments currently in the site, see if any is associated with this GB entry
-            for (Assignment assignment : assignmentService.getAssignmentsForContext(context)) {
-                String reference = AssignmentReferenceReckoner.reckoner().assignment(assignment).reckon().getReference();
-                if (StringUtils.equals(assignment.getProperties().get(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT), associateGradebookAssignment)
-                        && !StringUtils.equals(reference, assignmentReference)) {
-                    found = true;
-                    break;
-                }
-            }
-            // so if none of the assignment in this site is associated with the entry, remove the entry
-            if (!found) {
-                gradingService.removeExternalAssignment(gradebookUid, associateGradebookAssignment);
-            }
+            assignmentToolUtils.removeNonAssociatedExternalGradebookEntry(context, assignmentReference, oAssociateGradebookAssignment, gradebookUid);
         }
     }
 

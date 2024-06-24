@@ -95,8 +95,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     */
     public void removeExternalAssessment(String gradebookUId, String publishedAssessmentId, GradingService g)
         throws Exception {
-// TODO S2U-26 
-        g.removeExternalAssignment(null, publishedAssessmentId);
+        g.removeExternalAssignment(null, publishedAssessmentId, getAppName());
     }
 
   public boolean isAssignmentDefined(String assessmentTitle,
