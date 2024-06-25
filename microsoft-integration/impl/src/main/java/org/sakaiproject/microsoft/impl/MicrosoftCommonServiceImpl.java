@@ -540,7 +540,11 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
 			team.description = name;
 			team.visibility = TeamVisibilityType.PRIVATE;
 			team.members = conversationMemberCollectionPage;
+			System.out.println("EL TEAM ES ESTE:"+team.displayName);
+			System.out.println("EL TEAM ES ESTE:"+team.additionalDataManager().put("template@odata.bind", new JsonPrimitive("https://graph.microsoft.com/v1.0/teamsTemplates('standard')")));
 			team.additionalDataManager().put("template@odata.bind", new JsonPrimitive("https://graph.microsoft.com/v1.0/teamsTemplates('standard')"));
+
+			System.out.println("EL TEAM ES ESTE:"+team);
 
 			Team ret = getGraphClient().teams()
 				.buildRequest()
@@ -574,6 +578,9 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
 			throw e;
 		} catch(Exception ex){
 			log.debug("Error creating Microsoft Team: name={}", name);
+			System.out.println("ERROR CREATING TEAM"+ ex);
+			System.out.println("Error message: " + ex.getMessage());
+
 		}
 		return null;
 	}

@@ -504,16 +504,20 @@ public class MicrosoftSynchronizationServiceImpl implements MicrosoftSynchroniza
 				//process all group synchronizations related - only to remove
 				//users will be removed first from channels
 				if(ss.getGroupSynchronizationsList() != null && ss.getGroupSynchronizationsList().size() > 0) {
-					for(GroupSynchronization gs : ss.getGroupSynchronizationsList()) {
-						SynchronizationStatus aux_status = runGroupSynchronizationForced(ss, gs, mappedSakaiUserId, mappedMicrosoftUserId);
-						if(aux_status == SynchronizationStatus.ERROR_GUEST && ret != SynchronizationStatus.ERROR) {
-							//once ERROR status is set, do not check it again
-							ret = SynchronizationStatus.ERROR_GUEST;
+					int groupCounter = 0;
+						for (GroupSynchronization gs : ss.getGroupSynchronizationsList()) {
+							if(groupCounter < 3) {
+								SynchronizationStatus aux_status = runGroupSynchronizationForced(ss, gs, mappedSakaiUserId, mappedMicrosoftUserId);
+								if (aux_status == SynchronizationStatus.ERROR_GUEST && ret != SynchronizationStatus.ERROR) {
+									//once ERROR status is set, do not check it again
+									ret = SynchronizationStatus.ERROR_GUEST;
+								}
+								if (aux_status == SynchronizationStatus.ERROR) {
+									ret = SynchronizationStatus.ERROR;
+								}
+							}
+							groupCounter++;
 						}
-						if(aux_status == SynchronizationStatus.ERROR) {
-							ret = SynchronizationStatus.ERROR;
-						}
-					}
 				}
 				
 				//get team members that are not in site
@@ -623,7 +627,9 @@ public class MicrosoftSynchronizationServiceImpl implements MicrosoftSynchroniza
 			
 			//process all group synchronizations related
 			if(ss.getGroupSynchronizationsList() != null && ss.getGroupSynchronizationsList().size() > 0) {
+				int groupCounter = 0;
 				for(GroupSynchronization gs : ss.getGroupSynchronizationsList()) {
+					if(groupCounter < 3) {
 					SynchronizationStatus aux_status = runGroupSynchronization(ss, gs, guestUsers, mappedSakaiUserId, mappedMicrosoftUserId);
 					if(aux_status == SynchronizationStatus.ERROR_GUEST && ret != SynchronizationStatus.ERROR) {
 						//once ERROR status is set, do not check it again
@@ -632,6 +638,8 @@ public class MicrosoftSynchronizationServiceImpl implements MicrosoftSynchroniza
 					if(aux_status == SynchronizationStatus.ERROR) {
 						ret = SynchronizationStatus.ERROR;
 					}
+				}
+					groupCounter++;
 				}
 			}
 		}
