@@ -16,7 +16,9 @@
 package org.sakaiproject.microsoft.controller;
 
 import java.text.MessageFormat;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -24,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.sakaiproject.microsoft.api.MicrosoftCommonService;
 import org.sakaiproject.microsoft.api.MicrosoftConfigurationService;
 import org.sakaiproject.microsoft.api.MicrosoftSynchronizationService;
+import org.sakaiproject.microsoft.api.data.MicrosoftChannel;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftGenericException;
 import org.sakaiproject.microsoft.api.model.GroupSynchronization;
 import org.sakaiproject.microsoft.api.model.SiteSynchronization;
@@ -70,6 +73,7 @@ public class GroupSynchronizationController {
 	private static final String EDIT_GROUP_SYNCH_TEMPLATE = "editGroupSynchronization";
 
 	private static final String NEW = "NEW";
+	private static final int MAX_CHANNELS = 30;
 	
 	@GetMapping(value = {"/editGroupSynchronization/{siteSynchronizationId}"})
 	public String editGroupSynchronization(@PathVariable String siteSynchronizationId, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
@@ -100,50 +104,58 @@ public class GroupSynchronizationController {
 		//get parent object
 		SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteSynchronizationId).build());
 		if(ss != null) {
-			if(StringUtils.isNotBlank(payload.getSelectedGroupId()) && StringUtils.isNotBlank(payload.getSelectedChannelId())) {
-				String groupId = payload.getSelectedGroupId();
-				String channelId = payload.getSelectedChannelId();
-				
-				//TODO: do the same to create a site???
-				if(channelId.equals(NEW) && createdChannelId == null) {
-					//create new channel
-					if(StringUtils.isBlank(payload.getNewChannelName())) {
-						redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.new_channel_empty"));
-						
+			Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId());
+			model.addAttribute("channelsMap", channelsMap);
+
+			Collection<MicrosoftChannel> channels = channelsMap.values();
+			if(channels.size() < MAX_CHANNELS) {
+				if (StringUtils.isNotBlank(payload.getSelectedGroupId()) && StringUtils.isNotBlank(payload.getSelectedChannelId())) {
+					String groupId = payload.getSelectedGroupId();
+					String channelId = payload.getSelectedChannelId();
+
+					//TODO: do the same to create a site???
+					if (channelId.equals(NEW) && createdChannelId == null) {
+						//create new channel
+						if (StringUtils.isBlank(payload.getNewChannelName())) {
+							redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.new_channel_empty"));
+
+							return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
+						}
+						createdChannelId = microsoftCommonService.createChannel(ss.getTeamId(), payload.getNewChannelName(), microsoftConfigurationService.getCredentials().getEmail());
+
+						if (createdChannelId == null) {
+							redirectAttributes.addFlashAttribute("exception_error", MessageFormat.format(rb.getString("error.creating_channel"), payload.getNewChannelName()));
+
+							return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
+						}
+					}
+
+					GroupSynchronization gs = GroupSynchronization.builder()
+							.siteSynchronization(ss)
+							.groupId(groupId)
+							.channelId(channelId.equals(NEW) ? createdChannelId : channelId)
+							.build();
+
+					GroupSynchronization aux_gs = microsoftSynchronizationService.getGroupSynchronization(gs);
+					if (aux_gs != null) {
+						redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.group_synchronization_already_exists"));
+
 						return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
 					}
-					createdChannelId = microsoftCommonService.createChannel(ss.getTeamId(), payload.getNewChannelName(), microsoftConfigurationService.getCredentials().getEmail());
-	
-					if(createdChannelId == null) {
-						redirectAttributes.addFlashAttribute("exception_error", MessageFormat.format(rb.getString("error.creating_channel"), payload.getNewChannelName()));
-						
+
+					//check if parent is forced and selected channel is duplicated
+					//TODO: at this point, if parent is not forcing, we will allow this relationship. But we don't check if the parent starts forcing after that
+					if (ss.isForced() && microsoftSynchronizationService.countGroupSynchronizationsByChannelId(gs.getChannelId()) > 0) {
+						redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.group_synchronization_already_forced"));
+
 						return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
 					}
+
+					log.debug("saving: groupId={}, channelId={}", groupId, channelId.equals(NEW) ? createdChannelId : channelId);
+					microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
 				}
-				
-				GroupSynchronization gs = GroupSynchronization.builder()
-					.siteSynchronization(ss)
-					.groupId(groupId)
-					.channelId(channelId.equals(NEW) ? createdChannelId : channelId)
-				.build();
-				
-				GroupSynchronization aux_gs = microsoftSynchronizationService.getGroupSynchronization(gs);
-				if(aux_gs != null) {
-					redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.group_synchronization_already_exists"));
-					
-					return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
-				}
-				
-				//check if parent is forced and selected channel is duplicated
-				//TODO: at this point, if parent is not forcing, we will allow this relationship. But we don't check if the parent starts forcing after that
-				if(ss.isForced() && microsoftSynchronizationService.countGroupSynchronizationsByChannelId(gs.getChannelId()) > 0) {
-					redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.group_synchronization_already_forced"));
-					
-					return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
-				}
-				
-				log.debug("saving: groupId={}, channelId={}", groupId, channelId.equals(NEW) ? createdChannelId : channelId);
-				microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
+			} else {
+				redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.channel_number_more_than_30"));
 			}
 		} else {
 			redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.site_synchronization_not_found"));
