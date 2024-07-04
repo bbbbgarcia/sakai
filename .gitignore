@@ -26,3 +26,6 @@ rsf/sakai-rsf-web/test/overlays
 .checkstyle
 assets
 **/src/main/frontend/node/
+
+log
+microsoft-integration/*.diff
