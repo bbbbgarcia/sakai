@@ -46,6 +46,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import lombok.extern.slf4j.Slf4j;
 
+import static org.sakaiproject.microsoft.api.MicrosoftCommonService.MAX_CHANNELS;
+
 
 /**
  * GroupSynchronizationController
@@ -73,8 +75,7 @@ public class GroupSynchronizationController {
 	private static final String EDIT_GROUP_SYNCH_TEMPLATE = "editGroupSynchronization";
 
 	private static final String NEW = "NEW";
-	private static final int MAX_CHANNELS = 30;
-	
+
 	@GetMapping(value = {"/editGroupSynchronization/{siteSynchronizationId}"})
 	public String editGroupSynchronization(@PathVariable String siteSynchronizationId, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
 		SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteSynchronizationId).build(), true);
