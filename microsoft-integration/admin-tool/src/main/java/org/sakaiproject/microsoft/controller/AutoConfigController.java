@@ -16,18 +16,14 @@
 package org.sakaiproject.microsoft.controller;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.sakaiproject.microsoft.api.MicrosoftCommonService;
 import org.sakaiproject.microsoft.api.MicrosoftConfigurationService;
@@ -39,6 +35,7 @@ import org.sakaiproject.microsoft.api.data.MicrosoftTeam;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftCredentialsException;
 import org.sakaiproject.microsoft.api.model.GroupSynchronization;
 import org.sakaiproject.microsoft.api.model.SiteSynchronization;
+import org.sakaiproject.microsoft.api.persistence.MicrosoftLoggingRepository;
 import org.sakaiproject.microsoft.controller.auxiliar.AutoConfigSessionBean;
 import org.sakaiproject.microsoft.controller.auxiliar.AutoConfigConfirmRequest;
 import org.sakaiproject.microsoft.controller.auxiliar.AutoConfigRequest;
@@ -56,6 +53,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import lombok.extern.slf4j.Slf4j;
 
+import static org.sakaiproject.microsoft.api.MicrosoftCommonService.MAX_ADD_CHANNELS;
+import static org.sakaiproject.microsoft.api.MicrosoftCommonService.MAX_CHANNELS;
+
 
 /**
  * MainController
@@ -66,8 +66,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Controller
 public class AutoConfigController {
-	
+
+
 	private static ResourceLoader rb = new ResourceLoader("Messages");
+	@Setter private MicrosoftLoggingRepository microsoftLoggingRepository;
+
+	//private static final int MAX_CHANNELS = 3;
 	
 	@Autowired
 	private MicrosoftSynchronizationService microsoftSynchronizationService;
@@ -241,6 +245,7 @@ public class AutoConfigController {
 								try {
 									//--> create NEW Team
 									String teamId = microsoftCommonService.createTeam((String)o, credentials.getEmail());
+									int countNumberOfChannelsCreated = 0;
 									if(teamId != null) {
 										//create relationship
 										SiteSynchronization ss = SiteSynchronization.builder()
@@ -256,29 +261,73 @@ public class AutoConfigController {
 										
 										//check if given site has groups and configuration allows it 
 										if(autoConfigSessionBean.isNewChannel() && site.getGroups().size() > 0) {
-											for(Group g : site.getGroups()) {
-												try {
-													//exclude automatic lesson groups
-													if(g.getTitle().startsWith("Access:")) {
-														continue;
+											if(site.getGroups().size() <= MAX_CHANNELS) { //NUEVO
+												for (Group g : site.getGroups()) {
+													try {
+														//exclude automatic lesson groups
+														if (g.getTitle().startsWith("Access:")) {
+															continue;
+														}
+
+														//as Team is new, create all Channels (30 channels maximum)
+														if (countNumberOfChannelsCreated < MAX_CHANNELS) {
+															String createdChannelId = microsoftCommonService.createChannel(teamId, g.getTitle(), credentials.getEmail());
+															countNumberOfChannelsCreated++;
+
+															if (StringUtils.isNotBlank(createdChannelId)) {
+																//create relationship
+																GroupSynchronization gs = GroupSynchronization.builder()
+																		.siteSynchronization(ss)
+																		.groupId(g.getId())
+																		.channelId(createdChannelId)
+																		.build();
+
+																log.debug("saving NEW: groupId={}, channelId={}, title={}", g.getId(), createdChannelId, g.getTitle());
+																microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
+															}
+														} else {
+															log.info("Only the first" + MAX_CHANNELS + "channels of the team have been created");
+														}
+													} catch (Exception e) {
+														log.error("Unexpected exception creating channel: {}", e.getMessage());
 													}
-														
-													//as Team is new, create all Channels
-													String createdChannelId = microsoftCommonService.createChannel(teamId, g.getTitle(), credentials.getEmail());
-													
-													if(StringUtils.isNotBlank(createdChannelId)) {
-														//create relationship
-														GroupSynchronization gs = GroupSynchronization.builder()
-																.siteSynchronization(ss)
-																.groupId(g.getId())
-																.channelId(createdChannelId)
-																.build();
-														
-														log.debug("saving NEW: groupId={}, channelId={}, title={}", g.getId(), createdChannelId, g.getTitle());
-														microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
+												}
+											} else {//NUEVO
+												//Limitar el número de grupos o de canales que se crean al limite establecido en MAX_ADD_CHANNELS
+												Collection<Group> groupList = new ArrayList<>(site.getGroups());
+												List<Group> limitedGroupList = groupList.stream()
+														.limit(MAX_ADD_CHANNELS)
+														.collect(Collectors.toList());
+												for (Group g: limitedGroupList){
+													try {
+														//exclude automatic lesson groups
+														if (g.getTitle().startsWith("Access:")) {
+															continue;
+														}
+
+														//as Team is new, create all Channels (30 channels maximum)
+														if (countNumberOfChannelsCreated < MAX_CHANNELS) {
+															String createdChannelId = microsoftCommonService.createChannel(teamId, g.getTitle(), credentials.getEmail());
+															countNumberOfChannelsCreated++;
+
+															if (StringUtils.isNotBlank(createdChannelId)) {
+																//create relationship
+																GroupSynchronization gs = GroupSynchronization.builder()
+																		.siteSynchronization(ss)
+																		.groupId(g.getId())
+																		.channelId(createdChannelId)
+																		.build();
+
+																log.debug("saving NEW: groupId={}, channelId={}, title={}", g.getId(), createdChannelId, g.getTitle());
+																microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
+															}
+														} else {
+															log.info("Only the first" + MAX_CHANNELS + "channels of the team have been created");
+														}
+													} catch (Exception e) {
+														log.error("Unexpected exception creating channel: {}", e.getMessage());
 													}
-												}catch(Exception e) {
-													log.error("Unexpected exception creating channel: {}", e.getMessage());
+
 												}
 											}
 										}
@@ -321,38 +370,79 @@ public class AutoConfigController {
 								try {
 									if(site.getGroups().size() > 0) {
 										//get existing channels from Team
-										Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId(), true);
-										
-										//get existing groups from site
-										for(Group g : site.getGroups()) {
-											//exclude automatic lesson groups
-											if(g.getTitle().startsWith("Access:")) {
-												continue;
-											}
-											
-											//check if any group matches any channel
-											MicrosoftChannel channel = channelsMap.values().stream().filter(c -> c.getName().equalsIgnoreCase(g.getTitle())).findAny().orElse(null);
-											String channelId = (channel != null) ? channel.getId() : null;
-											
-											//match NOT found --> Create channel (if configuration allows it)
-											if(channel == null && autoConfigSessionBean.isNewChannel()) {
-												channelId = microsoftCommonService.createChannel(ss.getTeamId(), g.getTitle(), credentials.getEmail());
-											}
-											
-											if(StringUtils.isNotBlank(channelId)) {
-												//create relationship
-												GroupSynchronization gs = GroupSynchronization.builder()
-														.siteSynchronization(ss)
-														.groupId(g.getId())
-														.channelId(channelId)
-														.build();
-												
-												//check if Group Synchronization does not exist
-												GroupSynchronization aux_gs = microsoftSynchronizationService.getGroupSynchronization(gs);
-												if(aux_gs == null) {
-													log.debug("saving group-channel: groupId={}, channelId={}", g.getId(), channelId);
-													microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
+										if(site.getGroups().size() <= MAX_CHANNELS) { //NUEVO
+											Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId(), true);
+											int countNumberOfChannelsCreated = 0;
+											//get existing groups from site
+											for (Group g : site.getGroups()) {
+												//exclude automatic lesson groups
+												if (g.getTitle().startsWith("Access:")) {
+													continue;
 												}
+
+												//check if any group matches any channel
+												MicrosoftChannel channel = channelsMap.values().stream().filter(c -> c.getName().equalsIgnoreCase(g.getTitle())).findAny().orElse(null);
+												String channelId = (channel != null) ? channel.getId() : null;
+
+												//match NOT found --> Create channel (if configuration allows it)
+												if (channel == null && autoConfigSessionBean.isNewChannel() && countNumberOfChannelsCreated < MAX_CHANNELS) {
+													channelId = microsoftCommonService.createChannel(ss.getTeamId(), g.getTitle(), credentials.getEmail());
+												}
+
+												if (StringUtils.isNotBlank(channelId)) {
+													//create relationship
+													GroupSynchronization gs = GroupSynchronization.builder()
+															.siteSynchronization(ss)
+															.groupId(g.getId())
+															.channelId(channelId)
+															.build();
+
+													//check if Group Synchronization does not exist
+													GroupSynchronization aux_gs = microsoftSynchronizationService.getGroupSynchronization(gs);
+													if (aux_gs == null) {
+														log.debug("saving group-channel: groupId={}, channelId={}", g.getId(), channelId);
+														microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
+													}
+												}
+												countNumberOfChannelsCreated++;
+											}
+										} else { // AQUÍ PARA LIMITAR LOS GRUPOS QUE SE SINCRONICEN EN CASO DE SER > 30 (NUEVO)
+											Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId(), true);
+											int countNumberOfChannelsCreated = 0;
+											Collection<Group> groupList = new ArrayList<>(site.getGroups());
+											List<Group> limitedGroupList = groupList.stream()
+													.limit(MAX_ADD_CHANNELS)
+													.collect(Collectors.toList());
+											for (Group g: limitedGroupList){
+												//Meter todo lo que hay dentro del for de los grupos, aunque igual extraerlo en un método??
+												//exclude automatic lesson groups
+												if (g.getTitle().startsWith("Access:")) {
+													continue;
+												}
+												//check if any group matches any channel
+												MicrosoftChannel channel = channelsMap.values().stream().filter(c -> c.getName().equalsIgnoreCase(g.getTitle())).findAny().orElse(null);
+												String channelId = (channel != null) ? channel.getId() : null;
+
+												//match NOT found --> Create channel (if configuration allows it)
+												if (channel == null && autoConfigSessionBean.isNewChannel() && countNumberOfChannelsCreated < MAX_CHANNELS) {
+													channelId = microsoftCommonService.createChannel(ss.getTeamId(), g.getTitle(), credentials.getEmail());
+												}
+												if (StringUtils.isNotBlank(channelId)) {
+													//create relationship
+													GroupSynchronization gs = GroupSynchronization.builder()
+															.siteSynchronization(ss)
+															.groupId(g.getId())
+															.channelId(channelId)
+															.build();
+
+													//check if Group Synchronization does not exist
+													GroupSynchronization aux_gs = microsoftSynchronizationService.getGroupSynchronization(gs);
+													if (aux_gs == null) {
+														log.debug("saving group-channel: groupId={}, channelId={}", g.getId(), channelId);
+														microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
+													}
+												}
+												countNumberOfChannelsCreated++;
 											}
 										}
 									}

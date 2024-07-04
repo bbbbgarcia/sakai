@@ -39,7 +39,10 @@ public interface MicrosoftCommonService {
 	public static final String PERM_DELETE_FILES = "microsoft.documents.delete.files";
 	public static final String PERM_DELETE_FOLDERS = "microsoft.documents.delete.folders";
 	public static final String PERM_UPLOAD_FILES = "microsoft.documents.upload.files";
-	
+	public static final int MAX_CHANNELS = 3;
+	public static final int MAX_ADD_CHANNELS = 2;
+
+
 	public static enum PermissionRoles { READ, WRITE }
 	
 	void resetCache();
