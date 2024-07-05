@@ -261,8 +261,8 @@ public class AutoConfigController {
 										
 										//check if given site has groups and configuration allows it 
 										if(autoConfigSessionBean.isNewChannel() && site.getGroups().size() > 0) {
-											if(site.getGroups().size() <= MAX_CHANNELS) { //NUEVO
-												for (Group g : site.getGroups()) {
+											List<Group> groupsToProcess = limitGroups(site.getGroups());
+												for (Group g : groupsToProcess) {
 													try {
 														//exclude automatic lesson groups
 														if (g.getTitle().startsWith("Access:")) {
@@ -292,44 +292,6 @@ public class AutoConfigController {
 														log.error("Unexpected exception creating channel: {}", e.getMessage());
 													}
 												}
-											} else {//NUEVO
-												//Limitar el número de grupos o de canales que se crean al limite establecido en MAX_ADD_CHANNELS
-												Collection<Group> groupList = new ArrayList<>(site.getGroups());
-												List<Group> limitedGroupList = groupList.stream()
-														.limit(MAX_ADD_CHANNELS)
-														.collect(Collectors.toList());
-												for (Group g: limitedGroupList){
-													try {
-														//exclude automatic lesson groups
-														if (g.getTitle().startsWith("Access:")) {
-															continue;
-														}
-
-														//as Team is new, create all Channels (30 channels maximum)
-														if (countNumberOfChannelsCreated < MAX_CHANNELS) {
-															String createdChannelId = microsoftCommonService.createChannel(teamId, g.getTitle(), credentials.getEmail());
-															countNumberOfChannelsCreated++;
-
-															if (StringUtils.isNotBlank(createdChannelId)) {
-																//create relationship
-																GroupSynchronization gs = GroupSynchronization.builder()
-																		.siteSynchronization(ss)
-																		.groupId(g.getId())
-																		.channelId(createdChannelId)
-																		.build();
-
-																log.debug("saving NEW: groupId={}, channelId={}, title={}", g.getId(), createdChannelId, g.getTitle());
-																microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
-															}
-														} else {
-															log.info("Only the first" + MAX_CHANNELS + "channels of the team have been created");
-														}
-													} catch (Exception e) {
-														log.error("Unexpected exception creating channel: {}", e.getMessage());
-													}
-
-												}
-											}
 										}
 										autoConfigSessionBean.increaseCounter();
 									} else {
@@ -370,11 +332,11 @@ public class AutoConfigController {
 								try {
 									if(site.getGroups().size() > 0) {
 										//get existing channels from Team
-										if(site.getGroups().size() <= MAX_CHANNELS) { //NUEVO
 											Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId(), true);
+											List<Group> groupsToProcess = limitGroups(site.getGroups());
 											int countNumberOfChannelsCreated = 0;
 											//get existing groups from site
-											for (Group g : site.getGroups()) {
+											for (Group g : groupsToProcess) {
 												//exclude automatic lesson groups
 												if (g.getTitle().startsWith("Access:")) {
 													continue;
@@ -406,45 +368,6 @@ public class AutoConfigController {
 												}
 												countNumberOfChannelsCreated++;
 											}
-										} else { // AQUÍ PARA LIMITAR LOS GRUPOS QUE SE SINCRONICEN EN CASO DE SER > 30 (NUEVO)
-											Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId(), true);
-											int countNumberOfChannelsCreated = 0;
-											Collection<Group> groupList = new ArrayList<>(site.getGroups());
-											List<Group> limitedGroupList = groupList.stream()
-													.limit(MAX_ADD_CHANNELS)
-													.collect(Collectors.toList());
-											for (Group g: limitedGroupList){
-												//Meter todo lo que hay dentro del for de los grupos, aunque igual extraerlo en un método??
-												//exclude automatic lesson groups
-												if (g.getTitle().startsWith("Access:")) {
-													continue;
-												}
-												//check if any group matches any channel
-												MicrosoftChannel channel = channelsMap.values().stream().filter(c -> c.getName().equalsIgnoreCase(g.getTitle())).findAny().orElse(null);
-												String channelId = (channel != null) ? channel.getId() : null;
-
-												//match NOT found --> Create channel (if configuration allows it)
-												if (channel == null && autoConfigSessionBean.isNewChannel() && countNumberOfChannelsCreated < MAX_CHANNELS) {
-													channelId = microsoftCommonService.createChannel(ss.getTeamId(), g.getTitle(), credentials.getEmail());
-												}
-												if (StringUtils.isNotBlank(channelId)) {
-													//create relationship
-													GroupSynchronization gs = GroupSynchronization.builder()
-															.siteSynchronization(ss)
-															.groupId(g.getId())
-															.channelId(channelId)
-															.build();
-
-													//check if Group Synchronization does not exist
-													GroupSynchronization aux_gs = microsoftSynchronizationService.getGroupSynchronization(gs);
-													if (aux_gs == null) {
-														log.debug("saving group-channel: groupId={}, channelId={}", g.getId(), channelId);
-														microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
-													}
-												}
-												countNumberOfChannelsCreated++;
-											}
-										}
 									}
 								} catch (MicrosoftCredentialsException e) {
 									log.error("MicrosoftCredentialsException in confirm thread");
@@ -463,6 +386,13 @@ public class AutoConfigController {
 		}).start();
 		
 		return true;
+	}
+
+	private List<Group> limitGroups(Collection<Group> groups) {
+		// Limita a 20 grupos si hay más de 30 grupos
+		return groups.size() >= MAX_CHANNELS ?
+				groups.stream().limit(MAX_ADD_CHANNELS).collect(Collectors.toList()) :
+				new ArrayList<>(groups);
 	}
 	
 	@GetMapping(value = {"/autoConfig-status"}, produces = MediaType.APPLICATION_JSON_VALUE)
