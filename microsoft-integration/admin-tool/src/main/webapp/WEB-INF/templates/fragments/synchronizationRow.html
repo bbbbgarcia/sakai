@@ -86,6 +86,12 @@
 <th:block th:fragment="groupRows(siteRow)" th:with="df=#{date.format}">
 	<th:block th:if="${siteRow.groupSynchronizationsList?.size() > 0}">
 		<div class="group-table">
+			<div th:if="${ siteRow.creationStatus == T(org.sakaiproject.microsoft.api.data.CreationStatus).PARTIAL_OK}"
+				 style="background-color: #ffffcc; color: #a89e03; border: 1px solid #a89e03; padding: 10px; border-radius: 5px; margin-bottom: 10px; align-items: center;"
+				 class="yellow-box-alert">
+				<span th:text="#{group_synch.limit_reach}"></span>
+				<i class="fa fa-users"></i>
+			</div>
 			<div class="row table-space">
 				<div class="col-xs-4">
 					<span class="text-bold" th:text="#{group}"></span>

@@ -41,7 +41,7 @@
 								<div class="col-sm-2 text-center" th:if="${entry.channelId != ''}">
 									<i role="button"
 									   th:id="|btn_${entry.id}|"
-									   class="fa fa-solid fa-trash"
+									   class="fa fa-solid fa-minus"
 									   tabindex="0"
 									   th:data-url="@{/delete-groupSynchronization/{id}(id=${entry.id})}"
 									   onclick="deleteGroupSynchronization(this, this.getAttribute('data-url'))">
@@ -133,7 +133,7 @@
 				const row_id = btn.id.replace('btn_', 'row_');
 				
 				const classes = btn.classList;
-				classes.remove('fa-trash');
+				classes.remove('fa-minus');
 				classes.add('fa-spinner', 'fa-spin');
 				
 				let response = await fetch(url);
@@ -158,7 +158,7 @@
 				}
 
 				classes.remove('fa-spinner', 'fa-spin');
-				!uniqueRelation && classes.add('fa-trash');
+				!uniqueRelation && classes.add('fa-minus');
 			}
 
 			function checkNewChannel(id) {
