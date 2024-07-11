@@ -38,7 +38,7 @@
 
 								<div class="col-sm-5" th:text="${channelsMap[entry.channelId]?.name} ?: '???'"></div>
 
-								<div class="col-sm-2 text-center">
+								<div class="col-sm-2 text-center" th:if="${entry.channelId != ''}">
 									<i role="button"
 									   th:id="|btn_${entry.id}|"
 									   class="fa fa-solid fa-trash"
@@ -138,20 +138,27 @@
 				
 				let response = await fetch(url);
 				let data = await response.json();
-				
+
+				let uniqueRelation = true;
+
 				if(data == true){
+					const rows = document.querySelectorAll('div[id^="row_"]');
 					const row = document.getElementById(row_id);
-					const grouprow = row.parentElement.remove();
-					
-					if(document.querySelectorAll('div[id^="row_"]').length == 0){
+
+					uniqueRelation = [...rows].filter(r => r.children[0].innerHTML == (row.children[0].innerHTML)).length == 1
+
+					const grouprow = uniqueRelation ? row.children[1].innerHTML = '???' : row.parentElement.remove();
+
+					if(rows.length == 0){
 						document.getElementById('empty_table').classList.remove('hidden');
 						document.getElementById('table-block').classList.add('hidden');
 					}
 				} else {
-					classes.remove('fa-spinner', 'fa-spin');
-					classes.add('fa-trash');
 					showError();
 				}
+
+				classes.remove('fa-spinner', 'fa-spin');
+				!uniqueRelation && classes.add('fa-trash');
 			}
 
 			function checkNewChannel(id) {

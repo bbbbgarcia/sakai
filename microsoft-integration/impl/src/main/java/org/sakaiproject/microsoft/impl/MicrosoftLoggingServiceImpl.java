@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+
 @Slf4j
 @Transactional
 public class MicrosoftLoggingServiceImpl implements MicrosoftLoggingService {
@@ -35,6 +37,10 @@ public class MicrosoftLoggingServiceImpl implements MicrosoftLoggingService {
 	public void saveLog(MicrosoftLog log) {
 		microsoftLoggingRepository.save(log);
 	}
-	
+
+	/*@Override
+	public MicrosoftLog getSiteLog(String id) {
+		microsoftLoggingRepository.;
+	}*/
 	
 }

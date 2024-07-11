@@ -11,7 +11,22 @@
 	</div>
 	<!-- Microsoft Team Title -->
 	<div class="col-xs-2" th:title="#{team.id(${row.teamId})}">
-		<span th:text="${teamsMap[row.teamId]?.name} ?: '???'" />
+
+		<span th:if="${T(org.sakaiproject.microsoft.api.data.CreationStatus).KO != row.creationStatus && teamsMap[row.teamId] == null}" th:text="'???'"></span>
+			<div th:if="${teamsMap[row.teamId] != null || T(org.sakaiproject.microsoft.api.data.CreationStatus).KO == row.creationStatus}" >
+				<div th:switch="${row.creationStatus}" th:title="${row.creationStatus}">
+					<div  th:case="${T(org.sakaiproject.microsoft.api.data.CreationStatus).OK}"><span th:text="${teamsMap[row.teamId]?.name}"></span></div>
+					<div  th:case="${T(org.sakaiproject.microsoft.api.data.CreationStatus).KO}">
+						<span th:text="'Error general'"></span>
+						<i class="fa fa-solid fa-exclamation-triangle" style="color: #b53d3d;" th:title="'Error general'"></i>
+					</div>
+					<div  th:case="${T(org.sakaiproject.microsoft.api.data.CreationStatus).PARTIAL_OK}">
+						<span th:text="${teamsMap[row.teamId]?.name}" ></span>
+						<i class="fa fa-solid fa-exclamation-triangle" style="color: #a89e03;" th:title="'Límite de grupos alcanzado'"></i>
+					</div>
+				</div>
+			</div>
+
 		<a href='#'
 			th:if="${teamsMap[row.teamId]?.fullyCreated == false}"
 			th:title="#{team.id(${row.teamId})}"
@@ -39,13 +54,15 @@
 		<div style="color: grey;" th:case="${T(org.sakaiproject.microsoft.api.data.SynchronizationStatus).NONE}" th:text="#{status.NONE}" />
 		<div style="color: red;" th:case="${T(org.sakaiproject.microsoft.api.data.SynchronizationStatus).ERROR}" th:text="#{status.ERROR}" />
 		<div style="color: red;" th:case="${T(org.sakaiproject.microsoft.api.data.SynchronizationStatus).ERROR_GUEST}" th:text="#{status.ERROR_GUEST}" />
+		<div style="color: grey;" th:case="${T(org.sakaiproject.microsoft.api.data.SynchronizationStatus).NOT_AVAILABLE}" th:text="#{status.NOT_AVAILABLE}" />
+
 	</div>
 	<!-- Forced -->
 	<div class="col-xs-1 text-center">
 		<input type="checkbox" th:checked="${row.forced}" onchange="changeForced(this)" th:aria-label="#{forced}" />
 	</div>
 	<!-- Actions (Run, Edit Groups) -->
-	<div class="col-xs-1 multi-button">
+	<div class="col-xs-1 multi-button" th:if="${row.teamId != null && row.teamId != ''}">
 		<!-- Run -->
 		<a href="#" onclick="doRun(this)" class="run-button" th:classappend="(${today.isBefore(row.syncDateFrom)} or ${today.isAfter(row.syncDateTo)})? 'hidden'">
 			<i class="fa fa-play" tabindex="0" th:title="#{index.run}"></i>
@@ -56,6 +73,8 @@
 		<a th:href="@{/editGroupSynchronization/{id}(id=${row.id})}" th:title="#{index.edit_groups}">
 			<i class="fa fa-users"></i>
 		</a>
+	</div>
+	<div class="col-xs-1 multi-button" th:if="${row.teamId == null || row.teamId == ''}">
 	</div>
 	<!-- Select -->
 	<div class="col-xs-1 text-center">

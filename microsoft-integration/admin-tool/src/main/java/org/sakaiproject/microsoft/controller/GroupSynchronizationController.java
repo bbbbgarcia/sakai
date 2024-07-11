@@ -16,6 +16,7 @@
 package org.sakaiproject.microsoft.controller;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.sakaiproject.microsoft.api.MicrosoftCommonService;
 import org.sakaiproject.microsoft.api.MicrosoftConfigurationService;
 import org.sakaiproject.microsoft.api.MicrosoftSynchronizationService;
+import org.sakaiproject.microsoft.api.SakaiProxy;
 import org.sakaiproject.microsoft.api.data.MicrosoftChannel;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftGenericException;
 import org.sakaiproject.microsoft.api.model.GroupSynchronization;
@@ -69,6 +71,9 @@ public class GroupSynchronizationController {
 	
 	@Autowired
 	MicrosoftConfigurationService microsoftConfigurationService;
+
+	@Autowired
+	SakaiProxy sakaiProxy;
 	
 	private static final String REDIRECT_INDEX = "redirect:/index";
 	private static final String REDIRECT_EDIT_GROUP_SYNCH = "redirect:/editGroupSynchronization";
@@ -79,16 +84,35 @@ public class GroupSynchronizationController {
 	@GetMapping(value = {"/editGroupSynchronization/{siteSynchronizationId}"})
 	public String editGroupSynchronization(@PathVariable String siteSynchronizationId, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
 		SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteSynchronizationId).build(), true);
+		List<Group> gr = (List<Group>) sakaiProxy.getSite(ss.getSiteId()).getGroups();
+
+		/*TODO finalizar mañana union de grupos completos más sincronización*/
+
 		if(ss != null) {
 			model.addAttribute("siteSynchronizationId", siteSynchronizationId);
-			model.addAttribute("groupsMap", ss.getSite().getGroups().stream().collect(Collectors.toMap(Group::getId, Function.identity())));
+			model.addAttribute("groupsMap", gr.stream().collect(Collectors.toMap(Group::getId, Function.identity())));
 			model.addAttribute("channelsMap", microsoftCommonService.getTeamPrivateChannels(ss.getTeamId()));
 			model.addAttribute("siteTitle", ss.getSite().getTitle());
 			model.addAttribute("teamTitle", microsoftCommonService.getTeam(ss.getTeamId()).getName());
 			
 			List<GroupSynchronization> list = microsoftSynchronizationService.getAllGroupSynchronizationsBySiteSynchronizationId(siteSynchronizationId);
+			gr.stream()
+					.filter(g -> list.stream().noneMatch(item -> item.getGroupId().equals(g.getId())))
+					.map(g -> GroupSynchronization.builder()
+							.groupId(g.getId())
+							.channelId("")
+							.siteSynchronization(ss)
+							.build())
+					.forEach(list::add);
+
+			List<GroupSynchronization> sortedList = new ArrayList<>();
+			gr.forEach(g -> sortedList.addAll(
+					list.stream().filter(element -> element.getGroupId().equals(g.getId())).collect(Collectors.toList())
+					)
+			);
+
 			if(list != null && list.size() > 0) {
-				model.addAttribute("groupSynchronizations", list);
+				model.addAttribute("groupSynchronizations", sortedList);
 			}
 			
 	

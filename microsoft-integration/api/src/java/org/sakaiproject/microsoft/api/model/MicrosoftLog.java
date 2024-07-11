@@ -94,6 +94,8 @@ public class MicrosoftLog {
 	public static final String EVENT_GROUP_SYNCHRONIZATION = "event.group_synchronization";
 	public static final String EVENT_ADD_OWNER = "event.add_owner";
 
+	public static final String EVENT_AUTOCONFIG = "event.autoconfig";
+
 
 
 	public enum Status {

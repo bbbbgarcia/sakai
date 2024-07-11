@@ -255,8 +255,8 @@ public class SakaiProxyImpl implements SakaiProxy {
 		}
 		return ret;
 	}
-	
-	
+
+
 	// ------------------------------------------ GROUPS ----------------------------------------------------
 	@Override
 	public SakaiMembersCollection getGroupMembers(Group group, SakaiUserIdentifier key) {
@@ -283,7 +283,9 @@ public class SakaiProxyImpl implements SakaiProxy {
 		}
 		return ret;
 	}
-	
+
+
+
 	// ------------------------------------------ CALENDAR ----------------------------------------------------
 	@Override
 	public boolean existsCalendar(String reference) {
