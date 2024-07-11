@@ -18,13 +18,14 @@ package org.sakaiproject.microsoft.impl;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.apache.commons.lang3.StringUtils;
 import org.sakaiproject.messaging.api.MicrosoftMessage;
@@ -473,16 +474,18 @@ public class MicrosoftSynchronizationServiceImpl implements MicrosoftSynchroniza
 			log.debug("SS: siteId={}, teamId={} --> OUT OF DATE", ss.getSiteId(), ss.getTeamId());
 			return ret;
 		}
-		
+
+		List<MicrosoftLog> microsoftLogs = new ArrayList<>();
+
 		//save log
-		microsoftLoggingRepository.save(MicrosoftLog.builder()
+		microsoftLogs.add(MicrosoftLog.builder()
 				.event(MicrosoftLog.EVENT_SITE_SYNCRHO_START)
 				.status(MicrosoftLog.Status.OK)
 				.addData("siteId", ss.getSiteId())
 				.addData("teamId", ss.getTeamId())
 				.addData("forced", Boolean.toString(ss.isForced()))
 				.build());
-		
+
 		if(checkTeam(ss.getTeamId())) {
 			ret = SynchronizationStatus.OK;
 
@@ -735,13 +738,17 @@ public class MicrosoftSynchronizationServiceImpl implements MicrosoftSynchroniza
 		saveOrUpdateSiteSynchronization(ss);
 		
 		//save log
-		microsoftLoggingRepository.save(MicrosoftLog.builder()
+		microsoftLogs.add(MicrosoftLog.builder()
 				.event(MicrosoftLog.EVENT_SITE_SYNCRHO_END)
 				.status((ret == SynchronizationStatus.OK) ? MicrosoftLog.Status.OK : MicrosoftLog.Status.KO)
 				.addData("siteId", ss.getSiteId())
 				.addData("teamId", ss.getTeamId())
 				.addData("forced", Boolean.toString(ss.isForced()))
 				.build());
+
+		// save logs to db
+		microsoftLoggingRepository.save(microsoftLogs);
+
 		return ret;
 	}
 	
