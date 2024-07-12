@@ -8,10 +8,22 @@
 	<div th:if="${isAdmin}">
 		<div class="portletBody">
 			<div id="menu" th:include="fragments/menus :: main (editGroup)" />
-			<div class="page-header">
+			<div class="page-header" style="display: flex;gap: 77px;align-content: center;align-items: center;">
+				<div>
 				<h1 class="header-title" th:text="#{group_synch.new_title}"></h1>
 				<div th:utext="#{site_synch.selected_site(${siteTitle})}"></div>
 				<div th:utext="#{site_synch.selected_team(${teamTitle})}"></div>
+				</div>
+				<div style="display: flex; width: fit-content; height: fit-content; gap: 10px; align-items: end;">
+					<form id="channelForm" th:action="@{/channel}" method="post">
+						<label>
+							<span th:text="#{new_channel}">New Channel</span>
+							<input id="channelName" name="name" />
+						</label>
+						<input type="hidden" name="siteId" th:value="${siteSynchronizationId}" />
+						<button id="createChannelButton" type="submit" class="active">Create Channel</button>
+					</form>
+				</div>
 			</div>
 
 			<div th:include="fragments/common :: error" />
@@ -36,7 +48,24 @@
 								th:classappend="${stat.even} ? 'table-header' : ''">
 								<div class="col-sm-5" th:text="${groupsMap[entry.groupId]?.title} ?: '???'"></div>
 
-								<div class="col-sm-5" th:text="${channelsMap[entry.channelId]?.name} ?: '???'"></div>
+								<div class="col-sm-5">
+									<div th:if="${entry.channelId != ''}" th:text="${channelsMap[entry.channelId]?.name} ?: '???'"></div>
+									<div id="channelFormContainer" th:if="${entry.channelId == '' || channelsMap[entry.channelId]?.name == null}">
+										<form th:action="@{/add-groupSynchronization/{id}(id=${siteSynchronizationId})}"
+											  method="post"
+											  class="form-inline"
+											  onsubmit="return handleSubmit(this)">
+											<input type="hidden" name="groupId" th:value="${entry.groupId}" />
+											<select name="channelId" class="form-control" onchange="this.form.submit()">
+												<option value="" disabled selected>???</option>
+												<option th:each="channel : ${channelsMap.values()}"
+														th:value="${channel.id}"
+														th:text="${channel.name}">
+												</option>
+											</select>
+										</form>
+									</div>
+								</div>
 
 								<div class="col-sm-2 text-center" th:if="${entry.channelId != ''}">
 									<i role="button"
@@ -129,95 +158,96 @@
 		</div>
 		
 		<script th:inline="javascript">
-			async function deleteGroupSynchronization(btn, url) {
-				const row_id = btn.id.replace('btn_', 'row_');
-				
-				const classes = btn.classList;
-				classes.remove('fa-minus');
-				classes.add('fa-spinner', 'fa-spin');
-				
-				let response = await fetch(url);
-				let data = await response.json();
 
-				let uniqueRelation = true;
+                   async function deleteGroupSynchronization(btn, url) {
+                       const row_id = btn.id.replace('btn_', 'row_');
 
-				if(data == true){
-					const rows = document.querySelectorAll('div[id^="row_"]');
-					const row = document.getElementById(row_id);
+                       const classes = btn.classList;
+                       classes.remove('fa-minus');
+                       classes.add('fa-spinner', 'fa-spin');
 
-					uniqueRelation = [...rows].filter(r => r.children[0].innerHTML == (row.children[0].innerHTML)).length == 1
+                       let response = await fetch(url);
+                       let data = await response.json();
 
-					const grouprow = uniqueRelation ? row.children[1].innerHTML = '???' : row.parentElement.remove();
+                       let uniqueRelation = true;
 
-					if(rows.length == 0){
-						document.getElementById('empty_table').classList.remove('hidden');
-						document.getElementById('table-block').classList.add('hidden');
-					}
-				} else {
-					showError();
-				}
+                       if(data == true){
+                           const rows = document.querySelectorAll('div[id^="row_"]');
+                           const row = document.getElementById(row_id);
 
-				classes.remove('fa-spinner', 'fa-spin');
-				!uniqueRelation && classes.add('fa-minus');
-			}
+                           uniqueRelation = [...rows].filter(r => r.children[0].innerHTML == (row.children[0].innerHTML)).length == 1
 
-			function checkNewChannel(id) {
-				const newTeamRadio = document.getElementById(id);
-				const newTeamText = document.getElementsByName('newChannelName')[0];
+                           const grouprow = uniqueRelation ? row.children[1].innerHTML = '???' : row.parentElement.remove();
 
-				if (id == 'new-checkbox') {
-					if (newTeamRadio.checked) {
-						newTeamText.disabled = false;
-						newTeamText.required = true;
-						newTeamText.style.borderColor = 'black';
-					}
-				} else {
-					newTeamText.disabled = true;
-					newTeamText.required = false;
-					newTeamText.style.borderColor = '#E3E4E5';
-				}
-			}
-			
-			function showError() {
-				document.getElementById('delete_error').classList.remove('hidden');
-				setTimeout(() => { document.getElementById('delete_error').classList.add('hidden') }, 10000);
-			}
+                           if(rows.length == 0){
+                               document.getElementById('empty_table').classList.remove('hidden');
+                               document.getElementById('table-block').classList.add('hidden');
+                           }
+                       } else {
+                           showError();
+                       }
 
-			var groupTimeoutId = null;
-			var channelTimeoutId = null;
-			function validateForm() {
-				var errorContainer = document.querySelector('#error-banner');
+                       classes.remove('fa-spinner', 'fa-spin');
+                       !uniqueRelation && classes.add('fa-minus');
+                   }
 
-				const groupSelected = document.querySelector('input[name="selectedGroupId"]:checked');
-				const channelSelected = document.querySelector('input[name="selectedChannelId"]:checked');
+                   function checkNewChannel(id) {
+                       const newTeamRadio = document.getElementById(id);
+                       const newTeamText = document.getElementsByName('newChannelName')[0];
 
-				if (!groupSelected) {
-					if(groupTimeoutId != null){
-						clearTimeout(groupTimeoutId);
-					}
-					var errorGroup = createError(errorContainer);
-					errorGroup.innerHTML = '[(#{error.groups})]';
-					groupTimeoutId = setTimeout(() => {console.log('Removing...'); errorGroup.remove() }, 5000);
-					return false;
-				}
+                       if (id == 'new-checkbox') {
+                           if (newTeamRadio.checked) {
+                               newTeamText.disabled = false;
+                               newTeamText.required = true;
+                               newTeamText.style.borderColor = 'black';
+                           }
+                       } else {
+                           newTeamText.disabled = true;
+                           newTeamText.required = false;
+                           newTeamText.style.borderColor = '#E3E4E5';
+                       }
+                   }
 
-				if (!channelSelected) {
-					if(channelTimeoutId != null){
-						clearTimeout(channelTimeoutId);
-					}
-					var errorChannel = createError(errorContainer);
-					errorChannel.innerHTML = '[(#{error.channel})]';
-					channelTimeoutId = setTimeout(() => {console.log('Removing...'); errorChannel.remove() }, 10000);
-					return false;
-				}
+                   function showError() {
+                       document.getElementById('delete_error').classList.remove('hidden');
+                       setTimeout(() => { document.getElementById('delete_error').classList.add('hidden') }, 10000);
+                   }
 
-				return true;
-			}
+                   var groupTimeoutId = null;
+                   var channelTimeoutId = null;
+                   function validateForm() {
+                       var errorContainer = document.querySelector('#error-banner');
 
-			const parentDiv = document.querySelector('#row-container');
+                       const groupSelected = document.querySelector('input[name="selectedGroupId"]:checked');
+                       const channelSelected = document.querySelector('input[name="selectedChannelId"]:checked');
 
-			parentDiv.addEventListener('click', handleButtonClick);
-			parentDiv.addEventListener('keypress', handleButtonClick);
+                       if (!groupSelected) {
+                           if(groupTimeoutId != null){
+                               clearTimeout(groupTimeoutId);
+                           }
+                           var errorGroup = createError(errorContainer);
+                           errorGroup.innerHTML = '[(#{error.groups})]';
+                           groupTimeoutId = setTimeout(() => {console.log('Removing...'); errorGroup.remove() }, 5000);
+                           return false;
+                       }
+
+                       if (!channelSelected) {
+                           if(channelTimeoutId != null){
+                               clearTimeout(channelTimeoutId);
+                           }
+                           var errorChannel = createError(errorContainer);
+                           errorChannel.innerHTML = '[(#{error.channel})]';
+                           channelTimeoutId = setTimeout(() => {console.log('Removing...'); errorChannel.remove() }, 10000);
+                           return false;
+                       }
+
+                       return true;
+                   }
+
+                   const parentDiv = document.querySelector('#row-container');
+
+                   parentDiv.addEventListener('click', handleButtonClick);
+                   parentDiv.addEventListener('keypress', handleButtonClick);
 		</script>
 	</div>
 </body>
