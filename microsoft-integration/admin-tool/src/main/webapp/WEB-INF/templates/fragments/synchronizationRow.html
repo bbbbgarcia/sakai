@@ -17,12 +17,12 @@
 				<div th:switch="${row.creationStatus}" th:title="${row.creationStatus}">
 					<div  th:case="${T(org.sakaiproject.microsoft.api.data.CreationStatus).OK}"><span th:text="${teamsMap[row.teamId]?.name}"></span></div>
 					<div  th:case="${T(org.sakaiproject.microsoft.api.data.CreationStatus).KO}">
-						<span th:text="'Error general'"></span>
-						<i class="fa fa-solid fa-exclamation-triangle" style="color: #b53d3d;" th:title="'Error general'"></i>
+						<span th:text="#{error.general_failure}"></span>
+						<i class="fa fa-solid fa-exclamation-triangle" style="color: #b53d3d;" th:title="#{error.general_failure}"></i>
 					</div>
 					<div  th:case="${T(org.sakaiproject.microsoft.api.data.CreationStatus).PARTIAL_OK}">
 						<span th:text="${teamsMap[row.teamId]?.name}" ></span>
-						<i class="fa fa-solid fa-exclamation-triangle" style="color: #a89e03;" th:title="'Límite de grupos alcanzado'"></i>
+						<i class="fa fa-solid fa-exclamation-triangle" style="color: #a89e03;" th:title="#{error.channel_number_limit_reached}"></i>
 					</div>
 				</div>
 			</div>
@@ -55,7 +55,6 @@
 		<div style="color: red;" th:case="${T(org.sakaiproject.microsoft.api.data.SynchronizationStatus).ERROR}" th:text="#{status.ERROR}" />
 		<div style="color: red;" th:case="${T(org.sakaiproject.microsoft.api.data.SynchronizationStatus).ERROR_GUEST}" th:text="#{status.ERROR_GUEST}" />
 		<div style="color: grey;" th:case="${T(org.sakaiproject.microsoft.api.data.SynchronizationStatus).NOT_AVAILABLE}" th:text="#{status.NOT_AVAILABLE}" />
-
 	</div>
 	<!-- Forced -->
 	<div class="col-xs-1 text-center">

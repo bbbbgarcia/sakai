@@ -124,7 +124,7 @@ public class MainController {
 		
 		List<SiteSynchronization> list = microsoftSynchronizationService.getAllSiteSynchronizations(true);
 		Map<String, MicrosoftTeam> map = microsoftCommonService.getTeams();
-		
+
 		//filter elements
 		if(StringUtils.isNotBlank(search)) {
 			String lcSearch = search.toLowerCase();

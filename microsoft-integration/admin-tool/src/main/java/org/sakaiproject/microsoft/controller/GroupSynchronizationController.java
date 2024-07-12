@@ -15,9 +15,7 @@
  */
 package org.sakaiproject.microsoft.controller;
 
-import java.nio.channels.Channel;
 import java.text.MessageFormat;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -38,9 +36,7 @@ import org.sakaiproject.microsoft.controller.auxiliar.GroupSynchronizationReques
 import org.sakaiproject.site.api.Group;
 import org.sakaiproject.util.ResourceLoader;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -53,7 +49,6 @@ import static org.sakaiproject.microsoft.api.MicrosoftCommonService.MAX_CHANNELS
 
 /**
  * GroupSynchronizationController
- * <p>
  * This is the controller used by Spring MVC to handle Group Synchronizations related requests
  */
 @Slf4j
@@ -83,44 +78,43 @@ public class GroupSynchronizationController {
     @GetMapping(value = {"/editGroupSynchronization/{siteSynchronizationId}"})
     public String editGroupSynchronization(@PathVariable String siteSynchronizationId, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
         SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteSynchronizationId).build(), true);
-        List<Group> gr = (List<Group>) sakaiProxy.getSite(ss.getSiteId()).getGroups();
 
-        /*TODO finalizar mañana union de grupos completos más sincronización*/
-
-        if (ss != null) {
-            model.addAttribute("siteSynchronizationId", siteSynchronizationId);
-            model.addAttribute("groupsMap", gr.stream().collect(Collectors.toMap(Group::getId, Function.identity())));
-            model.addAttribute("channelsMap", microsoftCommonService.getTeamPrivateChannels(ss.getTeamId()));
-            model.addAttribute("siteTitle", ss.getSite().getTitle());
-            model.addAttribute("teamTitle", microsoftCommonService.getTeam(ss.getTeamId()).getName());
-
-            List<GroupSynchronization> list = microsoftSynchronizationService.getAllGroupSynchronizationsBySiteSynchronizationId(siteSynchronizationId);
-            gr.stream()
-                    .filter(g -> list.stream().noneMatch(item -> item.getGroupId().equals(g.getId())))
-                    .map(g -> GroupSynchronization.builder()
-                            .groupId(g.getId())
-                            .channelId("")
-                            .siteSynchronization(ss)
-                            .build())
-                    .forEach(list::add);
-
-            List<GroupSynchronization> sortedList = new ArrayList<>();
-            gr.forEach(g -> sortedList.addAll(
-                            list.stream().filter(element -> element.getGroupId().equals(g.getId())).collect(Collectors.toList())
-                    )
-            );
-
-            if (list != null && list.size() > 0) {
-                model.addAttribute("groupSynchronizations", sortedList);
-            }
-
-
-            return EDIT_GROUP_SYNCH_TEMPLATE;
+        if (ss == null) {
+            redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.site_synchronization_not_found"));
+            return REDIRECT_INDEX;
         }
 
-        redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.site_synchronization_not_found"));
-        return REDIRECT_INDEX;
+        List<Group> gr = (List<Group>) sakaiProxy.getSite(ss.getSiteId()).getGroups();
+
+        model.addAttribute("siteSynchronizationId", siteSynchronizationId);
+        model.addAttribute("groupsMap", gr.stream().collect(Collectors.toMap(Group::getId, Function.identity())));
+        model.addAttribute("channelsMap", microsoftCommonService.getTeamPrivateChannels(ss.getTeamId()));
+        model.addAttribute("siteTitle", ss.getSite().getTitle());
+        model.addAttribute("teamTitle", microsoftCommonService.getTeam(ss.getTeamId()).getName());
+
+        List<GroupSynchronization> list = microsoftSynchronizationService.getAllGroupSynchronizationsBySiteSynchronizationId(siteSynchronizationId);
+        gr.stream()
+                .filter(g -> list.stream().noneMatch(item -> item.getGroupId().equals(g.getId())))
+                .map(g -> GroupSynchronization.builder()
+                        .groupId(g.getId())
+                        .channelId("")
+                        .siteSynchronization(ss)
+                        .build())
+                .forEach(list::add);
+
+        List<GroupSynchronization> sortedList = new ArrayList<>();
+        gr.forEach(g -> sortedList.addAll(
+                        list.stream().filter(element -> element.getGroupId().equals(g.getId())).collect(Collectors.toList())
+                )
+        );
+
+        if (list.size() > 0) {
+            model.addAttribute("groupSynchronizations", sortedList);
+        }
+
+        return EDIT_GROUP_SYNCH_TEMPLATE;
     }
+
 
     @PostMapping(path = {"/add-groupSynchronization/{siteSynchronizationId}"}, consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE})
     public String saveGroupSynchronization(@PathVariable String siteSynchronizationId, @ModelAttribute GroupSynchronizationRequest payload, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {

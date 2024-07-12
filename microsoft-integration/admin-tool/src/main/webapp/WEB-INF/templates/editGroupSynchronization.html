@@ -28,6 +28,7 @@
 
 			<div th:include="fragments/common :: error" />
 			<div class="sak-banner-error hidden" id="delete_error" th:text="#{error.delete_group_synchronization}"></div>
+			<div id="error-banner"></div>
 
 			<div:block id="table-block" th:if="${groupSynchronizations != null}" class="container-fluid">
 				<div class="container-fluid">
@@ -39,35 +40,49 @@
 							<span class="text-bold" th:text="#{channel}"></span>
 						</div>
 						<div class="col-sm-2 text-center">
-							<span th:text="#{delete}" class="text-bold"></span>
+							<span th:text="#{index.actions}" class="text-bold"></span>
 						</div>
 					</div>
 					<div id="row-container" class="row-list">
+						<div class="row table-space table-row">
+
+						<div class="col-sm-5">
+								<select name="new_group" id="selectedGroupId">
+									<option value="none" disabled selected th:text="#{none}"/>
+									<option th:each="group : ${groupsMap}"
+											th:value="${group.key}"
+											name="selectedGroupId"
+											th:text="${group.value.title}">
+								</select>
+							</div>
+
+							<div class="col-sm-5">
+								<select name="new_channel" id="selectedChannelId">
+									<option value="none" disabled selected th:text="#{none}"/>
+									<option th:each="channel : ${channelsMap.values()}"
+											th:value="${channel.id}"
+											name="selectedChannelId"
+											th:text="${channel.name}">
+									</option>
+								</select>
+							</div>
+
+							<div class="col-sm-2 text-center">
+									<i role="button"
+									   th:id="|btn_add_new-sync|"
+									   class="fa fa-solid fa-plus"
+									   tabindex="0"
+									   th:data-url="@{/add-groupSynchronization/{id}(id=${siteSynchronizationId})}"
+									   onclick="createGroupSynchronization(this, this.getAttribute('data-url'))"
+									></i>
+							</div>
+							</div>
 						<div th:each="entry, stat: ${groupSynchronizations}" th:id="|groupSynchronization[${stat.index}]|">
 							<div class="row table-space table-row" th:id="|row_${entry.id}|"
 								th:classappend="${stat.even} ? 'table-header' : ''">
 								<div class="col-sm-5" th:text="${groupsMap[entry.groupId]?.title} ?: '???'"></div>
-
-								<div class="col-sm-5">
-									<div th:if="${entry.channelId != ''}" th:text="${channelsMap[entry.channelId]?.name} ?: '???'"></div>
-									<div id="channelFormContainer" th:if="${entry.channelId == '' || channelsMap[entry.channelId]?.name == null}">
-										<form th:action="@{/add-groupSynchronization/{id}(id=${siteSynchronizationId})}"
-											  method="post"
-											  class="form-inline"
-											  onsubmit="return handleSubmit(this)">
-											<input type="hidden" name="groupId" th:value="${entry.groupId}" />
-											<select name="channelId" class="form-control" onchange="this.form.submit()">
-												<option value="" disabled selected>???</option>
-												<option th:each="channel : ${channelsMap.values()}"
-														th:value="${channel.id}"
-														th:text="${channel.name}">
-												</option>
-											</select>
-										</form>
-									</div>
-								</div>
-
-								<div class="col-sm-2 text-center" th:if="${entry.channelId != ''}">
+								<div class="col-sm-5" th:text="${channelsMap[entry.channelId]?.name ?: '???'}"></div>
+								<div th:if="${entry.channelId != ''}" class="col-sm-2 text-center" >
 									<i role="button"
 									   th:id="|btn_${entry.id}|"
 									   class="fa fa-solid fa-minus"
@@ -85,79 +100,50 @@
 		</div>
 
 		<div class="act">
-			<button type="button" class="active" data-toggle="modal" data-target="#groupSynchronization-modal"
-				th:text="#{group_synch.add_synch}"></button>
 			<input type='button' th:value="#{back}" th:onclick="'window.location.href = \'' +@{/index}+ '\''" />
 		</div>
 
-		<div id="groupSynchronization-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="groupSynchronizationModalLabel" aria-hidden="true">
-			<div class="modal-dialog" role="document">
-				<form id="groupSynchForm" th:action="@{/add-groupSynchronization/{id}(id=${siteSynchronizationId})}" method="post" onsubmit="return validateForm()">
-					<div class="modal-content">
-						<div class="modal-header">
-							<button type="button" class="close" data-dismiss="modal" th:aria-label="#{close}">
-								<span aria-hidden="true">&times;</span>
-							</button>
-							<h4 class="modal-title" id="groupSynchronizationModalLabel" th:text="#{group_synch.new_title}"></h4>
-						</div>
-
-						<div class="modal-body">
-							<div id="error-banner"></div>
-							<div class="container-fluid">
-								<div class="row">
-									<div class="panel-body col-sm-6">
-										<div class="col-title" th:utext="#{group_synch.groups_from_site(${siteTitle})}"></div>
-										<th:block th:if="${groupsMap.size() > 0}">
-											<ul class="list-unstyled">
-												<li th:each="group : ${groupsMap}">
-													<label>
-														<input type='radio' name="selectedGroupId" th:value="${group.key}" />
-														<span th:text="${group.value.title}" />
-													</label>
-												</li>
-											</ul>
-										</th:block>
-										<div th:if="${groupsMap.size() == 0}" th:text="#{group_synch.no_groups}"></div>
-									</div>
-
-									<div class="panel-body col-sm-6">
-										<div class="col-title" th:utext="#{group_synch.channels_from_team(${teamTitle})}"></div>
-										<ul class="list-unstyled">
-											<li>
-												<div>
-													<label>
-														<input id="new-checkbox" type='radio' name="selectedChannelId" value="NEW" onchange="checkNewChannel(this.id)" />
-														<span th:text="#{new}"></span>
-													</label>
-													<input type="text" name="newChannelName" disabled />
-												</div>
-											</li>
-
-											<th:block th:if="${channelsMap.size() > 0}">
-												<li th:each="channel : ${channelsMap}">
-													<label>
-														<input type='radio' name="selectedChannelId" th:value="${channel.key}" onchange="checkNewChannel()" />
-														<span th:text="${channel.value.name}" />
-													</label>
-												</li>
-											</th:block>
-											<li th:if="${channelsMap.size() == 0}" th:text="#{group_synch.no_channels}"></li>
-										</ul>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<div class="modal-footer act">
-							<input type="submit" class="active" th:value="#{save}">
-							<button type="button" class="btn btn-secondary" data-dismiss="modal" th:text="#{close}"></button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-		
 		<script th:inline="javascript">
+			async function createGroupSynchronization(btn, url) {
+
+				let groupId = document.getElementById('selectedGroupId').value
+				let channelId = document.getElementById('selectedChannelId').value
+
+				if(!validateForm()) {
+					return;
+				}
+
+				let update = {
+					selectedGroupId: groupId,
+					selectedChannelId: channelId
+				}
+
+				const classes = btn.classList;
+				classes.remove('fa-minus');
+				classes.add('fa-spinner', 'fa-spin');
+
+				var formBody = [];
+				for (var property in update) {
+				  var encodedKey = encodeURIComponent(property);
+				  var encodedValue = encodeURIComponent(update[property]);
+				  formBody.push(encodedKey + "=" + encodedValue);
+				}
+				formBody = formBody.join("&");
+
+				let response = await fetch(url, {
+					method: 'POST',
+					headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+					},
+					body: formBody
+				});
+
+				if (response.status < 300)
+					location = response.url
+
+				classes.add('fa-minus');
+				classes.remove('fa-spinner', 'fa-spin');
+			}
 
                    async function deleteGroupSynchronization(btn, url) {
                        const row_id = btn.id.replace('btn_', 'row_');
@@ -218,10 +204,10 @@
                    function validateForm() {
                        var errorContainer = document.querySelector('#error-banner');
 
-                       const groupSelected = document.querySelector('input[name="selectedGroupId"]:checked');
-                       const channelSelected = document.querySelector('input[name="selectedChannelId"]:checked');
+						const groupSelected = document.getElementById('selectedGroupId').value
+						const channelSelected = document.getElementById('selectedChannelId').value
 
-                       if (!groupSelected) {
+                       if (groupSelected == 'none') {
                            if(groupTimeoutId != null){
                                clearTimeout(groupTimeoutId);
                            }
@@ -231,7 +217,7 @@
                            return false;
                        }
 
-                       if (!channelSelected) {
+                       if (channelSelected  == 'none') {
                            if(channelTimeoutId != null){
                                clearTimeout(channelTimeoutId);
                            }
