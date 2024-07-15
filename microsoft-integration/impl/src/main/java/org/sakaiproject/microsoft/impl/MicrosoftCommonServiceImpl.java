@@ -1026,7 +1026,7 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
     @Override
     public Map<String, MicrosoftChannel> getTeamPrivateChannels(String teamId, boolean force) throws MicrosoftCredentialsException {
         if (!force) {
-            // Obtener canales desde Microsoft
+            // get microsoft channels
             List<Channel> microsoftChannelsList = new ArrayList<>();
             microsoftChannelsList = graphClient.teams(teamId)
                     .channels()
@@ -1036,7 +1036,7 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
                     .get()
                     .getCurrentPage();
 
-            // Crear un conjunto de IDs de los canales obtenidos de Microsoft
+            // Create a set of channel IDs obtained from Microsoft
             Set<String> microsoftChannelIds = new HashSet<>();
             for (Channel channel : microsoftChannelsList) {
                 microsoftChannelIds.add(channel.id);
