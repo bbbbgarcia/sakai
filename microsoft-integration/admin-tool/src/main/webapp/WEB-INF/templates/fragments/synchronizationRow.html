@@ -1,13 +1,13 @@
 <th:block th:fragment="siteRow(row)" th:with="df=#{date.format}">
 	<!-- Sakai Site Title -->
 	<div class="col-xs-2">
-		<th:block th:if="${row.groupSynchronizationsList?.size() > 0}">
+		<th:block th:if="${row.groupSynchronizationsList?.size() > 0 && teamsMap[row.teamId] != null}">
 			<div role="button" th:title="#{site.id(${row.siteId})}" th:onclick="toggleGroupRow([[${row.id}]])" tabindex="0">
 				<i th:id="|toggleIcon_${row.id}|" class="fa fa-caret-right"></i>
 				<span th:text="${row?.site?.title} ?: '???'"></span>
 			</div>
 		</th:block>
-		<span th:if="${row.groupSynchronizationsList?.size() == 0}" class="site-title-margin" th:text="${row?.site?.title} ?: '???'"></span>
+		<span th:if="${row.groupSynchronizationsList?.size() == 0 || teamsMap[row.teamId] == null}" class="site-title-margin" th:text="${row?.site?.title} ?: '???'"></span>
 	</div>
 	<!-- Microsoft Team Title -->
 	<div class="col-xs-2" th:title="#{team.id(${row.teamId})}">
