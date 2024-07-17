@@ -198,6 +198,19 @@ public class MicrosoftSynchronizationServiceImpl implements MicrosoftSynchroniza
 				.collect(Collectors.toList());
 		return result;
 	}
+
+	@Override
+	public List<SiteSynchronization> getLinkedSiteSynchronizations(boolean fillSite) {
+		List<SiteSynchronization> result = StreamSupport.stream(microsoftSiteSynchronizationRepository.findDistinctByTeam("").spliterator(), false)
+				.map(ss -> {
+					if(fillSite) {
+						ss.setSite(sakaiProxy.getSite(ss.getSiteId()));
+					}
+					return ss;
+				})
+				.collect(Collectors.toList());
+		return result;
+	}
 	
 	@Override
 	public SiteSynchronization getSiteSynchronization(SiteSynchronization ss) {

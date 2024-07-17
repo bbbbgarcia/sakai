@@ -80,7 +80,14 @@ public class MicrosoftSiteSynchronizationRepositoryImpl extends BasicSerializabl
 		.add(Restrictions.eq("teamId", teamId))
 		.list();
 	}
-	
+
+	@Override
+	public List<SiteSynchronization> findDistinctByTeam(String teamId) {
+		return (List<SiteSynchronization>)startCriteriaQuery()
+				.add(Restrictions.ne("teamId", teamId))
+				.list();
+	}
+
 	@Override
 	public long countSiteSynchronizationsByTeamId(String teamId, boolean forced) {
 		Criteria criteria = startCriteriaQuery()

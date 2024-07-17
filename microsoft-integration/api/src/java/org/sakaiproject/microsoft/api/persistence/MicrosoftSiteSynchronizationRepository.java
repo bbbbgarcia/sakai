@@ -26,6 +26,7 @@ public interface MicrosoftSiteSynchronizationRepository extends SerializableRepo
 	Optional<SiteSynchronization> findBySiteTeam(String siteId, String teamId);
 	List<SiteSynchronization> findBySite(String siteId);
 	List<SiteSynchronization> findByTeam(String teamId);
+	List<SiteSynchronization> findDistinctByTeam(String teamId);
 	List<String> findBySiteIdList(List<String> siteIds);
 	
 	long countSiteSynchronizationsByTeamId(String teamId, boolean forced);
