@@ -290,19 +290,19 @@ public class AutoConfigController {
 
         if (teamId != null) {
             boolean limitExceeded = site.getGroups().size() > MAX_CHANNELS;
+            List<Group> groupsToProcess = limitGroups(site.getGroups());
 
             if (limitExceeded) {
                 ss.setCreationStatus(CreationStatus.PARTIAL_OK);
             }
 
             microsoftSynchronizationService.saveOrUpdateSiteSynchronization(ss);
-            int countNumberOfChannelsCreated = 0;
-            for (Group g : site.getGroups()) {
+            for (Group g :  groupsToProcess) {
                 if (g.getTitle().startsWith("Access:")) {
                     continue;
                 }
 
-                if (!limitExceeded || countNumberOfChannelsCreated < MAX_ADD_CHANNELS) {
+
                     String createdChannelId = microsoftCommonService.createChannel(teamId, g.getTitle(), credentials.getEmail());
                     GroupSynchronization gs = GroupSynchronization.builder()
                             .siteSynchronization(ss)
@@ -310,8 +310,8 @@ public class AutoConfigController {
                             .channelId(createdChannelId)
                             .build();
                     microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
-                }
-                countNumberOfChannelsCreated++;
+
+
             }
         } else {
             ss.setStatus(SynchronizationStatus.NOT_AVAILABLE);
@@ -332,9 +332,8 @@ public class AutoConfigController {
 
         Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId(), true);
         List<Group> groupsToProcess = limitGroups(site.getGroups());
-        int countNumberOfChannelsCreated = 0;
 
-        for (Group g : site.getGroups()) {
+        for (Group g : groupsToProcess) {
             if (g.getTitle().startsWith("Access:")) {
                 continue;
             }
@@ -346,7 +345,7 @@ public class AutoConfigController {
 
             String channelId = (channel != null) ? channel.getId() : null;
 
-            if (channel == null && (!limitExceeded || countNumberOfChannelsCreated < MAX_ADD_CHANNELS)) {
+            if (channel == null && autoConfigSessionBean.isNewChannel()) {
                 channelId = microsoftCommonService.createChannel(ss.getTeamId(), g.getTitle(), credentials.getEmail());
             }
 
@@ -361,7 +360,6 @@ public class AutoConfigController {
                     microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
                 }
             }
-            countNumberOfChannelsCreated++;
         }
     }
 
