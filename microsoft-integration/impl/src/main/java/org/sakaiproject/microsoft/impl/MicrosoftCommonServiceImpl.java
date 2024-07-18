@@ -15,6 +15,10 @@
  */
 package org.sakaiproject.microsoft.impl;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -125,6 +129,9 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
     private static final String CACHE_DRIVE_ITEMS = "key::driveitems::";
     private static final String CACHE_DRIVE_ITEMS_USER = "key::driveitems-user::";
     private static final String CACHE_DRIVE_ITEMS_GROUP = "key::driveitems-group::";
+    private static final String CACHE_MEMBERS = "key::members::";
+    private static final String CACHE_USERS = "key::users::";
+    private static final String CACHE_INVITATION_USER = "key::invitations::";
     private static final String PERMISSION_READ = "read";
     private static final String PERMISSION_WRITE = "write";
     private static final String LINK_TYPE_EDIT = "edit";
@@ -282,6 +289,18 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
     @Override
     public MicrosoftUser getUserByEmail(String email) throws MicrosoftCredentialsException {
         try {
+            Map<String, MicrosoftUser> usersMap;
+            Cache.ValueWrapper cachedValue = getCache().get(CACHE_USERS);
+            if (cachedValue != null) {
+                usersMap = (Map<String, MicrosoftUser>) cachedValue.get();
+                for(MicrosoftUser user : usersMap.values()){
+                    if(user.getEmail().toLowerCase().equals(email)){
+                        return user;
+                    }
+                }
+            } else {
+                usersMap = new HashMap<>();
+            }
             UserCollectionPage pageCollection = getGraphClient().users()
                     .buildRequest()
                     .filter("mail eq '" + email + "'")
@@ -289,12 +308,15 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
                     .get();
             if (pageCollection != null && pageCollection.getCurrentPage().size() > 0) {
                 User u = pageCollection.getCurrentPage().get(0);
-                return MicrosoftUser.builder()
+                MicrosoftUser microsoftUser = MicrosoftUser.builder()
                         .id(u.id)
                         .name(u.displayName)
                         .email(u.mail)
                         .guest(MicrosoftUser.GUEST.equalsIgnoreCase(u.userType))
                         .build();
+
+                usersMap.put(microsoftUser.getId(), microsoftUser);
+                getCache().put(CACHE_USERS, usersMap);
             }
         } catch (MicrosoftCredentialsException e) {
             throw e;
@@ -307,16 +329,32 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
     @Override
     public MicrosoftUser getUserById(String id) throws MicrosoftCredentialsException {
         try {
+            Map<String, MicrosoftUser> usersMap;
+            Cache.ValueWrapper cachedValue = getCache().get(CACHE_USERS);
+            if (cachedValue != null) {
+                usersMap = (Map<String, MicrosoftUser>) cachedValue.get();
+                if (usersMap.containsKey(id)) {
+                    return usersMap.get(id);
+                }
+            } else {
+                usersMap = new HashMap<>();
+            }
+
             User u = getGraphClient().users(id)
                     .buildRequest()
                     .select("id,displayName,mail,userType")
                     .get();
-            return MicrosoftUser.builder()
+            MicrosoftUser microsoftUser = MicrosoftUser.builder()
                     .id(u.id)
                     .name(u.displayName)
                     .email(u.mail)
                     .guest(MicrosoftUser.GUEST.equalsIgnoreCase(u.userType))
                     .build();
+
+            usersMap.put(id, microsoftUser);
+            getCache().put(CACHE_USERS, usersMap);
+
+            return microsoftUser;
         } catch (MicrosoftCredentialsException e) {
             throw e;
         } catch (Exception e) {
@@ -335,6 +373,18 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
     @Override
     public MicrosoftUser createInvitation(String email, String redirectURL) throws MicrosoftGenericException {
         try {
+            Map<String, MicrosoftUser> userInvitationMap;
+            Cache.ValueWrapper cachedValue = getCache().get(CACHE_INVITATION_USER);
+            if (cachedValue != null){
+                userInvitationMap = (Map<String, MicrosoftUser>) cachedValue.get();
+                for (MicrosoftUser user : userInvitationMap.values()) {
+                    if (user.getEmail().toLowerCase().equals(email)) {
+                        return user;
+                    }
+                }
+            } else {
+                userInvitationMap = new HashMap<>();
+            }
             log.debug("CREATE INVITATION: email={}, redirectURL={}", email, redirectURL);
             if ("true".equals(microsoftConfigRepository.getConfigItemValueByKey("DEBUG"))) {
                 return MicrosoftUser.builder()
@@ -354,11 +404,15 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
 
             log.debug("INVITATION RESPONSE: id={}, userId={}, email={}, status={}", response.id, response.invitedUser.id, response.invitedUserEmailAddress, response.status);
 
-            return MicrosoftUser.builder()
+            MicrosoftUser microsoftUser = MicrosoftUser.builder()
                     .id(response.invitedUser.id)
                     .email(response.invitedUserEmailAddress)
                     .guest(true)
                     .build();
+
+            userInvitationMap.put(microsoftUser.getId(), microsoftUser);
+            userInvitationMap.put(CACHE_INVITATION_USER, microsoftUser);
+            return microsoftUser;
         } catch (MicrosoftCredentialsException e) {
             throw e;
         } catch (Exception e) {
@@ -690,6 +744,12 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
 
     @Override
     public MicrosoftMembersCollection getTeamMembers(String id, MicrosoftUserIdentifier key) throws MicrosoftCredentialsException {
+        Cache.ValueWrapper cachedValue = getCache().get(CACHE_MEMBERS);
+        if (cachedValue != null) {
+            MicrosoftMembersCollection membersMap = (MicrosoftMembersCollection) cachedValue.get();
+            return membersMap;
+        }
+
         MicrosoftMembersCollection ret = new MicrosoftMembersCollection();
         try {
             MicrosoftCredentials credentials = microsoftConfigRepository.getCredentials();
@@ -699,6 +759,7 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
                     .members()
                     .buildRequest()
                     .get();
+
             while (page != null) {
                 for (ConversationMember m : page.getCurrentPage()) {
                     AadUserConversationMember member = (AadUserConversationMember) m;
@@ -730,6 +791,8 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
                 if (builder == null) break;
                 page = builder.buildRequest().get();
             }
+
+            getCache().put(CACHE_MEMBERS, ret);
         } catch (MicrosoftCredentialsException e) {
             throw e;
         } catch (Exception ex) {

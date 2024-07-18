@@ -544,7 +544,6 @@ public class MicrosoftSynchronizationServiceImpl implements MicrosoftSynchroniza
 										.addData("teamId", ss.getTeamId())
 										.addData("groups", ss.getSite().getGroups().toString())
 										.build());
-								//break; ????
 							}
 							groupCounter++;
 						}
