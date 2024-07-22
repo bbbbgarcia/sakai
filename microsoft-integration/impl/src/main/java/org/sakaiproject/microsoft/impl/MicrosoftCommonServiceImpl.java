@@ -15,34 +15,39 @@
  */
 package org.sakaiproject.microsoft.impl;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import com.microsoft.graph.requests.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.microsoft.graph.content.BatchRequestContent;
+import com.microsoft.graph.content.BatchResponseContent;
+import com.microsoft.graph.http.HttpMethod;
+import com.microsoft.graph.models.*;
+import com.microsoft.graph.options.HeaderOption;
+import com.microsoft.graph.options.Option;
+import com.microsoft.graph.requests.ChannelCollectionPage;
+import com.microsoft.graph.requests.ChannelCollectionRequest;
+import com.microsoft.graph.requests.ChannelCollectionRequestBuilder;
+import com.microsoft.graph.requests.ChatMessageCollectionPage;
+import com.microsoft.graph.requests.ChatMessageCollectionRequestBuilder;
+import com.microsoft.graph.requests.ConversationMemberCollectionPage;
+import com.microsoft.graph.requests.ConversationMemberCollectionRequestBuilder;
+import com.microsoft.graph.requests.ConversationMemberCollectionResponse;
+import com.microsoft.graph.requests.DirectoryObjectCollectionWithReferencesPage;
+import com.microsoft.graph.requests.DirectoryObjectCollectionWithReferencesRequestBuilder;
+import com.microsoft.graph.requests.DriveItemCollectionPage;
+import com.microsoft.graph.requests.DriveItemCollectionRequestBuilder;
+import com.microsoft.graph.requests.DriveSharedWithMeCollectionPage;
+import com.microsoft.graph.requests.DriveSharedWithMeCollectionRequestBuilder;
+import com.microsoft.graph.requests.GraphServiceClient;
+import com.microsoft.graph.requests.GroupCollectionPage;
+import com.microsoft.graph.requests.GroupCollectionRequestBuilder;
+import com.microsoft.graph.requests.UserCollectionPage;
+import com.microsoft.graph.requests.UserCollectionRequestBuilder;
+import com.microsoft.graph.tasks.LargeFileUploadResult;
+import com.microsoft.graph.tasks.LargeFileUploadTask;
+import com.nimbusds.oauth2.sdk.util.StringUtils;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.messaging.api.MicrosoftMessage;
@@ -73,50 +78,29 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
-
-import com.microsoft.graph.tasks.LargeFileUploadTask;
-import com.microsoft.graph.tasks.LargeFileUploadResult;
-import com.microsoft.graph.models.AadUserConversationMember;
-import com.microsoft.graph.models.CallRecordingEventMessageDetail;
-import com.microsoft.graph.models.CallRecordingStatus;
-import com.microsoft.graph.models.Channel;
-import com.microsoft.graph.models.ChannelMembershipType;
-import com.microsoft.graph.models.ChatMessage;
-import com.microsoft.graph.models.ConversationMember;
-import com.microsoft.graph.models.DirectoryObject;
-import com.microsoft.graph.models.DriveItem;
-import com.microsoft.graph.models.DriveItemCreateLinkParameterSet;
-import com.microsoft.graph.models.DriveItemCreateUploadSessionParameterSet;
-import com.microsoft.graph.models.DriveItemInviteParameterSet;
-import com.microsoft.graph.models.DriveItemUploadableProperties;
-import com.microsoft.graph.models.DriveRecipient;
-import com.microsoft.graph.models.Folder;
-import com.microsoft.graph.models.Group;
-import com.microsoft.graph.models.Identity;
-import com.microsoft.graph.models.IdentitySet;
-import com.microsoft.graph.models.Invitation;
-import com.microsoft.graph.models.LobbyBypassScope;
-import com.microsoft.graph.models.LobbyBypassSettings;
-import com.microsoft.graph.models.MeetingParticipantInfo;
-import com.microsoft.graph.models.MeetingParticipants;
-import com.microsoft.graph.models.OnlineMeeting;
-import com.microsoft.graph.models.OnlineMeetingPresenters;
-import com.microsoft.graph.models.OnlineMeetingRole;
-import com.microsoft.graph.models.Permission;
-import com.microsoft.graph.models.PermissionGrantParameterSet;
-import com.microsoft.graph.models.Team;
-import com.microsoft.graph.models.TeamVisibilityType;
-import com.microsoft.graph.models.ThumbnailSet;
-import com.microsoft.graph.models.UploadSession;
-import com.microsoft.graph.models.User;
-import com.microsoft.graph.options.HeaderOption;
-import com.microsoft.graph.options.Option;
-import com.nimbusds.oauth2.sdk.util.StringUtils;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional
@@ -1088,16 +1072,18 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
 
     @Override
     public Map<String, MicrosoftChannel> getTeamPrivateChannels(String teamId, boolean force) throws MicrosoftCredentialsException {
+        Map<String, MicrosoftChannel> channelsMap = new HashMap<>();
+
+        ChannelCollectionPage page = getGraphClient().teams(teamId)
+                .channels()
+                .buildRequest()
+                .filter("membershipType eq 'private'")
+                .select("id,displayName,description")
+                .get();
+
         if (!force) {
             // get microsoft channels
-            List<Channel> microsoftChannelsList = new ArrayList<>();
-            microsoftChannelsList = graphClient.teams(teamId)
-                    .channels()
-                    .buildRequest()
-                    .filter("membershipType eq 'private'")
-                    .select("id,displayName,description")
-                    .get()
-                    .getCurrentPage();
+            List<Channel> microsoftChannelsList = page.getCurrentPage();
 
             // Create a set of channel IDs obtained from Microsoft
             Set<String> microsoftChannelIds = new HashSet<>();
@@ -1109,19 +1095,22 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
             if (cachedValue != null) {
                 Map<String, MicrosoftChannel> cachedChannels = (Map<String, MicrosoftChannel>) cachedValue.get();
                 cachedChannels.keySet().removeIf(channelId -> !microsoftChannelIds.contains(channelId));
-                return cachedChannels;
+                //return or update cache by ttl (?)
+                if (cachedChannels.values().size() == microsoftChannelIds.size()) {
+                    return cachedChannels;
+                } else {
+                    microsoftChannelsList.forEach(c -> channelsMap.put(c.id, MicrosoftChannel.builder()
+                            .id(c.id)
+                            .name(c.displayName)
+                            .description(c.description)
+                            .build()));
+                    getCache().put(CACHE_CHANNELS + teamId, channelsMap);
+                    return channelsMap;
+                }
             }
         }
 
-        Map<String, MicrosoftChannel> channelsMap = new HashMap<>();
-
         try {
-            ChannelCollectionPage page = getGraphClient().teams(teamId)
-                    .channels()
-                    .buildRequest()
-                    .filter("membershipType eq 'private'")
-                    .select("id,displayName,description")
-                    .get();
             while (page != null) {
                 for (Channel channel : page.getCurrentPage()) {
                     channelsMap.put(channel.id, MicrosoftChannel.builder()
@@ -1137,8 +1126,6 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
 
             //store in cache
             getCache().put(CACHE_CHANNELS + teamId, channelsMap);
-        } catch (MicrosoftCredentialsException e) {
-            throw e;
         } catch (Exception e) {
             log.debug("Error getting private channels for teamId={}", teamId);
         }
@@ -1153,19 +1140,7 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
             channel.displayName = formatMicrosoftString(name);
             channel.description = name;
 
-            User userOwner = getGraphClient().users(ownerEmail).buildRequest().get();
-            AadUserConversationMember conversationMember = new AadUserConversationMember();
-            conversationMember.oDataType = "#microsoft.graph.aadUserConversationMember";
-            conversationMember.roles = Arrays.asList(MicrosoftUser.OWNER);
-            conversationMember.additionalDataManager().put("user@odata.bind", new JsonPrimitive("https://graph.microsoft.com/v1.0/users('" + userOwner.id + "')"));
-
-            LinkedList<ConversationMember> membersList = new LinkedList<ConversationMember>();
-            membersList.add(conversationMember);
-
-            ConversationMemberCollectionResponse conversationMemberCollectionResponse = new ConversationMemberCollectionResponse();
-            conversationMemberCollectionResponse.value = membersList;
-            ConversationMemberCollectionPage conversationMemberCollectionPage = new ConversationMemberCollectionPage(conversationMemberCollectionResponse, null);
-            channel.members = conversationMemberCollectionPage;
+            channel.members = initializeChannelMembers(ownerEmail);
 
             Channel newChannel = getGraphClient().teams(teamId).channels()
                     .buildRequest()
@@ -1190,6 +1165,82 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
             log.debug("Error creating private channel ({}) in teamId={}", name, teamId);
         }
         return null;
+    }
+
+    @Override
+    public List<MicrosoftChannel> createChannels(List<org.sakaiproject.site.api.Group> groupsToProcess, String teamId, String ownerEmail) throws MicrosoftCredentialsException {
+        List<MicrosoftChannel> channels = new ArrayList<>();
+
+        ChannelCollectionRequest postChannel = graphClient.teams(teamId).channels()
+                .buildRequest();
+
+        ConversationMemberCollectionPage members = initializeChannelMembers(ownerEmail);
+        List<org.sakaiproject.site.api.Group> pendingChannels = groupsToProcess;
+
+        final int MAX_RETRY = 1;
+        int retryCount = 0;
+
+        //sometimes microsoft fails creating -> loop for retry failed ones
+        while (!pendingChannels.isEmpty() && retryCount < MAX_RETRY) {
+            BatchRequestContent batchRequestContent = new BatchRequestContent();
+
+            groupsToProcess.forEach(group -> {
+                Channel channel = new Channel();
+                channel.membershipType = ChannelMembershipType.PRIVATE;
+                channel.displayName = formatMicrosoftString(group.getTitle());
+                channel.description = group.getTitle();
+                channel.members = members;
+
+                batchRequestContent.addBatchRequestStep(postChannel, HttpMethod.POST, channel);
+            });
+
+            BatchResponseContent responseContent = getGraphClient().batch().buildRequest().post(batchRequestContent);
+
+            HashMap<String, List<?>> channelsResponse = parseBatchResponseToChannels(responseContent, groupsToProcess);
+
+            channels.addAll((List<MicrosoftChannel>) channelsResponse.get("success"));
+            pendingChannels = (List<org.sakaiproject.site.api.Group>) channelsResponse.get("failed");
+            retryCount++;
+        }
+
+        return channels;
+    }
+
+    private HashMap<String, List<?>> parseBatchResponseToChannels(BatchResponseContent responseContent, List<org.sakaiproject.site.api.Group> groupsToProcess) {
+        HashMap<String, List<?>> responseMap = new HashMap<>();
+
+        if (Objects.nonNull(responseContent)) {
+            List<MicrosoftChannel> successRequests =
+                    responseContent.responses.stream().filter(r -> r.status <= 299).collect(Collectors.toList())
+                            .stream().map(r -> MicrosoftChannel.builder()
+                                    .id(r.body.getAsJsonObject().get("id").getAsString())
+                                    .name(r.body.getAsJsonObject().get("displayName").getAsString())
+                                    .build()).collect(Collectors.toList());
+
+            List<org.sakaiproject.site.api.Group> pendingGroups = groupsToProcess.stream()
+                    .filter(g -> successRequests.stream().noneMatch(c -> c.getName().equalsIgnoreCase(g.getTitle())))
+                    .collect(Collectors.toList());
+
+            responseMap.put("failed", pendingGroups);
+            responseMap.put("success", successRequests);
+        }
+
+        return responseMap;
+    }
+
+    private ConversationMemberCollectionPage initializeChannelMembers(String ownerEmail) throws MicrosoftCredentialsException {
+        User userOwner = getGraphClient().users(ownerEmail).buildRequest().get();
+        AadUserConversationMember conversationMember = new AadUserConversationMember();
+        conversationMember.oDataType = "#microsoft.graph.aadUserConversationMember";
+        conversationMember.roles = Arrays.asList(MicrosoftUser.OWNER);
+        conversationMember.additionalDataManager().put("user@odata.bind", new JsonPrimitive("https://graph.microsoft.com/v1.0/users('" + userOwner.id + "')"));
+
+        LinkedList<ConversationMember> membersList = new LinkedList<ConversationMember>();
+        membersList.add(conversationMember);
+
+        ConversationMemberCollectionResponse conversationMemberCollectionResponse = new ConversationMemberCollectionResponse();
+        conversationMemberCollectionResponse.value = membersList;
+        return new ConversationMemberCollectionPage(conversationMemberCollectionResponse, null);
     }
 
     @Override
