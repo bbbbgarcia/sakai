@@ -381,6 +381,7 @@ public class AutoConfigController {
                 new ArrayList<>(groups);
     }
 
+
     @GetMapping(value = {"/autoConfig-status"}, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public AutoConfigSessionBean autoConfigStatus(Model model, HttpServletRequest request) throws Exception {

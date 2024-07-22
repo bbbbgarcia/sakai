@@ -56,16 +56,7 @@ import org.sakaiproject.messaging.api.MicrosoftMessagingService;
 import org.sakaiproject.microsoft.api.MicrosoftAuthorizationService;
 import org.sakaiproject.microsoft.api.MicrosoftCommonService;
 import org.sakaiproject.microsoft.api.SakaiProxy;
-import org.sakaiproject.microsoft.api.data.MeetingRecordingData;
-import org.sakaiproject.microsoft.api.data.MicrosoftChannel;
-import org.sakaiproject.microsoft.api.data.MicrosoftCredentials;
-import org.sakaiproject.microsoft.api.data.MicrosoftDriveItem;
-import org.sakaiproject.microsoft.api.data.MicrosoftDriveItemFilter;
-import org.sakaiproject.microsoft.api.data.MicrosoftMembersCollection;
-import org.sakaiproject.microsoft.api.data.MicrosoftTeam;
-import org.sakaiproject.microsoft.api.data.MicrosoftUser;
-import org.sakaiproject.microsoft.api.data.MicrosoftUserIdentifier;
-import org.sakaiproject.microsoft.api.data.TeamsMeetingData;
+import org.sakaiproject.microsoft.api.data.*;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftCredentialsException;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftGenericException;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftInvalidCredentialsException;
@@ -249,6 +240,11 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
         }
 
         return userList;
+    }
+
+    @Override
+    public Map<String, Object> getErrorUsers() throws MicrosoftCredentialsException {
+        return errorUsers;
     }
 
     @Override
@@ -1177,7 +1173,7 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
         ConversationMemberCollectionPage members = initializeChannelMembers(ownerEmail);
         List<org.sakaiproject.site.api.Group> pendingChannels = groupsToProcess;
 
-        final int MAX_RETRY = 1;
+        final int MAX_RETRY = 2;
         int retryCount = 0;
 
         //sometimes microsoft fails creating -> loop for retry failed ones

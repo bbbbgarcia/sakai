@@ -178,7 +178,6 @@ public class GroupSynchronizationController {
     public String createNewChannel(@RequestParam String siteId, @RequestParam String name, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
         log.debug("NEW channel creating");
         SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteId).build());
-
         try {
             Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId());
             Collection<MicrosoftChannel> channels = channelsMap.values();

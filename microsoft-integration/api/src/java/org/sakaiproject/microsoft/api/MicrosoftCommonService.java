@@ -31,6 +31,7 @@ import org.sakaiproject.site.api.Group;
 
 import java.io.File;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +44,8 @@ public interface MicrosoftCommonService {
 	public static final String PERM_UPLOAD_FILES = "microsoft.documents.upload.files";
 	public static final int MAX_CHANNELS = 30;
 	public static final int MAX_ADD_CHANNELS = 20;
+
+	public static Map<String, Object> errorUsers = new HashMap<>();
 
 
 	public static enum PermissionRoles { READ, WRITE }
@@ -57,6 +60,7 @@ public interface MicrosoftCommonService {
 	
 	// ---------------------------------------- USERS ------------------------------------------------
 	List<MicrosoftUser> getUsers() throws MicrosoftCredentialsException;
+	Map<String, Object> getErrorUsers() throws MicrosoftCredentialsException;
 
 	MicrosoftUser getUser(String identifier, MicrosoftUserIdentifier key) throws MicrosoftCredentialsException;
 	MicrosoftUser getUserById(String id) throws MicrosoftCredentialsException;

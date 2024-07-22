@@ -29,7 +29,7 @@ import org.sakaiproject.microsoft.api.MicrosoftCommonService;
 import org.sakaiproject.microsoft.api.MicrosoftConfigurationService;
 import org.sakaiproject.microsoft.api.MicrosoftSynchronizationService;
 import org.sakaiproject.microsoft.api.SakaiProxy;
-import org.sakaiproject.microsoft.api.data.MicrosoftTeam;
+import org.sakaiproject.microsoft.api.data.*;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftCredentialsException;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftGenericException;
 import org.sakaiproject.microsoft.api.model.SiteSynchronization;
@@ -238,6 +238,10 @@ public class MainController {
 
 			model.addAttribute("row", ss);
 			model.addAttribute("teamsMap", microsoftCommonService.getTeams());
+
+			if (ss.getStatus().equals(SynchronizationStatus.ERROR)){
+				model.addAttribute("errorMembers", microsoftCommonService.getErrorUsers());
+			}
 		}
 		return ROW_SITE_SYNCH_FRAGMENT;
 	}
