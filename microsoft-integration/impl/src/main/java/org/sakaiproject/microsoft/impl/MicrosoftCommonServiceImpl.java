@@ -112,6 +112,10 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
     private static final String LINK_TYPE_EDIT = "edit";
     private static final String LINK_TYPE_VIEW = "view";
     private static final String LINK_SCOPE_USERS = "users";
+    private static final int TEAM_CHARACTER_LIMIT = 73;// around 80, but leaving some margin because it is not consistent on the Microsoft side
+    private static final int CHANNEL_CHARACTER_LIMIT = 50;// this is an official restriction
+    private static final int UDL_CODE_SIZE = 15;
+    private static final String TEAM_CHARACTER_SEPARATOR = "...";
 
 
     @Setter
@@ -273,8 +277,8 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
             Cache.ValueWrapper cachedValue = getCache().get(CACHE_USERS);
             if (cachedValue != null) {
                 usersMap = (Map<String, MicrosoftUser>) cachedValue.get();
-                for(MicrosoftUser user : usersMap.values()){
-                    if(user.getEmail().toLowerCase().equals(email)){
+                for (MicrosoftUser user : usersMap.values()) {
+                    if (user.getEmail().toLowerCase().equals(email)) {
                         return user;
                     }
                 }
@@ -355,7 +359,7 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
         try {
             Map<String, MicrosoftUser> userInvitationMap;
             Cache.ValueWrapper cachedValue = getCache().get(CACHE_INVITATION_USER);
-            if (cachedValue != null){
+            if (cachedValue != null) {
                 userInvitationMap = (Map<String, MicrosoftUser>) cachedValue.get();
                 for (MicrosoftUser user : userInvitationMap.values()) {
                     if (user.getEmail().toLowerCase().equals(email)) {
@@ -547,6 +551,11 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
             LinkedList<String> rolesList = new LinkedList<String>();
             rolesList.add("owner");
 
+            String truncatedName = name.length() > TEAM_CHARACTER_LIMIT ?
+                    name.substring(0, TEAM_CHARACTER_LIMIT - UDL_CODE_SIZE - 3) + TEAM_CHARACTER_SEPARATOR + name.substring(name.length() - UDL_CODE_SIZE, name.length())
+                    :
+                    name;
+
             User userOwner = getGraphClient().users(ownerEmail).buildRequest().get();
             AadUserConversationMember conversationMember = new AadUserConversationMember();
             conversationMember.oDataType = "#microsoft.graph.aadUserConversationMember";
@@ -561,8 +570,8 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
             ConversationMemberCollectionPage conversationMemberCollectionPage = new ConversationMemberCollectionPage(conversationMemberCollectionResponse, null);
 
             Team team = new Team();
-            team.displayName = name;
-            team.description = name;
+            team.displayName = truncatedName;
+            team.description = truncatedName;
             team.visibility = TeamVisibilityType.PRIVATE;
             team.members = conversationMemberCollectionPage;
             System.out.println("EL TEAM ES ESTE:" + team.displayName);
@@ -589,8 +598,8 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
                         Map<String, MicrosoftTeam> teamsMap = (Map<String, MicrosoftTeam>) cachedValue.get();
                         teamsMap.put(teamId, MicrosoftTeam.builder()
                                 .id(teamId)
-                                .name(name)
-                                .description(name)
+                                .name(truncatedName)
+                                .description(truncatedName)
                                 .build());
 
                         getCache().put(CACHE_TEAMS, teamsMap);
@@ -1131,10 +1140,12 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
     @Override
     public String createChannel(String teamId, String name, String ownerEmail) throws MicrosoftCredentialsException {
         try {
+            String truncatedName = name.length() > CHANNEL_CHARACTER_LIMIT ? name.substring(0, CHANNEL_CHARACTER_LIMIT - 1) : name;
+
             Channel channel = new Channel();
             channel.membershipType = ChannelMembershipType.PRIVATE;
-            channel.displayName = formatMicrosoftString(name);
-            channel.description = name;
+            channel.displayName = formatMicrosoftString(truncatedName);
+            channel.description = truncatedName;
 
             channel.members = initializeChannelMembers(ownerEmail);
 
