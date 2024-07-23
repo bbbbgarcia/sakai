@@ -104,46 +104,46 @@
 		</div>
 
 		<script th:inline="javascript">
-			async function createGroupSynchronization(btn, url) {
+			        async function createGroupSynchronization(btn, url) {
 
-				let groupId = document.getElementById('selectedGroupId').value
-				let channelId = document.getElementById('selectedChannelId').value
+			        	let groupId = document.getElementById('selectedGroupId').value
+			        	let channelId = document.getElementById('selectedChannelId').value
 
-				if(!validateForm()) {
-					return;
-				}
+			        	if(!validateForm()) {
+			        		return;
+			        	}
 
-				let update = {
-					selectedGroupId: groupId,
-					selectedChannelId: channelId
-				}
+			        	let update = {
+			        		selectedGroupId: groupId,
+			        		selectedChannelId: channelId
+			        	}
 
-				const classes = btn.classList;
-				classes.remove('fa-minus');
-				classes.add('fa-spinner', 'fa-spin');
+			        	const classes = btn.classList;
+			        	classes.remove('fa-minus');
+			        	classes.add('fa-spinner', 'fa-spin');
 
-				var formBody = [];
-				for (var property in update) {
-				  var encodedKey = encodeURIComponent(property);
-				  var encodedValue = encodeURIComponent(update[property]);
-				  formBody.push(encodedKey + "=" + encodedValue);
-				}
-				formBody = formBody.join("&");
+			        	var formBody = [];
+			        	for (var property in update) {
+			        	  var encodedKey = encodeURIComponent(property);
+			        	  var encodedValue = encodeURIComponent(update[property]);
+			        	  formBody.push(encodedKey + "=" + encodedValue);
+			        	}
+			        	formBody = formBody.join("&");
 
-				let response = await fetch(url, {
-					method: 'POST',
-					headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-					},
-					body: formBody
-				});
+			        	let response = await fetch(url, {
+			        		method: 'POST',
+			        		headers: {
+			        		'Content-Type': 'application/x-www-form-urlencoded',
+			        		},
+			        		body: formBody
+			        	});
 
-				if (response.status < 300)
-					location = response.url
+			        	if (response.status < 300)
+			        		location = response.url
 
-				classes.add('fa-minus');
-				classes.remove('fa-spinner', 'fa-spin');
-			}
+			        	classes.add('fa-minus');
+			        	classes.remove('fa-spinner', 'fa-spin');
+			        }
 
                    async function deleteGroupSynchronization(btn, url) {
                        const row_id = btn.id.replace('btn_', 'row_');

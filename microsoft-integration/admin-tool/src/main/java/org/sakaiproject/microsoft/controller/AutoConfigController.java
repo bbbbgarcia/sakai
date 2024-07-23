@@ -247,31 +247,31 @@ public class AutoConfigController {
                         continue;
                     }
 
-						Object o = map.get(siteId);
+					Object o = map.get(siteId);
                     if (o == null) {
                         continue;
                     }
 
-							if(o instanceof String) {
+					if(o instanceof String) {
                         autoConfigSessionBean.addStatus(String.format("Creating teams for site %s...", site.getTitle()));
-								try {
+                        try {
                             handleNewTeamCreation(autoConfigSessionBean, site, (String) o, syncDateFrom, syncDateTo, credentials);
-												}catch(Exception e) {
+                        } catch(Exception e) {
                             autoConfigSessionBean.addError(siteId, site.getTitle(), e.getMessage());
                         } finally {
-										autoConfigSessionBean.increaseCounter();
-									}
-							} else if(o instanceof SiteSynchronization) {
+                            autoConfigSessionBean.increaseCounter();
+                        }
+                    } else if(o instanceof SiteSynchronization) {
                         autoConfigSessionBean.addStatus(String.format("Binding existing teams for site %s...", site.getTitle()));
-								try {
+                        try {
                             handleExistingTeamBinding(autoConfigSessionBean, site, (SiteSynchronization) o, syncDateFrom, syncDateTo, credentials);
                         } catch (Exception e) {
                             autoConfigSessionBean.addError(siteId, site.getTitle(), e.getMessage());
                         } finally {
-								autoConfigSessionBean.increaseCounter();
-							}
-						}
-					}
+                            autoConfigSessionBean.increaseCounter();
+                        }
+                    }
+                }
 				
 				if(autoConfigSessionBean.getCount() >= autoConfigSessionBean.getTotal()) {
                     autoConfigSessionBean.addStatus("Process finished");

@@ -39,6 +39,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.microsoft.graph.content.BatchRequestContent;
+import com.microsoft.graph.content.BatchResponseContent;
+import com.microsoft.graph.http.HttpMethod;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -114,6 +117,7 @@ import com.microsoft.graph.models.User;
 import com.microsoft.graph.options.HeaderOption;
 import com.microsoft.graph.options.Option;
 import com.microsoft.graph.requests.ChannelCollectionPage;
+import com.microsoft.graph.requests.ChannelCollectionRequest;
 import com.microsoft.graph.requests.ChannelCollectionRequestBuilder;
 import com.microsoft.graph.requests.ChatMessageCollectionPage;
 import com.microsoft.graph.requests.ChatMessageCollectionRequestBuilder;
@@ -615,11 +619,7 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
 			team.description = truncatedName;
 			team.visibility = TeamVisibilityType.PRIVATE;
 			team.members = conversationMemberCollectionPage;
-            System.out.println("EL TEAM ES ESTE:" + team.displayName);
-            System.out.println("EL TEAM ES ESTE:" + team.additionalDataManager().put("template@odata.bind", new JsonPrimitive("https://graph.microsoft.com/v1.0/teamsTemplates('standard')")));
 			team.additionalDataManager().put("template@odata.bind", new JsonPrimitive("https://graph.microsoft.com/v1.0/teamsTemplates('standard')"));
-
-            System.out.println("EL TEAM ES ESTE:" + team);
 
 			Team ret = getGraphClient().teams()
 				.buildRequest()

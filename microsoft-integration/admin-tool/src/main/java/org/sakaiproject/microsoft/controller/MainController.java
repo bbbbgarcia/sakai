@@ -153,9 +153,9 @@ public class MainController {
 							case "teamId":
 							return i1.getTeamId().compareTo(i2.getTeamId());
 							case "teamTitle":
-                        String fromString = Objects.isNull(map.get(i1.getTeamId())) ? "_null" : map.get(i1.getTeamId()).getName();
-                        String toString = Objects.isNull(map.get(i2.getTeamId())) ? "_null" : map.get(i2.getTeamId()).getName();
-                        return fromString.compareToIgnoreCase(toString);
+                            String fromString = Objects.isNull(map.get(i1.getTeamId())) ? "_null" : map.get(i1.getTeamId()).getName();
+                            String toString = Objects.isNull(map.get(i2.getTeamId())) ? "_null" : map.get(i2.getTeamId()).getName();
+                            return fromString.compareToIgnoreCase(toString);
 							case "siteTitle":
 							return i1.getSite().getTitle().compareToIgnoreCase(i2.getSite().getTitle());
 							case "syncDateFrom":

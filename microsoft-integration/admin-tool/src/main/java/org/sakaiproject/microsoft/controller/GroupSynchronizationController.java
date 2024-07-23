@@ -65,7 +65,7 @@ public class GroupSynchronizationController {
 	
 	@Autowired
 	MicrosoftConfigurationService microsoftConfigurationService;
-	
+
     @Autowired
     SakaiProxy sakaiProxy;
 
@@ -84,36 +84,37 @@ public class GroupSynchronizationController {
             return REDIRECT_INDEX;
         }
 
-        List<Group> gr = (List<Group>) sakaiProxy.getSite(ss.getSiteId()).getGroups();
+        List<Group> groups = (List<Group>) sakaiProxy.getSite(ss.getSiteId()).getGroups();
 
-			model.addAttribute("siteSynchronizationId", siteSynchronizationId);
-        model.addAttribute("groupsMap", gr.stream().collect(Collectors.toMap(Group::getId, Function.identity())));
-			model.addAttribute("channelsMap", microsoftCommonService.getTeamPrivateChannels(ss.getTeamId()));
-			model.addAttribute("siteTitle", ss.getSite().getTitle());
-			model.addAttribute("teamTitle", microsoftCommonService.getTeam(ss.getTeamId()).getName());
-			
-			List<GroupSynchronization> list = microsoftSynchronizationService.getAllGroupSynchronizationsBySiteSynchronizationId(siteSynchronizationId);
-        gr.stream()
-                .filter(g -> list.stream().noneMatch(item -> item.getGroupId().equals(g.getId())))
-                .map(g -> GroupSynchronization.builder()
-                        .groupId(g.getId())
-                        .channelId("")
-                        .siteSynchronization(ss)
-                        .build())
-                .forEach(list::add);
+		model.addAttribute("siteSynchronizationId", siteSynchronizationId);
+        model.addAttribute("groupsMap", groups.stream().collect(Collectors.toMap(Group::getId, Function.identity())));
+		model.addAttribute("channelsMap", microsoftCommonService.getTeamPrivateChannels(ss.getTeamId()));
+		model.addAttribute("siteTitle", ss.getSite().getTitle());
+		model.addAttribute("teamTitle", microsoftCommonService.getTeam(ss.getTeamId()).getName());
+
+		List<GroupSynchronization> list = microsoftSynchronizationService.getAllGroupSynchronizationsBySiteSynchronizationId(siteSynchronizationId);
+        groups.stream()
+            .filter(g -> list.stream().noneMatch(item -> item.getGroupId().equals(g.getId())))
+            .map(g -> GroupSynchronization.builder()
+                    .groupId(g.getId())
+                    .channelId("")
+                    .siteSynchronization(ss)
+                    .build())
+            .forEach(list::add);
 			
         List<GroupSynchronization> sortedList = new ArrayList<>();
-        gr.forEach(g -> sortedList.addAll(
-                        list.stream().filter(element -> element.getGroupId().equals(g.getId())).collect(Collectors.toList())
-                )
+        groups.forEach(
+            g -> sortedList.addAll(
+                list.stream().filter(element -> element.getGroupId().equals(g.getId())).collect(Collectors.toList())
+            )
         );
 
         if (list.size() > 0) {
             model.addAttribute("groupSynchronizations", sortedList);
         }
 	
-			return EDIT_GROUP_SYNCH_TEMPLATE;
-		}
+		return EDIT_GROUP_SYNCH_TEMPLATE;
+	}
 		
 	
 	@PostMapping(path = {"/add-groupSynchronization/{siteSynchronizationId}"}, consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE})
@@ -123,17 +124,15 @@ public class GroupSynchronizationController {
             Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId());
             model.addAttribute("channelsMap", channelsMap);
 
-            Collection<MicrosoftChannel> channels = channelsMap.values();
-
 			if(StringUtils.isNotBlank(payload.getSelectedGroupId()) && StringUtils.isNotBlank(payload.getSelectedChannelId())) {
 				String groupId = payload.getSelectedGroupId();
 				String channelId = payload.getSelectedChannelId();
 				
 				GroupSynchronization gs = GroupSynchronization.builder()
-					.siteSynchronization(ss)
-					.groupId(groupId)
-                            .channelId(channelId)
-				.build();
+					    .siteSynchronization(ss)
+					    .groupId(groupId)
+                        .channelId(channelId)
+                        .build();
 				
 				GroupSynchronization aux_gs = microsoftSynchronizationService.getGroupSynchronization(gs);
 				if(aux_gs != null) {
@@ -150,13 +149,12 @@ public class GroupSynchronizationController {
 					return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
 				}
 				
-                    log.debug("saving: groupId={}, channelId={}", groupId, channelId);
+                log.debug("saving: groupId={}, channelId={}", groupId, channelId);
 				microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
 			}
 		} else {
-                redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.channel_number_more_than_30"));
+            redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.channel_number_more_than_30"));
 		}
-		
 
 		return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
 	}
