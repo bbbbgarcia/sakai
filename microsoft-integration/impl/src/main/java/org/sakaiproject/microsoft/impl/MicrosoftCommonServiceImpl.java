@@ -56,7 +56,16 @@ import org.sakaiproject.messaging.api.MicrosoftMessagingService;
 import org.sakaiproject.microsoft.api.MicrosoftAuthorizationService;
 import org.sakaiproject.microsoft.api.MicrosoftCommonService;
 import org.sakaiproject.microsoft.api.SakaiProxy;
-import org.sakaiproject.microsoft.api.data.*;
+import org.sakaiproject.microsoft.api.data.MeetingRecordingData;
+import org.sakaiproject.microsoft.api.data.MicrosoftChannel;
+import org.sakaiproject.microsoft.api.data.MicrosoftCredentials;
+import org.sakaiproject.microsoft.api.data.MicrosoftDriveItem;
+import org.sakaiproject.microsoft.api.data.MicrosoftDriveItemFilter;
+import org.sakaiproject.microsoft.api.data.MicrosoftMembersCollection;
+import org.sakaiproject.microsoft.api.data.MicrosoftTeam;
+import org.sakaiproject.microsoft.api.data.MicrosoftUser;
+import org.sakaiproject.microsoft.api.data.MicrosoftUserIdentifier;
+import org.sakaiproject.microsoft.api.data.TeamsMeetingData;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftCredentialsException;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftGenericException;
 import org.sakaiproject.microsoft.api.exceptions.MicrosoftInvalidCredentialsException;
@@ -1192,10 +1201,11 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
             BatchRequestContent batchRequestContent = new BatchRequestContent();
 
             groupsToProcess.forEach(group -> {
+                String truncatedName = group.getTitle().length() > CHANNEL_CHARACTER_LIMIT ? group.getTitle().substring(0, CHANNEL_CHARACTER_LIMIT - 1) : group.getTitle();
                 Channel channel = new Channel();
                 channel.membershipType = ChannelMembershipType.PRIVATE;
-                channel.displayName = formatMicrosoftString(group.getTitle());
-                channel.description = group.getTitle();
+                channel.displayName = formatMicrosoftString(truncatedName);
+                channel.description = truncatedName;
                 channel.members = members;
 
                 batchRequestContent.addBatchRequestStep(postChannel, HttpMethod.POST, channel);
@@ -1208,6 +1218,15 @@ public class MicrosoftCommonServiceImpl implements MicrosoftCommonService {
             channels.addAll((List<MicrosoftChannel>) channelsResponse.get("success"));
             pendingChannels = (List<org.sakaiproject.site.api.Group>) channelsResponse.get("failed");
             retryCount++;
+        }
+
+        //update cache
+        Cache.ValueWrapper cachedValue = getCache().get(CACHE_CHANNELS + teamId);
+        if (cachedValue != null) {
+            Map<String, MicrosoftChannel> channelsMap = (Map<String, MicrosoftChannel>) cachedValue.get();
+            channelsMap.keySet().removeIf(channelId -> !channels.stream().map(c -> c.getId()).collect(Collectors.toSet()).contains(channelId));
+            channels.stream().filter(c -> !channelsMap.containsKey(c.getId())).forEach(channel -> channelsMap.put(channel.getId(), channel));
+            getCache().put(CACHE_CHANNELS + teamId, channelsMap);
         }
 
         return channels;

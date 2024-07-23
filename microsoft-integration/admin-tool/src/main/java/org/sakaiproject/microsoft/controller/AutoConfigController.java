@@ -344,8 +344,8 @@ public class AutoConfigController {
                 .filter(g -> channelsMap.values().stream().noneMatch(c -> c.getName().equalsIgnoreCase(g.getTitle())))
                 .collect(Collectors.toList());
 
-        if (autoConfigSessionBean.isNewChannel()) {
-            List<MicrosoftChannel> channels = microsoftCommonService.createChannels(groupsToProcess, ss.getTeamId(), credentials.getEmail());
+        if (nonExistingGroups.size() > 0 && autoConfigSessionBean.isNewChannel()) {
+            List<MicrosoftChannel> channels = microsoftCommonService.createChannels(nonExistingGroups, ss.getTeamId(), credentials.getEmail());
             channels.forEach(c -> channelsMap.put(c.getId(), c));
         }
 
