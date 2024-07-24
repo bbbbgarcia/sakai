@@ -44,38 +44,38 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * GroupSynchronizationController
- * 
+ *
  * This is the controller used by Spring MVC to handle Group Synchronizations related requests
  *
  */
 @Slf4j
 @Controller
 public class SiteSynchronizationController {
-	
+
 	private static ResourceLoader rb = new ResourceLoader("Messages");
-	
+
 	@Autowired
 	private MicrosoftSynchronizationService microsoftSynchronizationService;
-	
+
 	@Autowired
 	private MicrosoftCommonService microsoftCommonService;
-	
+
 	@Autowired
 	MicrosoftConfigurationService microsoftConfigurationService;
-	
+
 	@Autowired
 	private SakaiProxy sakaiProxy;
-	
+
 	private static final String REDIRECT_INDEX = "redirect:/index";
 	private static final String NEW_SITE_SYNCH_TEMPLATE = "newSiteSynchronization";
 	private static final String REDIRECT_NEW_SITE_SYNCH_TEMPLATE = "redirect:/newSiteSynchronization";
 
 	private static final String NEW = "NEW";
-	
+
 	@GetMapping(value = {"/newSiteSynchronization"})
 	public String newSiteSynchronization(Model model) throws MicrosoftGenericException {
 		log.debug("NEW site synchronization");
-		
+
 		long syncDuration = microsoftConfigurationService.getSyncDuration();
 
 		model.addAttribute("syncDateFrom", ZonedDateTime.now().toLocalDate());
@@ -83,7 +83,7 @@ public class SiteSynchronizationController {
 
 		return NEW_SITE_SYNCH_TEMPLATE;
 	}
-	
+
 
 	@PostMapping(value = {"/fiterSites"})
 	public String fiterSites(@RequestBody SakaiSiteFilter filter, Model model) throws MicrosoftGenericException {
@@ -91,9 +91,9 @@ public class SiteSynchronizationController {
 		model.addAttribute("sitesList", sakaiProxy.getSakaiSites(filter));
 
 		return NEW_SITE_SYNCH_TEMPLATE + " :: sites";
-		
+
 	}
-	
+
 	@GetMapping(value = {"/refreshTeams"})
 	public String refreshTeams(@RequestParam(defaultValue = "false") Boolean forced, Model model) throws MicrosoftGenericException {
 		log.debug("Refresh teams");
@@ -101,74 +101,73 @@ public class SiteSynchronizationController {
 
 		return NEW_SITE_SYNCH_TEMPLATE + " :: teams";
 	}
-	
+
 	@PostMapping(path = {"/save-siteSynchronization"}, consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE})
-	public String saveSiteSynchronization(@ModelAttribute SiteSynchronizationRequest payload,  Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
+	public String saveSiteSynchronization(@ModelAttribute SiteSynchronizationRequest payload, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
 		//case NEW
-		if(payload.getSelectedSiteIds().isEmpty()) {
+		if (payload.getSelectedSiteIds().isEmpty()) {
 			log.debug("ERROR: No site selected");
 			redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.no_site_selected"));
-			
+
 			return REDIRECT_NEW_SITE_SYNCH_TEMPLATE;
 		}
-		
-		if(payload.getSelectedTeamIds().isEmpty()) {
+
+		if (payload.getSelectedTeamIds().isEmpty()) {
 			log.debug("ERROR: No team selected");
 			redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.no_team_selected"));
-			
+
 			return REDIRECT_NEW_SITE_SYNCH_TEMPLATE;
 		}
 		ZonedDateTime syncDateFrom, syncDateTo;
 		try {
 			syncDateFrom = payload.getSyncDateFrom().atStartOfDay(sakaiProxy.getUserTimeZoneId());
 			syncDateTo = payload.getSyncDateTo().atStartOfDay(sakaiProxy.getUserTimeZoneId()).plusHours(23).plusMinutes(59);
-		} catch(Exception e) {
+		} catch (Exception e) {
 			redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.dates"));
-			
+
 			return REDIRECT_NEW_SITE_SYNCH_TEMPLATE;
 		}
 		//validate dates
-		if(syncDateFrom.isAfter(syncDateTo)) {
+		if (syncDateFrom.isAfter(syncDateTo)) {
 			redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.dates_order"));
-			
+
 			return REDIRECT_NEW_SITE_SYNCH_TEMPLATE;
 		}
-		
+
 		String teamCreatedId = null;
-		for(String siteId: payload.getSelectedSiteIds()) {
-			for(String teamId: payload.getSelectedTeamIds()) {
-				if(teamId.equals(NEW) && teamCreatedId == null) {
+		for (String siteId : payload.getSelectedSiteIds()) {
+			for (String teamId : payload.getSelectedTeamIds()) {
+				if (teamId.equals(NEW) && teamCreatedId == null) {
 					teamCreatedId = microsoftCommonService.createTeam(payload.getNewTeamName(), microsoftConfigurationService.getCredentials().getEmail());
-					System.out.println("TEAMID"+teamCreatedId);
-					if(teamCreatedId == null) {
+					if (teamCreatedId == null) {
 						redirectAttributes.addFlashAttribute("exception_error", MessageFormat.format(rb.getString("error.creating_team_param"), payload.getNewTeamName()));
 						continue;
 					}
 				}
-				
+
 				SiteSynchronization ss = SiteSynchronization.builder()
-					.siteId(siteId)
-					.teamId(teamId.equals(NEW) ? teamCreatedId : teamId)
-					.forced(payload.isForced())
-					.syncDateFrom(syncDateFrom)
-					.syncDateTo(syncDateTo)
-				.build();
-				
+						.siteId(siteId)
+						.teamId(teamId.equals(NEW) ? teamCreatedId : teamId)
+						.forced(payload.isForced())
+						.syncDateFrom(syncDateFrom)
+						.syncDateTo(syncDateTo)
+						.build();
+
 				SiteSynchronization aux_ss = microsoftSynchronizationService.getSiteSynchronization(ss);
-				if(aux_ss != null) {
+				if (aux_ss != null) {
 					redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.site_synchronization_already_exists"));
-					
+
 					continue;
 				}
-				
+
 				//if not forced -> check if exists some forced synchronization
 				//if forced -> check if exists any
-				if(microsoftSynchronizationService.countSiteSynchronizationsByTeamId(ss.getTeamId(), !ss.isForced()) > 0) {
+				if (microsoftSynchronizationService.countSiteSynchronizationsByTeamId(ss.getTeamId(), !ss.isForced()) > 0) {
 					redirectAttributes.addFlashAttribute("exception_error", rb.getString(ss.isForced() ? "error.site_synchronization_impossible_forced" : "error.site_synchronization_already_forced"));
-					
+
 					continue;
 				}
-				
+
 				log.debug("saving: siteId={}, teamId={}", siteId, teamId);
 				microsoftSynchronizationService.saveOrUpdateSiteSynchronization(ss);
 			}

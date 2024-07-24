@@ -74,320 +74,320 @@ import static org.sakaiproject.microsoft.api.MicrosoftCommonService.MAX_CHANNELS
 public class AutoConfigController {
 
 
-    private static ResourceLoader rb = new ResourceLoader("Messages");
-    @Setter
-    private MicrosoftLoggingRepository microsoftLoggingRepository;
-    @Autowired
-    private MicrosoftLoggingService microsoftLoggingService;
-    @Autowired
-    private MicrosoftSynchronizationService microsoftSynchronizationService;
-    @Autowired
-    private MicrosoftCommonService microsoftCommonService;
-    @Autowired
-    MicrosoftConfigurationService microsoftConfigurationService;
-    @Autowired
-    private SakaiProxy sakaiProxy;
+	private static ResourceLoader rb = new ResourceLoader("Messages");
+	@Setter
+	private MicrosoftLoggingRepository microsoftLoggingRepository;
+	@Autowired
+	private MicrosoftLoggingService microsoftLoggingService;
+	@Autowired
+	private MicrosoftSynchronizationService microsoftSynchronizationService;
+	@Autowired
+	private MicrosoftCommonService microsoftCommonService;
+	@Autowired
+	MicrosoftConfigurationService microsoftConfigurationService;
+	@Autowired
+	private SakaiProxy sakaiProxy;
 
 
-    @PostMapping(path = {"/autoConfig"})
-    public String autoConfig(
-            @RequestBody AutoConfigRequest requestBody,
-            HttpServletRequest request,
-            Model model
-    ) throws Exception {
-        List<String> excluded_sites = Arrays.asList(
-                "!admin",
-                "citationsAdmin",
-                "mercury"
-        );
+	@PostMapping(path = {"/autoConfig"})
+	public String autoConfig(
+			@RequestBody AutoConfigRequest requestBody,
+			HttpServletRequest request,
+			Model model
+	) throws Exception {
+		List<String> excluded_sites = Arrays.asList(
+				"!admin",
+				"citationsAdmin",
+				"mercury"
+		);
 
-        HttpSession session = request.getSession();
+		HttpSession session = request.getSession();
 
-        AutoConfigSessionBean autoConfigSessionBean = autoConfigSessionBean = (AutoConfigSessionBean) session.getAttribute("AutoConfigSessionBean");
-        if (autoConfigSessionBean == null) {
-            autoConfigSessionBean = new AutoConfigSessionBean();
-            session.setAttribute("AutoConfigSessionBean", autoConfigSessionBean);
-        }
+		AutoConfigSessionBean autoConfigSessionBean = autoConfigSessionBean = (AutoConfigSessionBean) session.getAttribute("AutoConfigSessionBean");
+		if (autoConfigSessionBean == null) {
+			autoConfigSessionBean = new AutoConfigSessionBean();
+			session.setAttribute("AutoConfigSessionBean", autoConfigSessionBean);
+		}
 
-        if (!autoConfigSessionBean.isRunning()) {
+		if (!autoConfigSessionBean.isRunning()) {
 
-            //get all synchronizations
-            List<SiteSynchronization> ssList = microsoftSynchronizationService.getAllSiteSynchronizations(false);
+			//get all synchronizations
+			List<SiteSynchronization> ssList = microsoftSynchronizationService.getAllSiteSynchronizations(false);
 
-            //get (filtered) sites
-            List<Site> sitesList = sakaiProxy.getSakaiSites(requestBody.getFilter());
-            //map sites by id
-            Map<String, Site> sitesMap = sitesList.stream().collect(Collectors.toMap(Site::getId, Function.identity()));
+			//get (filtered) sites
+			List<Site> sitesList = sakaiProxy.getSakaiSites(requestBody.getFilter());
+			//map sites by id
+			Map<String, Site> sitesMap = sitesList.stream().collect(Collectors.toMap(Site::getId, Function.identity()));
 
-            //get teams - avoid cache, force get from Microsoft
-            Map<String, MicrosoftTeam> teamsMap = microsoftCommonService.getTeams(true);
+			//get teams - avoid cache, force get from Microsoft
+			Map<String, MicrosoftTeam> teamsMap = microsoftCommonService.getTeams(true);
 
-            //exclude sites and teams that are already synch
-            ssList.stream().forEach(ss -> {
-                sitesMap.remove(ss.getSiteId());
-                teamsMap.remove(ss.getTeamId());
-            });
-            //also exclude all known sites
-            excluded_sites.forEach(id -> sitesMap.remove(id));
+			//exclude sites and teams that are already synch
+			ssList.stream().forEach(ss -> {
+				sitesMap.remove(ss.getSiteId());
+				teamsMap.remove(ss.getTeamId());
+			});
+			//also exclude all known sites
+			excluded_sites.forEach(id -> sitesMap.remove(id));
 
-            Map<String, Object> confirmMap = new HashMap<>();
+			Map<String, Object> confirmMap = new HashMap<>();
 
-            //for each not-used site
-            int count_new = 0;
-            int count_link = 0;
-            List<String> removedSites = new ArrayList<>();
-            for (String siteId : sitesMap.keySet()) {
-                Site site = sitesMap.get(siteId);
-                String title = site.getTitle();
-                //if have specified a pattern -> apply it
-                if (StringUtils.isNotBlank(requestBody.getTeamPattern())) {
-                    title = requestBody.getTeamPattern().replace("${siteTitle}", site.getTitle());
-                    //just to display it in the confirmation table
-                    site.setTitle(title);
-                }
-                final String finalTitle = title;
+			//for each not-used site
+			int count_new = 0;
+			int count_link = 0;
+			List<String> removedSites = new ArrayList<>();
+			for (String siteId : sitesMap.keySet()) {
+				Site site = sitesMap.get(siteId);
+				String title = site.getTitle();
+				//if have specified a pattern -> apply it
+				if (StringUtils.isNotBlank(requestBody.getTeamPattern())) {
+					title = requestBody.getTeamPattern().replace("${siteTitle}", site.getTitle());
+					//just to display it in the confirmation table
+					site.setTitle(title);
+				}
+				final String finalTitle = title;
 
-                //check if there is a, not-used Team that matched the Site
-                MicrosoftTeam team = teamsMap.values().stream().filter(t -> t.getName().equalsIgnoreCase(finalTitle)).findAny().orElse(null);
+				//check if there is a, not-used Team that matched the Site
+				MicrosoftTeam team = teamsMap.values().stream().filter(t -> t.getName().equalsIgnoreCase(finalTitle)).findAny().orElse(null);
 
-                //match found
-                if (team != null) {
-                    //create relationship
-                    SiteSynchronization ss = SiteSynchronization.builder()
-                            .siteId(siteId)
-                            .teamId(team.getId())
-                            .forced(false)
-                            .build();
-                    count_link++;
+				//match found
+				if (team != null) {
+					//create relationship
+					SiteSynchronization ss = SiteSynchronization.builder()
+							.siteId(siteId)
+							.teamId(team.getId())
+							.forced(false)
+							.build();
+					count_link++;
 
-                    confirmMap.put(siteId, ss);
-                    //no match found --> create NEW Team if configuration allows it
-                } else {
-                    if (requestBody.isNewTeam()) {
-                        confirmMap.put(siteId, title);
-                        count_new++;
-                    } else {
-                        //not allowed to create NEW team -> remove site from list
-                        removedSites.add(siteId);
-                    }
-                }
-            }
+					confirmMap.put(siteId, ss);
+					//no match found --> create NEW Team if configuration allows it
+				} else {
+					if (requestBody.isNewTeam()) {
+						confirmMap.put(siteId, title);
+						count_new++;
+					} else {
+						//not allowed to create NEW team -> remove site from list
+						removedSites.add(siteId);
+					}
+				}
+			}
 
-            //remove unwanted sites
-            if (removedSites.size() > 0) {
-                for (String siteId : removedSites) {
-                    sitesMap.remove(siteId);
-                }
-            }
+			//remove unwanted sites
+			if (removedSites.size() > 0) {
+				for (String siteId : removedSites) {
+					sitesMap.remove(siteId);
+				}
+			}
 
-            //save in session bean
-            autoConfigSessionBean.setSitesMap(sitesMap);
-            autoConfigSessionBean.setConfirmMap(confirmMap);
-            autoConfigSessionBean.setNewChannel(requestBody.isNewChannel());
+			//save in session bean
+			autoConfigSessionBean.setSitesMap(sitesMap);
+			autoConfigSessionBean.setConfirmMap(confirmMap);
+			autoConfigSessionBean.setNewChannel(requestBody.isNewChannel());
 
-            model.addAttribute("confirmMap", confirmMap);
+			model.addAttribute("confirmMap", confirmMap);
 
-            List<Site> auxList = new ArrayList<>(sitesMap.values());
-            //sort elements by title
-            Collections.sort(auxList, (s1, s2) -> s1.getTitle().compareToIgnoreCase(s2.getTitle()));
-            model.addAttribute("sitesList", auxList);
+			List<Site> auxList = new ArrayList<>(sitesMap.values());
+			//sort elements by title
+			Collections.sort(auxList, (s1, s2) -> s1.getTitle().compareToIgnoreCase(s2.getTitle()));
+			model.addAttribute("sitesList", auxList);
 
-            model.addAttribute("countSites", sitesMap.size());
-            model.addAttribute("countTeams", teamsMap.size());
-            model.addAttribute("countLink", count_link);
-            model.addAttribute("countNew", count_new);
+			model.addAttribute("countSites", sitesMap.size());
+			model.addAttribute("countTeams", teamsMap.size());
+			model.addAttribute("countLink", count_link);
+			model.addAttribute("countNew", count_new);
 
-            long syncDuration = microsoftConfigurationService.getSyncDuration();
-            model.addAttribute("syncDateFrom", ZonedDateTime.now().toLocalDate());
-            model.addAttribute("syncDateTo", ZonedDateTime.now().plusMonths(syncDuration).toLocalDate());
-        }
+			long syncDuration = microsoftConfigurationService.getSyncDuration();
+			model.addAttribute("syncDateFrom", ZonedDateTime.now().toLocalDate());
+			model.addAttribute("syncDateTo", ZonedDateTime.now().plusMonths(syncDuration).toLocalDate());
+		}
 
-        return "fragments/autoConfig :: confirm";
-    }
+		return "fragments/autoConfig :: confirm";
+	}
 
-    @PostMapping(path = {"/autoConfig-confirm"}, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public Boolean autoConfigConfirm(
-            @RequestBody AutoConfigConfirmRequest payload,
-            HttpServletRequest request,
-            Model model) throws Exception {
+	@PostMapping(path = {"/autoConfig-confirm"}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public Boolean autoConfigConfirm(
+			@RequestBody AutoConfigConfirmRequest payload,
+			HttpServletRequest request,
+			Model model) throws Exception {
 
-        if (payload.getSiteIdList() == null || payload.getSiteIdList().isEmpty() ||
-                payload.getSyncDateFrom() == null || payload.getSyncDateTo() == null) {
-            return false;
-        }
+		if (payload.getSiteIdList() == null || payload.getSiteIdList().isEmpty() ||
+				payload.getSyncDateFrom() == null || payload.getSyncDateTo() == null) {
+			return false;
+		}
 
-        ZonedDateTime syncDateFrom = payload.getSyncDateFrom().atStartOfDay(sakaiProxy.getUserTimeZoneId());
-        ZonedDateTime syncDateTo = payload.getSyncDateTo().atStartOfDay(sakaiProxy.getUserTimeZoneId()).plusHours(23).plusMinutes(59);
+		ZonedDateTime syncDateFrom = payload.getSyncDateFrom().atStartOfDay(sakaiProxy.getUserTimeZoneId());
+		ZonedDateTime syncDateTo = payload.getSyncDateTo().atStartOfDay(sakaiProxy.getUserTimeZoneId()).plusHours(23).plusMinutes(59);
 
-        HttpSession session = request.getSession();
-        MicrosoftCredentials credentials = microsoftConfigurationService.getCredentials();
+		HttpSession session = request.getSession();
+		MicrosoftCredentials credentials = microsoftConfigurationService.getCredentials();
 
-        new Thread(() -> {
-            AutoConfigSessionBean autoConfigSessionBean;
-            synchronized (session) {
-                autoConfigSessionBean = (AutoConfigSessionBean) session.getAttribute("AutoConfigSessionBean");
-                if (autoConfigSessionBean == null) {
-                    autoConfigSessionBean = new AutoConfigSessionBean();
-                    session.setAttribute("AutoConfigSessionBean", autoConfigSessionBean);
-                }
-            }
+		new Thread(() -> {
+			AutoConfigSessionBean autoConfigSessionBean;
+			synchronized (session) {
+				autoConfigSessionBean = (AutoConfigSessionBean) session.getAttribute("AutoConfigSessionBean");
+				if (autoConfigSessionBean == null) {
+					autoConfigSessionBean = new AutoConfigSessionBean();
+					session.setAttribute("AutoConfigSessionBean", autoConfigSessionBean);
+				}
+			}
 
-            if (!autoConfigSessionBean.isRunning()) {
-                autoConfigSessionBean.startRunning(payload.getSiteIdList().size());
-                autoConfigSessionBean.addStatus("Process started");
+			if (!autoConfigSessionBean.isRunning()) {
+				autoConfigSessionBean.startRunning(payload.getSiteIdList().size());
+				autoConfigSessionBean.addStatus("Process started");
 
-                Map<String, Object> map = autoConfigSessionBean.getConfirmMap();
+				Map<String, Object> map = autoConfigSessionBean.getConfirmMap();
 
-                for (String siteId : payload.getSiteIdList()) {
-                    Site site = autoConfigSessionBean.getSitesMap().get(siteId);
-                    if (site == null) {
-                        continue;
-                    }
+				for (String siteId : payload.getSiteIdList()) {
+					Site site = autoConfigSessionBean.getSitesMap().get(siteId);
+					if (site == null) {
+						continue;
+					}
 
-                    Object o = map.get(siteId);
-                    if (o == null) {
-                        continue;
-                    }
+					Object o = map.get(siteId);
+					if (o == null) {
+						continue;
+					}
 
-                    if (o instanceof String) {
-                        autoConfigSessionBean.addStatus(String.format("Creating teams for site %s...", site.getTitle()));
-                        try {
-                            handleNewTeamCreation(autoConfigSessionBean, site, (String) o, syncDateFrom, syncDateTo, credentials);
-                        } catch (Exception e) {
-                            autoConfigSessionBean.addError(siteId, site.getTitle(), e.getMessage());
-                        } finally {
-                            autoConfigSessionBean.increaseCounter();
-                        }
-                    } else if (o instanceof SiteSynchronization) {
-                        autoConfigSessionBean.addStatus(String.format("Binding existing teams for site %s...", site.getTitle()));
-                        try {
-                            handleExistingTeamBinding(autoConfigSessionBean, site, (SiteSynchronization) o, syncDateFrom, syncDateTo, credentials);
-                        } catch (Exception e) {
-                            autoConfigSessionBean.addError(siteId, site.getTitle(), e.getMessage());
-                        } finally {
-                            autoConfigSessionBean.increaseCounter();
-                        }
-                    }
-                }
+					if (o instanceof String) {
+						autoConfigSessionBean.addStatus(String.format("Creating teams for site %s...", site.getTitle()));
+						try {
+							handleNewTeamCreation(autoConfigSessionBean, site, (String) o, syncDateFrom, syncDateTo, credentials);
+						} catch (Exception e) {
+							autoConfigSessionBean.addError(siteId, site.getTitle(), e.getMessage());
+						} finally {
+							autoConfigSessionBean.increaseCounter();
+						}
+					} else if (o instanceof SiteSynchronization) {
+						autoConfigSessionBean.addStatus(String.format("Binding existing teams for site %s...", site.getTitle()));
+						try {
+							handleExistingTeamBinding(autoConfigSessionBean, site, (SiteSynchronization) o, syncDateFrom, syncDateTo, credentials);
+						} catch (Exception e) {
+							autoConfigSessionBean.addError(siteId, site.getTitle(), e.getMessage());
+						} finally {
+							autoConfigSessionBean.increaseCounter();
+						}
+					}
+				}
 
-                if (autoConfigSessionBean.getCount() >= autoConfigSessionBean.getTotal()) {
-                    autoConfigSessionBean.addStatus("Process finished");
-                    autoConfigSessionBean.finishRunning();
-                }
-            }
-        }).start();
+				if (autoConfigSessionBean.getCount() >= autoConfigSessionBean.getTotal()) {
+					autoConfigSessionBean.addStatus("Process finished");
+					autoConfigSessionBean.finishRunning();
+				}
+			}
+		}).start();
 
-        return true;
-    }
-
-
-    public void handleNewTeamCreation(AutoConfigSessionBean autoConfigSessionBean, Site site, String teamName, ZonedDateTime syncDateFrom, ZonedDateTime syncDateTo, MicrosoftCredentials credentials) throws Exception {
-        String teamId = microsoftCommonService.createTeam(teamName, credentials.getEmail());
-        SiteSynchronization ss = SiteSynchronization.builder()
-                .siteId(site.getId())
-                .teamId(teamId != null ? teamId : "")
-                .forced(false)
-                .syncDateFrom(syncDateFrom)
-                .syncDateTo(syncDateTo)
-                .creationStatus(CreationStatus.OK)
-                .build();
-
-        if (teamId == null) {
-            ss.setStatus(SynchronizationStatus.NOT_AVAILABLE);
-            ss.setCreationStatus(CreationStatus.KO);
-
-            autoConfigSessionBean.addError(site.getId(), site.getTitle(), rb.getString("error.creating_team"));
-            microsoftSynchronizationService.saveOrUpdateSiteSynchronization(ss);
-            return;
-        }
-
-        boolean limitExceeded = site.getGroups().size() > MAX_CHANNELS;
-        List<Group> groupsToProcess = limitGroups(site.getGroups().stream().filter(g -> !g.getTitle().startsWith("Access:")).collect(Collectors.toList()));
-
-        if (limitExceeded) {
-            ss.setCreationStatus(CreationStatus.PARTIAL_OK);
-        }
-
-        microsoftSynchronizationService.saveOrUpdateSiteSynchronization(ss);
-
-        List<MicrosoftChannel> channels = microsoftCommonService.createChannels(groupsToProcess, teamId, credentials.getEmail());
-
-        for (Group g : groupsToProcess) {
-
-            Optional<MicrosoftChannel> channelOpt = channels.stream()
-                    .filter(c -> c.getName().equalsIgnoreCase(g.getTitle())).findFirst();
-
-            channelOpt.ifPresent(channel -> {
-                GroupSynchronization gs = GroupSynchronization.builder()
-                        .siteSynchronization(ss)
-                        .groupId(g.getId())
-                        .channelId(channel.getId())
-                        .build();
-                microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
-            });
-        }
-    }
-
-    public void handleExistingTeamBinding(AutoConfigSessionBean autoConfigSessionBean, Site site, SiteSynchronization ss, ZonedDateTime syncDateFrom, ZonedDateTime syncDateTo, MicrosoftCredentials credentials) throws Exception {
-        boolean limitExceeded = site.getGroups().size() > MAX_CHANNELS;
-        ss.setSyncDateFrom(syncDateFrom);
-        ss.setSyncDateTo(syncDateTo);
-        ss.setCreationStatus(limitExceeded ? CreationStatus.PARTIAL_OK : CreationStatus.OK);
-
-        microsoftSynchronizationService.saveOrUpdateSiteSynchronization(ss);
-
-        Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId(), true);
-        List<Group> groupsToProcess = limitGroups(site.getGroups().stream().filter(g -> !g.getTitle().startsWith("Access:")).collect(Collectors.toList()));
-
-        List<Group> nonExistingGroups = groupsToProcess.stream()
-                .filter(g -> channelsMap.values().stream().noneMatch(c -> c.getName().equalsIgnoreCase(g.getTitle())))
-                .collect(Collectors.toList());
-
-        if (nonExistingGroups.size() > 0 && autoConfigSessionBean.isNewChannel()) {
-            List<MicrosoftChannel> channels = microsoftCommonService.createChannels(nonExistingGroups, ss.getTeamId(), credentials.getEmail());
-            channels.forEach(c -> channelsMap.put(c.getId(), c));
-        }
-
-        for (Group g : groupsToProcess) {
-            MicrosoftChannel channel = channelsMap.values().stream()
-                    .filter(c -> c.getName().equalsIgnoreCase(g.getTitle()))
-                    .findAny()
-                    .orElse(null);
-
-            String channelId = (channel != null) ? channel.getId() : null;
-
-            if (channel == null && autoConfigSessionBean.isNewChannel()) {
-                channelId = microsoftCommonService.createChannel(ss.getTeamId(), g.getTitle(), credentials.getEmail());
-            }
-
-            if (StringUtils.isNotBlank(channelId)) {
-                GroupSynchronization gs = GroupSynchronization.builder()
-                        .siteSynchronization(ss)
-                        .groupId(g.getId())
-                        .channelId(channelId)
-                        .build();
-
-                if (microsoftSynchronizationService.getGroupSynchronization(gs) == null) {
-                    microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
-                }
-            }
-        }
-    }
-
-    private List<Group> limitGroups(Collection<Group> groups) {
-        return groups.size() > MAX_CHANNELS ?
-                groups.stream().limit(MAX_ADD_CHANNELS).collect(Collectors.toList()) :
-                new ArrayList<>(groups);
-    }
+		return true;
+	}
 
 
-    @GetMapping(value = {"/autoConfig-status"}, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public AutoConfigSessionBean autoConfigStatus(Model model, HttpServletRequest request) throws Exception {
-        HttpSession session = request.getSession();
-        AutoConfigSessionBean autoConfigSessionBean = (AutoConfigSessionBean) session.getAttribute("AutoConfigSessionBean");
+	public void handleNewTeamCreation(AutoConfigSessionBean autoConfigSessionBean, Site site, String teamName, ZonedDateTime syncDateFrom, ZonedDateTime syncDateTo, MicrosoftCredentials credentials) throws Exception {
+		String teamId = microsoftCommonService.createTeam(teamName, credentials.getEmail());
+		SiteSynchronization ss = SiteSynchronization.builder()
+				.siteId(site.getId())
+				.teamId(teamId != null ? teamId : "")
+				.forced(false)
+				.syncDateFrom(syncDateFrom)
+				.syncDateTo(syncDateTo)
+				.creationStatus(CreationStatus.OK)
+				.build();
 
-        return autoConfigSessionBean;
-    }
+		if (teamId == null) {
+			ss.setStatus(SynchronizationStatus.NOT_AVAILABLE);
+			ss.setCreationStatus(CreationStatus.KO);
+
+			autoConfigSessionBean.addError(site.getId(), site.getTitle(), rb.getString("error.creating_team"));
+			microsoftSynchronizationService.saveOrUpdateSiteSynchronization(ss);
+			return;
+		}
+
+		boolean limitExceeded = site.getGroups().size() > MAX_CHANNELS;
+		List<Group> groupsToProcess = limitGroups(site.getGroups().stream().filter(g -> !g.getTitle().startsWith("Access:")).collect(Collectors.toList()));
+
+		if (limitExceeded) {
+			ss.setCreationStatus(CreationStatus.PARTIAL_OK);
+		}
+
+		microsoftSynchronizationService.saveOrUpdateSiteSynchronization(ss);
+
+		List<MicrosoftChannel> channels = microsoftCommonService.createChannels(groupsToProcess, teamId, credentials.getEmail());
+
+		for (Group g : groupsToProcess) {
+
+			Optional<MicrosoftChannel> channelOpt = channels.stream()
+					.filter(c -> c.getName().equalsIgnoreCase(g.getTitle())).findFirst();
+
+			channelOpt.ifPresent(channel -> {
+				GroupSynchronization gs = GroupSynchronization.builder()
+						.siteSynchronization(ss)
+						.groupId(g.getId())
+						.channelId(channel.getId())
+						.build();
+				microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
+			});
+		}
+	}
+
+	public void handleExistingTeamBinding(AutoConfigSessionBean autoConfigSessionBean, Site site, SiteSynchronization ss, ZonedDateTime syncDateFrom, ZonedDateTime syncDateTo, MicrosoftCredentials credentials) throws Exception {
+		boolean limitExceeded = site.getGroups().size() > MAX_CHANNELS;
+		ss.setSyncDateFrom(syncDateFrom);
+		ss.setSyncDateTo(syncDateTo);
+		ss.setCreationStatus(limitExceeded ? CreationStatus.PARTIAL_OK : CreationStatus.OK);
+
+		microsoftSynchronizationService.saveOrUpdateSiteSynchronization(ss);
+
+		Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId(), true);
+		List<Group> groupsToProcess = limitGroups(site.getGroups().stream().filter(g -> !g.getTitle().startsWith("Access:")).collect(Collectors.toList()));
+
+		List<Group> nonExistingGroups = groupsToProcess.stream()
+				.filter(g -> channelsMap.values().stream().noneMatch(c -> c.getName().equalsIgnoreCase(g.getTitle())))
+				.collect(Collectors.toList());
+
+		if (nonExistingGroups.size() > 0 && autoConfigSessionBean.isNewChannel()) {
+			List<MicrosoftChannel> channels = microsoftCommonService.createChannels(nonExistingGroups, ss.getTeamId(), credentials.getEmail());
+			channels.forEach(c -> channelsMap.put(c.getId(), c));
+		}
+
+		for (Group g : groupsToProcess) {
+			MicrosoftChannel channel = channelsMap.values().stream()
+					.filter(c -> c.getName().equalsIgnoreCase(g.getTitle()))
+					.findAny()
+					.orElse(null);
+
+			String channelId = (channel != null) ? channel.getId() : null;
+
+			if (channel == null && autoConfigSessionBean.isNewChannel()) {
+				channelId = microsoftCommonService.createChannel(ss.getTeamId(), g.getTitle(), credentials.getEmail());
+			}
+
+			if (StringUtils.isNotBlank(channelId)) {
+				GroupSynchronization gs = GroupSynchronization.builder()
+						.siteSynchronization(ss)
+						.groupId(g.getId())
+						.channelId(channelId)
+						.build();
+
+				if (microsoftSynchronizationService.getGroupSynchronization(gs) == null) {
+					microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
+				}
+			}
+		}
+	}
+
+	private List<Group> limitGroups(Collection<Group> groups) {
+		return groups.size() > MAX_CHANNELS ?
+				groups.stream().limit(MAX_ADD_CHANNELS).collect(Collectors.toList()) :
+				new ArrayList<>(groups);
+	}
+
+
+	@GetMapping(value = {"/autoConfig-status"}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public AutoConfigSessionBean autoConfigStatus(Model model, HttpServletRequest request) throws Exception {
+		HttpSession session = request.getSession();
+		AutoConfigSessionBean autoConfigSessionBean = (AutoConfigSessionBean) session.getAttribute("AutoConfigSessionBean");
+
+		return autoConfigSessionBean;
+	}
 }

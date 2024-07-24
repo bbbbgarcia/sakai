@@ -55,146 +55,144 @@ import static org.sakaiproject.microsoft.api.MicrosoftCommonService.MAX_CHANNELS
 @Controller
 public class GroupSynchronizationController {
 
-    private static ResourceLoader rb = new ResourceLoader("Messages");
+	private static ResourceLoader rb = new ResourceLoader("Messages");
 
-    @Autowired
-    private MicrosoftSynchronizationService microsoftSynchronizationService;
+	@Autowired
+	private MicrosoftSynchronizationService microsoftSynchronizationService;
 
-    @Autowired
-    private MicrosoftCommonService microsoftCommonService;
+	@Autowired
+	private MicrosoftCommonService microsoftCommonService;
 
-    @Autowired
-    MicrosoftConfigurationService microsoftConfigurationService;
+	@Autowired
+	MicrosoftConfigurationService microsoftConfigurationService;
 
-    @Autowired
-    SakaiProxy sakaiProxy;
+	@Autowired
+	SakaiProxy sakaiProxy;
 
-    private static final String REDIRECT_INDEX = "redirect:/index";
-    private static final String REDIRECT_EDIT_GROUP_SYNCH = "redirect:/editGroupSynchronization";
-    private static final String EDIT_GROUP_SYNCH_TEMPLATE = "editGroupSynchronization";
+	private static final String REDIRECT_INDEX = "redirect:/index";
+	private static final String REDIRECT_EDIT_GROUP_SYNCH = "redirect:/editGroupSynchronization";
+	private static final String EDIT_GROUP_SYNCH_TEMPLATE = "editGroupSynchronization";
 
-    private static final String NEW = "NEW";
+	private static final String NEW = "NEW";
 
-    @GetMapping(value = {"/editGroupSynchronization/{siteSynchronizationId}"})
-    public String editGroupSynchronization(@PathVariable String siteSynchronizationId, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
-        SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteSynchronizationId).build(), true);
+	@GetMapping(value = {"/editGroupSynchronization/{siteSynchronizationId}"})
+	public String editGroupSynchronization(@PathVariable String siteSynchronizationId, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
+		SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteSynchronizationId).build(), true);
 
-        if (ss == null) {
-            redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.site_synchronization_not_found"));
-            return REDIRECT_INDEX;
-        }
+		if (ss == null) {
+			redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.site_synchronization_not_found"));
+			return REDIRECT_INDEX;
+		}
 
-        List<Group> gr = (List<Group>) sakaiProxy.getSite(ss.getSiteId()).getGroups();
+		List<Group> groups = (List<Group>) sakaiProxy.getSite(ss.getSiteId()).getGroups();
 
-        model.addAttribute("siteSynchronizationId", siteSynchronizationId);
-        model.addAttribute("groupsMap", gr.stream().collect(Collectors.toMap(Group::getId, Function.identity())));
-        model.addAttribute("channelsMap", microsoftCommonService.getTeamPrivateChannels(ss.getTeamId()));
-        model.addAttribute("siteTitle", ss.getSite().getTitle());
-        model.addAttribute("teamTitle", microsoftCommonService.getTeam(ss.getTeamId()).getName());
+		model.addAttribute("siteSynchronizationId", siteSynchronizationId);
+		model.addAttribute("groupsMap", groups.stream().collect(Collectors.toMap(Group::getId, Function.identity())));
+		model.addAttribute("channelsMap", microsoftCommonService.getTeamPrivateChannels(ss.getTeamId()));
+		model.addAttribute("siteTitle", ss.getSite().getTitle());
+		model.addAttribute("teamTitle", microsoftCommonService.getTeam(ss.getTeamId()).getName());
 
-        List<GroupSynchronization> list = microsoftSynchronizationService.getAllGroupSynchronizationsBySiteSynchronizationId(siteSynchronizationId);
-        gr.stream()
-                .filter(g -> list.stream().noneMatch(item -> item.getGroupId().equals(g.getId())))
-                .map(g -> GroupSynchronization.builder()
-                        .groupId(g.getId())
-                        .channelId("")
-                        .siteSynchronization(ss)
-                        .build())
-                .forEach(list::add);
+		List<GroupSynchronization> list = microsoftSynchronizationService.getAllGroupSynchronizationsBySiteSynchronizationId(siteSynchronizationId);
+		groups.stream()
+				.filter(g -> list.stream().noneMatch(item -> item.getGroupId().equals(g.getId())))
+				.map(g -> GroupSynchronization.builder()
+						.groupId(g.getId())
+						.channelId("")
+						.siteSynchronization(ss)
+						.build())
+				.forEach(list::add);
 
-        List<GroupSynchronization> sortedList = new ArrayList<>();
-        gr.forEach(g -> sortedList.addAll(
-                        list.stream().filter(element -> element.getGroupId().equals(g.getId())).collect(Collectors.toList())
-                )
-        );
+		List<GroupSynchronization> sortedList = new ArrayList<>();
+		groups.forEach(
+				g -> sortedList.addAll(
+						list.stream().filter(element -> element.getGroupId().equals(g.getId())).collect(Collectors.toList())
+				)
+		);
 
-        if (list.size() > 0) {
-            model.addAttribute("groupSynchronizations", sortedList);
-        }
+		if (list.size() > 0) {
+			model.addAttribute("groupSynchronizations", sortedList);
+		}
 
-        return EDIT_GROUP_SYNCH_TEMPLATE;
-    }
-
-
-    @PostMapping(path = {"/add-groupSynchronization/{siteSynchronizationId}"}, consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE})
-    public String saveGroupSynchronization(@PathVariable String siteSynchronizationId, @ModelAttribute GroupSynchronizationRequest payload, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
-        SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteSynchronizationId).build());
-        if (ss != null) {
-            Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId());
-            model.addAttribute("channelsMap", channelsMap);
-
-            Collection<MicrosoftChannel> channels = channelsMap.values();
-
-                if (StringUtils.isNotBlank(payload.getSelectedGroupId()) && StringUtils.isNotBlank(payload.getSelectedChannelId())) {
-                    String groupId = payload.getSelectedGroupId();
-                    String channelId = payload.getSelectedChannelId();
-
-                    GroupSynchronization gs = GroupSynchronization.builder()
-                            .siteSynchronization(ss)
-                            .groupId(groupId)
-                            .channelId(channelId)
-                            .build();
-
-                    GroupSynchronization aux_gs = microsoftSynchronizationService.getGroupSynchronization(gs);
-                    if (aux_gs != null) {
-                        redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.group_synchronization_already_exists"));
-
-                        return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
-                    }
-
-                    //check if parent is forced and selected channel is duplicated
-                    //TODO: at this point, if parent is not forcing, we will allow this relationship. But we don't check if the parent starts forcing after that
-                    if (ss.isForced() && microsoftSynchronizationService.countGroupSynchronizationsByChannelId(gs.getChannelId()) > 0) {
-                        redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.group_synchronization_already_forced"));
-
-                        return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
-                    }
-
-                    log.debug("saving: groupId={}, channelId={}", groupId, channelId);
-                    microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
-                }
-            } else {
-                redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.channel_number_more_than_30"));
-            }
+		return EDIT_GROUP_SYNCH_TEMPLATE;
+	}
 
 
-        return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
-    }
+	@PostMapping(path = {"/add-groupSynchronization/{siteSynchronizationId}"}, consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE})
+	public String saveGroupSynchronization(@PathVariable String siteSynchronizationId, @ModelAttribute GroupSynchronizationRequest payload, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
+		SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteSynchronizationId).build());
+		if (ss != null) {
+			Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId());
+			model.addAttribute("channelsMap", channelsMap);
+
+			if (StringUtils.isNotBlank(payload.getSelectedGroupId()) && StringUtils.isNotBlank(payload.getSelectedChannelId())) {
+				String groupId = payload.getSelectedGroupId();
+				String channelId = payload.getSelectedChannelId();
+
+				GroupSynchronization gs = GroupSynchronization.builder()
+						.siteSynchronization(ss)
+						.groupId(groupId)
+						.channelId(channelId)
+						.build();
+
+				GroupSynchronization aux_gs = microsoftSynchronizationService.getGroupSynchronization(gs);
+				if (aux_gs != null) {
+					redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.group_synchronization_already_exists"));
+
+					return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
+				}
+
+				//check if parent is forced and selected channel is duplicated
+				//TODO: at this point, if parent is not forcing, we will allow this relationship. But we don't check if the parent starts forcing after that
+				if (ss.isForced() && microsoftSynchronizationService.countGroupSynchronizationsByChannelId(gs.getChannelId()) > 0) {
+					redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.group_synchronization_already_forced"));
+
+					return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
+				}
+
+				log.debug("saving: groupId={}, channelId={}", groupId, channelId);
+				microsoftSynchronizationService.saveOrUpdateGroupSynchronization(gs);
+			}
+		} else {
+			redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.channel_number_more_than_30"));
+		}
+
+		return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteSynchronizationId;
+	}
 
 
-    @GetMapping(path = {"/delete-groupSynchronization/{groupSynchronizationId}"}, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public Boolean deleteGroupSynchronization(@PathVariable String groupSynchronizationId, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
-        boolean ok = false;
-        GroupSynchronization gs = microsoftSynchronizationService.getGroupSynchronization(GroupSynchronization.builder().id(groupSynchronizationId).build());
-        if (gs != null) {
-            ok = microsoftSynchronizationService.deleteGroupSynchronization(groupSynchronizationId);
-        }
+	@GetMapping(path = {"/delete-groupSynchronization/{groupSynchronizationId}"}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public Boolean deleteGroupSynchronization(@PathVariable String groupSynchronizationId, Model model, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
+		boolean ok = false;
+		GroupSynchronization gs = microsoftSynchronizationService.getGroupSynchronization(GroupSynchronization.builder().id(groupSynchronizationId).build());
+		if (gs != null) {
+			ok = microsoftSynchronizationService.deleteGroupSynchronization(groupSynchronizationId);
+		}
 
-        return ok;
-    }
+		return ok;
+	}
 
-    @PostMapping(value = {"/channel"})
-    public String createNewChannel(@RequestParam String siteId, @RequestParam String name, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
-        log.debug("NEW channel creating");
-        SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteId).build());
-        try {
-            Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId());
-            Collection<MicrosoftChannel> channels = channelsMap.values();
-            boolean channelExists = channels.stream()
-                    .anyMatch(channel -> channel.getName().equalsIgnoreCase(name));
-            if (!channelExists) {
-                if (channels.size() < MAX_CHANNELS) {
-                    microsoftCommonService.createChannel(ss.getTeamId(), name, microsoftConfigurationService.getCredentials().getEmail());
-                } else {
-                    redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.channel_number_more_than_30"));
-                }
-            } else {
-                redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.new_channel_with_same_name"));
-            }
-        } catch (NullPointerException e) {
-            log.error("MicrosoftCredentialsException in confirm thread");
-        }
-        return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteId;
-    }
+	@PostMapping(value = {"/channel"})
+	public String createNewChannel(@RequestParam String siteId, @RequestParam String name, RedirectAttributes redirectAttributes) throws MicrosoftGenericException {
+		log.debug("NEW channel creating");
+		SiteSynchronization ss = microsoftSynchronizationService.getSiteSynchronization(SiteSynchronization.builder().id(siteId).build());
+		try {
+			Map<String, MicrosoftChannel> channelsMap = microsoftCommonService.getTeamPrivateChannels(ss.getTeamId());
+			Collection<MicrosoftChannel> channels = channelsMap.values();
+			boolean channelExists = channels.stream()
+					.anyMatch(channel -> channel.getName().equalsIgnoreCase(name));
+			if (!channelExists) {
+				if (channels.size() < MAX_CHANNELS) {
+					microsoftCommonService.createChannel(ss.getTeamId(), name, microsoftConfigurationService.getCredentials().getEmail());
+				} else {
+					redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.channel_number_more_than_30"));
+				}
+			} else {
+				redirectAttributes.addFlashAttribute("exception_error", rb.getString("error.new_channel_with_same_name"));
+			}
+		} catch (NullPointerException e) {
+			log.error("MicrosoftCredentialsException in confirm thread");
+		}
+		return REDIRECT_EDIT_GROUP_SYNCH + "/" + siteId;
+	}
 }
