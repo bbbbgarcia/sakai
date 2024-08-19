@@ -143,7 +143,6 @@ public class GradingBean {
 				gradebookUids = new ArrayList<String>(simplePageBean.getItemGroups(topItem, null, false));
 			}
 			for (String gradebookUid : gradebookUids) {
-				// S2U-26 improvements : check if user belongs to gradebook
 				r = gradebookIfc.updateExternalAssessmentScore(gradebookUid, simplePageBean.getCurrentSiteId(), gradebookId, comment.getAuthor(), Double.toString(newpoints));
 			}
 		}catch(Exception ex) {
@@ -204,7 +203,6 @@ public class GradingBean {
 					gradebookUids = new ArrayList<String>(simplePageBean.getItemGroups(pageItem, null, false));
 				}
 				for (String gradebookUid : gradebookUids) {
-					// S2U-26 improvements : check if user belongs to gradebook
 					r = gradebookIfc.updateExternalAssessmentScore(gradebookUid, simplePageBean.getCurrentSiteId(), pageItem.getGradebookId(), page.getOwner(), Double.toString(newpoints));
 				}
 			} else {
@@ -251,7 +249,6 @@ public class GradingBean {
 					gradebookUids = new ArrayList<String>(simplePageBean.getItemGroups(questionItem, null, false));
 				}
 				for (String gradebookUid : gradebookUids) {
-					// S2U-26 improvements : check if user belongs to gradebook
 					r = gradebookIfc.updateExternalAssessmentScore(gradebookUid, simplePageBean.getCurrentSiteId(), questionItem.getGradebookId(), response.getUserId(), Double.toString(newpoints));
 				}
 		    }catch(Exception ex) {

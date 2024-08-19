@@ -571,7 +571,6 @@ public class TurnitinReviewServiceImpl extends BaseContentReviewService {
 
 		SecurityAdvisor advisor = pushAdvisor();
 		try {
-			// TODO s2u-26 review perf and qa
 			List<String> gradebookUids = Arrays.asList(siteId);
 			if (gradingService.isGradebookGroupEnabled(siteId)) {
 				gradebookUids = gradingService.getGradebookGroupInstancesIds(siteId);
@@ -747,7 +746,6 @@ public class TurnitinReviewServiceImpl extends BaseContentReviewService {
 		try {
 			if (grade != null) {
 				try {
-					// TODO s2u-26 review perf + qa
 					List<String> gradebookUids = Arrays.asList(siteId);
 					if (gradingService.isGradebookGroupEnabled(siteId)) {
 						gradebookUids = gradingService.getGradebookGroupInstancesIds(siteId);

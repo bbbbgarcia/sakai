@@ -5115,7 +5115,6 @@ public class SimplePageBean {
 			gradebookUids = new ArrayList<>(gbGroups);
 		}
 		for (String gradebookUid : gradebookUids) {
-			// S2U-26 improvements : check if user belongs to gradebook
 			gradebookIfc.updateExternalAssessmentScores(gradebookUid, getCurrentSiteId(), "lesson-builder:" + pageId, userMap);
 		}
 	}
@@ -8425,7 +8424,6 @@ public class SimplePageBean {
 				}
 			}
 			for (String gradebookUid : gradebookUids) {
-				// S2U-26 improvements : check if user belongs to gradebook
 				gradebookIfc.updateExternalAssessmentScore(gradebookUid, getCurrentSiteId(), gradebookId, userid, "0.0");
 			}
 		}
@@ -8508,7 +8506,6 @@ public class SimplePageBean {
 				}
 			}
 			for (String gradebookUid : gradebookUids) {
-				// S2U-26 improvements : check if user belongs to gradebook
 				gradebookIfc.updateExternalAssessmentScore(gradebookUid, getCurrentSiteId(), gradebookId, owner, "0.0");
 			}
 	    }
@@ -8564,7 +8561,6 @@ public class SimplePageBean {
 				}
 			}
 			for (String gradebookUid : gradebookUids) {
-				// S2U-26 improvements : check if user belongs to gradebook
 				gradebookIfc.updateExternalAssessmentScore(gradebookUid, getCurrentSiteId(), gradebookId, owner, "0.0");
 			}
 	    }
@@ -8608,7 +8604,6 @@ public class SimplePageBean {
 						}
 					}
 					for (String gradebookUid : gradebookUids) {
-						// S2U-26 improvements : check if user belongs to gradebook
 						gradebookIfc.updateExternalAssessmentScore(gradebookUid, getCurrentSiteId(), pageItem.getGradebookId(), c.getOwner(), String.valueOf(c.getPoints()));
 					}
 			    } else {
