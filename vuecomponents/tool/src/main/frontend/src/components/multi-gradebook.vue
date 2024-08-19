@@ -131,9 +131,9 @@ export default {
 		siteId: { type: String },
 		tool: { type: String },
 		selectedTemp: { type: String },
-		extraOptions: { type: String },
 		isCategory: { type: Boolean },
 		multipleSelection: { type: Boolean },
+		userId: { type: String },
 	},
 	data(props) {
 		return {
@@ -169,18 +169,22 @@ export default {
 	},
 	async mounted() {
 		var endpoint = this.isCategory ? "/categories" : "/items";
-		console.log("ENDPOINT: " + endpoint);
-		console.log("selection" , this.multipleSelection);
+		console.debug("ENDPOINT: " + endpoint);
+		console.debug("selection" , this.multipleSelection);
 
-    	await fetch('/api/sites/' + this.siteId + endpoint)
-      	.then((r) => {
+		if (this.userId) {
+			endpoint += "/" + this.userId;
+		}
+
+		await fetch('/api/sites/' + this.siteId + endpoint)
+		.then((r) => {
 			if (r.ok) {
 				return r.json();
 			}
-        	throw new Error(`Failed to get items for site ` + this.siteId);
-      	})
-      	.then((data) => {
-			console.log(data);
+			throw new Error(`Failed to get items for site ` + this.siteId);
+		})
+		.then((data) => {
+			console.debug(data);
 			if (data != null && data.length > 0) {
 				this.options = data.map(parent => {
 					parent.items = parent.items.map(item => {
@@ -189,12 +193,12 @@ export default {
 						return item;
 					});
 					return parent;
-        		});
+				});
 			} else {
 				this.options = [{ name: 'No options found', items: [] }];
 			}
-      	})
-      	.catch ((error) => console.error(error));
+		})
+		.catch ((error) => console.error(error));
 
 		this.selectedTemp.split(',').forEach((element) => {
 			for (const option of this.options) {
@@ -206,7 +210,7 @@ export default {
 					}
 				}
 			}
-      	});
+		});
 	},
 };
 </script>

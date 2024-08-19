@@ -183,12 +183,17 @@ public class GradesController extends AbstractSakaiApiController {
         return gradeDataSupplierForSite.apply(siteId);
     }
 
-    @GetMapping(value = "/sites/{siteId}/items", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<GradebookRestBean> getSiteItems(@PathVariable String siteId) throws UserNotDefinedException {
+    @GetMapping(value = {"/sites/{siteId}/items", "/sites/{siteId}/items/{userId}"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<GradebookRestBean> getSiteItems(@PathVariable String siteId, @PathVariable Optional<String> userId) throws UserNotDefinedException {
         checkSakaiSession();
 
         List<GradebookRestBean> gbWithItems = new ArrayList<>();
-        Map<String, String> gradebookGroupMap = returnFoundGradebooks(siteId);
+        String user = userDirectoryService.getCurrentUser().getId();
+        if (userId.isPresent()) {
+            user = userId.get();
+        }
+
+        Map<String, String> gradebookGroupMap = returnFoundGradebooks(siteId, user);
 
         for (Map.Entry<String, String> entry : gradebookGroupMap.entrySet()) {
             List<GradebookItemRestBean> gbItems = new ArrayList<>();
@@ -230,7 +235,7 @@ public class GradesController extends AbstractSakaiApiController {
 
         List<GradebookRestBean> gbWithItems = new ArrayList<>();
 
-        Map<String, String> gradebookGroupMap = returnFoundGradebooks(siteId);
+        Map<String, String> gradebookGroupMap = returnFoundGradebooks(siteId, userDirectoryService.getCurrentUser().getId());
 
         for (Map.Entry<String, String> entry : gradebookGroupMap.entrySet()) {
             List<GradebookItemRestBean> gbItems = new ArrayList<>();
@@ -253,7 +258,7 @@ public class GradesController extends AbstractSakaiApiController {
         return gbWithItems;
     }
 
-    private Map<String, String> returnFoundGradebooks(String siteId) {
+    private Map<String, String> returnFoundGradebooks(String siteId, String userId) {
         try {
             List<Gradebook> gradebookList = gradingService.getGradebookGroupInstances(siteId);
             Map<String, String> gradebookGroupMap = new HashMap<>();
@@ -261,8 +266,9 @@ public class GradesController extends AbstractSakaiApiController {
             Site site = siteService.getSite(siteId);
             Collection<Group> groupList = site.getGroups();
 
-            boolean isInstructor = securityService.isSuperUser() || securityService.unlock("section.role.instructor", site.getReference());
-            List<String> groupIds = site.getGroupsWithMember(userDirectoryService.getCurrentUser().getId()).stream().map(Group::getId).collect(Collectors.toList());
+            // a specific user id is sent in some cases like forums
+            boolean isInstructor = userId.equals(userDirectoryService.getCurrentUser().getId()) && (securityService.isSuperUser() || securityService.unlock("section.role.instructor", site.getReference()));
+            List<String> groupIds = site.getGroupsWithMember(userId).stream().map(Group::getId).collect(Collectors.toList());
 
             gradebookList.forEach(gradebook -> {
                 String gradebookUid = gradebook.getUid();
