@@ -949,8 +949,6 @@ public interface GradingService extends EntityProducer {
      */
     public void updateGradeMapping(Long gradeMappingId, Map<String, Double> gradeMap);
 
-    public String getUrlForAssignment(Assignment assignment);
-
     public boolean isGradebookGroupEnabled(String siteId);
     public List<Gradebook> getGradebookGroupInstances(String siteId);
     public List<String> getGradebookGroupInstancesIds(String siteId);

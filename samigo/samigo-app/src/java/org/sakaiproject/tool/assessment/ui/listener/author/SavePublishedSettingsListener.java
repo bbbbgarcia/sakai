@@ -1046,7 +1046,6 @@ implements ActionListener
             }
         } else { //remove
             try {
-                // TODO S2U-26 borrar todos?? por external id directamentE??
                 gbsHelper.removeExternalAssessment(GradebookFacade.getGradebookUId(), assessment.getPublishedAssessmentId().toString(), gradingService);
             } catch(Exception e){
                 log.warn("No external assessment to remove: {}", e.getMessage());

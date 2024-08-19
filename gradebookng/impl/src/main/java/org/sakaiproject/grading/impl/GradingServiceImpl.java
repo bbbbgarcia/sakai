@@ -280,22 +280,16 @@ public class GradingServiceImpl implements GradingService {
             .orElseThrow(() -> new IllegalArgumentException("Invalid gradebookUid or externalId"));
     }
 
-    //TODO CACHE
-	//TODO hay algun caso en el q se pueda cambiar la respuesta?? si es asi resetear la cache en ese caso
     public List<String> getGradebookUidByExternalId(String externalId) {
-        //TODO validar aqui o en tareas si el guid corresponde a alguno de los grupos seleccionados?
 
         List<GradebookAssignment> optAsn = gradingPersistenceManager.getGradebookUidByExternalId(externalId);
-        //?
         if (optAsn.isEmpty()) {
             return new ArrayList<>();
-			//2407 sustituyo porque si lanzo excepcion peta por ejemplo al borrar una tarea que no tiene (o con el ref erroneo?) pero seguir viendo si la excep estaba por algo...
-			//throw new AssessmentNotFoundException("There is no assessment id=" + externalId);
         }
 
         return optAsn.stream()
-			.map(a -> a.getGradebook().getUid())//MyObject::getName)
-			.collect(Collectors.toList());//get().getGradebook().getUid();
+			.map(a -> a.getGradebook().getUid())
+			.collect(Collectors.toList());
     }
 
     @Override
@@ -329,7 +323,7 @@ public class GradingServiceImpl implements GradingService {
         Assignment assignmentDefinition = new Assignment();
         assignmentDefinition.setName(internalAssignment.getName());
         assignmentDefinition.setReference(internalAssignment.getReference());
-        assignmentDefinition.setContext(internalAssignment.getGradebook().getUid());//TODO ? si quiero investigar la relevancia de esto renombrar el campo en el modelo por contextt y ver llamadas
+        assignmentDefinition.setContext(internalAssignment.getGradebook().getUid());
         assignmentDefinition.setPoints(internalAssignment.getPointsPossible());
         assignmentDefinition.setDueDate(internalAssignment.getDueDate());
         assignmentDefinition.setCounted(internalAssignment.getCounted());
@@ -481,7 +475,7 @@ public class GradingServiceImpl implements GradingService {
             throw new IllegalArgumentException("Null paraemter passed to getGradeDefinitionForStudentForItem");
         }
 
-        // studentId can be a groupId (from Assignments) - TODO S2U-26 revisar este caso??
+        // studentId can be a groupId (from Assignments)
         final boolean studentRequestingOwnScore = sessionManager.getCurrentSessionUserId().equals(studentUid)
                 || isCurrentUserFromGroup(siteId, studentUid);
 
@@ -4945,53 +4939,10 @@ public class GradingServiceImpl implements GradingService {
 
     @Override
 	public String getGradebookUidByAssignmentById(String siteId, Long assignmentId) {
-        /*if (assignmentId == null || siteId == null) {
-            throw new IllegalArgumentException("null parameter passed to getAssignment. Values are assignmentId:" + assignmentId + " siteId:" + siteId);
-        }
-        if (!isUserAbleToViewAssignments(siteId) && !currentUserHasViewOwnGradesPerm(siteId)) {
-            log.warn("AUTHORIZATION FAILURE: User {} in site {} attempted to get assignment with id {}", getUserUid(), siteId, assignmentId);
-            throw new GradingSecurityException();
-        }
-
-        GradebookAssignment assignment = gradingPersistenceManager.getAssignmentById(assignmentId).orElse(null);
-
-        if (assignment == null) {
-            throw new AssessmentNotFoundException("No gradebook item exists with gradable object id = " + assignmentId);
-        }
-
-        return assignment.getGradebook().getUid();*/
 		return getAssignmentById(siteId, assignmentId).getContext();//TODO s2u-26 revisar comentario en metodo getAssignmentDefinition
 	}
 
-    @Override
-    public String getUrlForAssignment(Assignment assignment) {//TODO s2u-26  revisar y ver la forma de recuperar el GB desde un objeto de este tipo..
-//ESTO IGUAL SE PODRIA HACER DENTRO DEL PROPIO GRADESCONTROLLER NO HAY NADA QUE REQUIERA QUE ESTE AQUI Y ALLI TENGO YA INFO DE TOOLCONFIG SI ME MONTO EL BUCLE Y LO GUARDO EN UN MAP O ALGO
-        String gbUrl = "";
-        try {
-            Site site = siteService.getSite(assignment.getContext());
-            ToolConfiguration tc = site.getToolForCommonId("sakai.gradebookng");
-            if (tc != null) {
-                gbUrl = "/portal/directtool/" + tc.getId();
-            } else {
-                log.warn("No gradebook tool for site {}", assignment.getContext());
-            }
-        } catch (IdUnusedException idue) {
-            log.warn("No site for id {}", assignment.getContext());
-        }
-
-        if (assignment.getExternallyMaintained()) {
-            if (assignment.getReference() != null) {
-                return entityManager.getUrl(assignment.getReference(), UrlType.PORTAL).orElse("");
-            } else {
-                return gbUrl;
-            }
-        } else {
-            return gbUrl;
-        }
-    }
-
-//TODO ESPACIOS POR TABS
-//TODO s2u-26 CACHE - new en el init?
+//TODO s2u-26 ESPACIOS POR TABS
 	private static final String GB_GROUP_SITE_PROPERTY = "gradebook_group";
 	private static final String GB_GROUP_TOOL_PROPERTY = "gb-group";
 
@@ -5046,8 +4997,7 @@ public class GradingServiceImpl implements GradingService {
 			for (ToolConfiguration tc : gbs) {
 				Properties props = tc.getPlacementConfig();
 				if (props.getProperty(GB_GROUP_TOOL_PROPERTY) != null) {
-					log.info("Detected gradebook for group {}", props.getProperty(GB_GROUP_TOOL_PROPERTY));
-                    // TODO s2u-26 HOLA ??
+					log.debug("Detected gradebook for group {}", props.getProperty(GB_GROUP_TOOL_PROPERTY));
                     Optional<Gradebook> gb = gradingPersistenceManager.getGradebook(props.getProperty(GB_GROUP_TOOL_PROPERTY));
                     if (gb.isPresent()) {
                         gbList.add(gb.get());

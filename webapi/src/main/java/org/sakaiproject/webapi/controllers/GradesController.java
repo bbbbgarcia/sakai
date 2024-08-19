@@ -204,7 +204,7 @@ public class GradesController extends AbstractSakaiApiController {
             List<Assignment> gradebookAssignments = gradingService.getAssignments(gbUid, siteId, SortType.SORT_BY_NONE);
 
             for (Assignment gAssignment : gradebookAssignments) {
-                //TODO revisar - esta comprobacion ahora mismo viene de tareas, faltan otras y luego cada tool tendra
+                //TODO S2U-26 revisar - esta comprobacion ahora mismo viene de tareas, faltan otras y luego cada tool tendra
                 if (!gAssignment.getExternallyMaintained() || gAssignment.getExternallyMaintained() && gAssignment.getExternalAppName().equals(AssignmentServiceConstants.ASSIGNMENT_TOOL_ID)) {
                     // gradebook item has been associated or not
                     // ANTIGUO MÉTODO Se cambia de Referencia / Ids a unicamente Ids, por lo que se recoge solo el id

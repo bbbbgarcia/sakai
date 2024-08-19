@@ -2212,7 +2212,6 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
                 }
             }
 
-//TODO S2U-26 rellenar solamente si !group?
             List<Assignment> gradebookAssignmentList = gradingService.getAssignments(AgentFacade.getCurrentSiteId(), AgentFacade.getCurrentSiteId(), SortType.SORT_BY_NONE);
             for (Assignment gradebookAssignment : gradebookAssignmentList) {
                 boolean isExternallyMaintained = gradebookAssignment.getExternallyMaintained();
@@ -2247,14 +2246,12 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
 
     public List<SelectItem> getExistingGradebook() {
         if (this.existingGradebook == null || this.existingGradebook.isEmpty()) {
-            //TODO S2U-26 if ! gb group
             this.setExistingGradebook(this.populateExistingGradebookItems());
         }
         return this.existingGradebook;
     }
   
     public boolean getGradebookGroupEnabled() {
-        //TODO Cache aqui o dentro del gb?
         this.gradebookGroupEnabled = gradingService.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
         return this.gradebookGroupEnabled;
     }
