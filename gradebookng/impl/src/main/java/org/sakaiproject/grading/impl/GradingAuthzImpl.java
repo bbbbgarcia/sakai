@@ -164,20 +164,19 @@ public class GradingAuthzImpl implements GradingAuthz {
         return sectionAwareness.isSectionMemberInRole(sectionUid, userUid, Role.TA);
     }
 
-	// S2U-26 this function is called from forums, so it will always be a site=id situation until SAK-49493 is completed
-    public String getGradeViewFunctionForUserForStudentForItem(String gradebookUid, Long itemId, String studentUid) {
+    public String getGradeViewFunctionForUserForStudentForItem(String gradebookUid, String siteId, Long itemId, String studentUid) {
 
         if (itemId == null || studentUid == null || gradebookUid == null) {
             throw new IllegalArgumentException("Null parameter(s) in AuthzSectionsServiceImpl.getGradeViewFunctionForUserForStudentForItem");
         }
 
-        if (isUserAbleToGradeAll(gradebookUid)) {
+        if (isUserAbleToGradeAll(siteId)) {
             return GradingConstants.gradePermission;
         }
 
         String userUid = sessionManager.getCurrentSessionUserId();
 
-        List<CourseSection> viewableSections = getViewableSections(gradebookUid, gradebookUid);
+        List<CourseSection> viewableSections = getViewableSections(gradebookUid, siteId);
 
         if (gradingPermissionService.currentUserHasGraderPermissions(gradebookUid)) {
 

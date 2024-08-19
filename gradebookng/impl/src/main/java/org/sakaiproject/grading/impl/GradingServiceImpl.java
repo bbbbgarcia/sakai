@@ -207,9 +207,9 @@ public class GradingServiceImpl implements GradingService {
     }
 
     @Override
-    public String getGradeViewFunctionForUserForStudentForItem(String gradebookUid, Long itemId, String studentUid) {
+    public String getGradeViewFunctionForUserForStudentForItem(String gradebookUid, String siteId, Long itemId, String studentUid) {
 
-        return gradingAuthz.getGradeViewFunctionForUserForStudentForItem(gradebookUid, itemId, studentUid);
+        return gradingAuthz.getGradeViewFunctionForUserForStudentForItem(gradebookUid, siteId, itemId, studentUid);
     }
 
     @Override
@@ -2295,52 +2295,6 @@ public class GradingServiceImpl implements GradingService {
         log.debug("assignment score after formatting: {}", formatted);
         return formatted;
     }
-/*
-    @Override
-    public String getAssignmentScoreString(final String gradebookUid, final String siteId, final String assignmentName, final String studentUid)
-            throws AssessmentNotFoundException {
-
-        if (gradebookUid == null || assignmentName == null || studentUid == null) {
-            throw new IllegalArgumentException("null parameter passed to getAssignment. Values are gradebookUid:"
-                    + gradebookUid + " assignmentName:" + assignmentName + " studentUid:" + studentUid);
-        }
-
-        final GradebookAssignment assignment = getAssignmentWithoutStats(gradebookUid, assignmentName);
-
-        if (assignment == null) {
-            throw new AssessmentNotFoundException("There is no assignment with name " + assignmentName + " in gradebook " + gradebookUid);
-        }
-
-        return getAssignmentScoreString(gradebookUid, siteId, assignment.getId(), studentUid);
-    }
-
-    @Override
-    public String getAssignmentScoreStringByNameOrId(final String gradebookUid, final String siteId, final String assignmentName, final String studentUid)
-            throws AssessmentNotFoundException {
-        String score = null;
-        try {
-            score = getAssignmentScoreString(gradebookUid, siteId, assignmentName, studentUid);
-        } catch (final AssessmentNotFoundException e) {
-            // Don't fail on this exception
-            log.debug("Assessment not found by name", e);
-        } catch (final GradingSecurityException gse) {
-            log.warn("User {} does not have permission to retrieve score for assignment {}", studentUid, assignmentName, gse);
-            return null;
-        }
-
-        if (score == null) {
-            // Try to get the assignment by id
-            if (NumberUtils.isCreatable(assignmentName)) {
-                final Long assignmentId = NumberUtils.toLong(assignmentName, -1L);
-                try {
-                    score = getAssignmentScoreString(gradebookUid, siteId, assignmentId, studentUid);
-                } catch (AssessmentNotFoundException anfe) {
-                    log.debug("Assessment could not be found for gradebook id {} and assignment id {} and student id {}", gradebookUid, assignmentName, studentUid);
-                }
-            }
-        }
-        return score;
-    }*/
 
     @Override
     public void setAssignmentScoreString(String gradebookUid, String siteId, Long assignmentId, String studentUid, String score, String clientServiceDescription)//clientServiceDescription se usa?
@@ -2357,7 +2311,7 @@ public class GradingServiceImpl implements GradingService {
                     getUserUid(), gradebookUid, assignmentId, clientServiceDescription);
             throw new GradingSecurityException();
         }
-//esta comprobacion la hace tb en assignmenttoolutils cada vez
+//TODO s2u-26 esta comprobacion la hace tb en assignmenttoolutils cada vez
 	// se puede quitar el metodo alli
 //mirar https://sakaiproject.atlassian.net/browse/SAK-33978 y https://sakaiproject.atlassian.net/browse/SAK-31915 
 	// si la quito de alli lanzara excepcion y no queremos?
@@ -2405,55 +2359,6 @@ public class GradingServiceImpl implements GradingService {
         setAssignmentScoreString(gradebookUid, siteId, assignment.getId(), studentUid, score, clientServiceDescription);
     }
 
-//TODOS ESTOS METODOS QUE BORRO IGUAL PODRIAN IR EN OTRO SERVICIO O EN UNA SECCION APARTE
-	// IGUAL SON DE INTEGRACIONES EXTERNAS...
-
-/*    @Override
-    public void finalizeGrades(final String gradebookUid, final String siteId) {
-
-        if (!gradingAuthz.isUserAbleToGradeAll(siteId)) {
-            log.error("AUTHORIZATION FAILURE: User {} in gradebook {} attempted to finalize grades", getUserUid(), gradebookUid);
-            throw new GradingSecurityException();
-        }
-        finalizeNullGradeRecords(getGradebook(gradebookUid), siteId);
-    }
-
-    @Override
-    public String getLowestPossibleGradeForGbItem(final String gradebookUid, final String siteId, final Long gradebookItemId) {
-
-        if (gradebookUid == null || gradebookItemId == null) {
-            throw new IllegalArgumentException("Null gradebookUid and/or gradebookItemId " +
-                    "passed to getLowestPossibleGradeForGbItem. gradebookUid:" +
-                    gradebookUid + " gradebookItemId:" + gradebookItemId);
-        }
-
-        final GradebookAssignment gbItem = getAssignmentWithoutStatsByID(gradebookUid, gradebookItemId);
-
-        if (gbItem == null) {
-            throw new AssessmentNotFoundException("No gradebook item found with id " + gradebookItemId);
-        }
-
-        final Gradebook gradebook = gbItem.getGradebook();
-
-        // double check that user has some permission to access gb items in this site
-        if (!isUserAbleToViewAssignments(siteId) && !currentUserHasViewOwnGradesPerm(siteId)) {
-            throw new GradingSecurityException();
-        }
-
-        String lowestPossibleGrade = null;
-
-        if (gbItem.getUngraded()) {
-            lowestPossibleGrade = null;
-        } else if (Objects.equals(GradingConstants.GRADE_TYPE_PERCENTAGE, gradebook.getGradeType()) || Objects.equals(GradingConstants.GRADE_TYPE_POINTS, gradebook.getGradeType())) {
-            lowestPossibleGrade = "0";
-        } else if (Objects.equals(GradingConstants.GRADE_TYPE_LETTER, gbItem.getGradebook().getGradeType())) {
-            final LetterGradePercentMapping mapping = getLetterGradePercentMapping(gradebook);
-            lowestPossibleGrade = mapping.getGrade(0d);
-        }
-
-        return lowestPossibleGrade;
-    }
-*/
     @Override
     public List<CategoryDefinition> getCategoryDefinitions(String gradebookUid, String siteId) {
 
@@ -4037,118 +3942,7 @@ public class GradingServiceImpl implements GradingService {
         }
         return result || !providerResponded;
     }
-/*
-    @Override
-    public Map<String, String> getExternalAssignmentsForCurrentUser(final String gradebookUid) {
 
-        final Map<String, String> visibleAssignments = new HashMap<>();
-        final Set<String> providedAssignments = getProvidedExternalAssignments(gradebookUid);
-
-        for (final ExternalAssignmentProvider provider : getExternalAssignmentProviders().values()) {
-            final String appKey = provider.getAppKey();
-            final List<String> assignments = provider.getExternalAssignmentsForCurrentUser(gradebookUid);
-            for (final String externalId : assignments) {
-                visibleAssignments.put(externalId, appKey);
-            }
-        }
-
-        // We include those items that the gradebook has marked as externally maintained, but no provider has
-        // identified as items under its authority. This maintains the behavior prior to the grouping support
-        // introduced for the 2.9 release (SAK-11485 and SAK-19688), where a tool that does not have a provider
-        // implemented does not have its items filtered for student views and grading.
-        final List<Assignment> gbAssignments = getViewableAssignmentsForCurrentUser(gradebookUid, gradebookUid, SortType.SORT_BY_SORTING);
-        for (final Assignment assignment : gbAssignments) {
-            final String id = assignment.getExternalId();
-            if (assignment.getExternallyMaintained() && !providedAssignments.contains(id) && !visibleAssignments.containsKey(id)) {
-                log.debug("External assignment in gradebook [{}] is not handled by a provider; ID: {}", gradebookUid, id);
-                visibleAssignments.put(id, null);
-            }
-        }
-
-        return visibleAssignments;
-    }
-
-    private Set<String> getProvidedExternalAssignments(final String gradebookUid) {
-        final Set<String> allAssignments = new HashSet<>();
-        for (final ExternalAssignmentProvider provider : getExternalAssignmentProviders().values()) {
-            // TODO: This is a temporary cast; if this method proves to be the right fit
-            // and perform well enough, it will be moved to the regular interface.
-            if (provider instanceof ExternalAssignmentProviderCompat) {
-                allAssignments.addAll(
-                        ((ExternalAssignmentProviderCompat) provider).getAllExternalAssignments(gradebookUid));
-            } else if (this.providerMethods.containsKey(provider)) {
-                final Method m = this.providerMethods.get(provider);
-                try {
-                    @SuppressWarnings("unchecked")
-                    final List<String> reflectedAssignments = (List<String>) m.invoke(provider, gradebookUid);
-                    allAssignments.addAll(reflectedAssignments);
-                } catch (final Exception e) {
-                    log.debug("Exception calling getAllExternalAssignments", e);
-                }
-            }
-        }
-        return allAssignments;
-    }
-
-    @Override
-    public Map<String, List<String>> getVisibleExternalAssignments(final String gradebookUid, final Collection<String> studentIds) {
-
-        final Set<String> providedAssignments = getProvidedExternalAssignments(gradebookUid);
-
-        final Map<String, Set<String>> visible = new HashMap<>();
-        for (final String studentId : studentIds) {
-            visible.put(studentId, new HashSet<String>());
-        }
-
-        for (final ExternalAssignmentProvider provider : getExternalAssignmentProviders().values()) {
-            // SAK-24407 - Some tools modify this set so we can't pass it. I considered making it an unmodifableCollection but that would
-            // require changing a number of tools
-            final Set<String> studentIdsCopy = new HashSet<>(studentIds);
-            final Map<String, List<String>> externals = provider.getAllExternalAssignments(gradebookUid, (studentIdsCopy));
-            for (final String studentId : externals.keySet()) {
-                if (visible.containsKey(studentId)) {
-                    visible.get(studentId).addAll(externals.get(studentId));
-                }
-            }
-        }
-
-        // SAK-23733 - This covers a tricky case where items that the gradebook thinks are external
-        // but are not reported by any provider should be included for everyone. This is
-        // to accommodate tools that use the external assessment mechanisms but have not
-        // implemented an ExternalAssignmentProvider.
-        List<Assignment> allAssignments = getViewableAssignmentsForCurrentUser(gradebookUid, gradebookUid, SortType.SORT_BY_SORTING);
-        for (Assignment assignment : allAssignments) {
-            String id = assignment.getExternalId();
-            if (assignment.getExternallyMaintained() && !providedAssignments.contains(id)) {
-                for (String studentId : visible.keySet()) {
-                    visible.get(studentId).add(id);
-                }
-            }
-        }
-
-        return visible.keySet().stream()
-            .collect(Collectors.toMap(k -> k, k -> new ArrayList<String>(visible.get(k))));
-    }
-
-    @Override
-    public void setExternalAssessmentToGradebookAssignment(final String gradebookUid, final String externalId) {
-
-        final Optional<GradebookAssignment> optAssignment = getDbExternalAssignment(gradebookUid, externalId);
-        if (optAssignment.isEmpty()) {
-            throw new AssessmentNotFoundException("There is no assessment id=" + externalId + " in gradebook uid=" + gradebookUid);
-        }
-        GradebookAssignment assignment = optAssignment.get();
-        assignment.setExternalAppName(null);
-        assignment.setExternalId(null);
-        assignment.setExternalInstructorLink(null);
-        assignment.setExternalStudentLink(null);
-        assignment.setExternalData(null);
-        assignment.setExternallyMaintained(false);
-        gradingPersistenceManager.saveAssignment(assignment);
-        log.info("Externally-managed assignment {} moved to Gradebook management in gradebookUid={} by userUid={}", externalId,
-                gradebookUid, getUserUid());
-    }
-*/
     @Override
     public void addExternalAssessment(final String gradebookUid, final String siteId, final String externalId, final String externalUrl, final String title, final Double points,
                                            final Date dueDate, final String externalServiceDescription, String externalData, final Boolean ungraded, final Long categoryId, String gradableReference)
@@ -5166,11 +4960,11 @@ public class GradingServiceImpl implements GradingService {
         }
 
         return assignment.getGradebook().getUid();*/
-		return getAssignmentById(siteId, assignmentId).getContext();//TODO revisar comentario en metodo getAssignmentDefinition
+		return getAssignmentById(siteId, assignmentId).getContext();//TODO s2u-26 revisar comentario en metodo getAssignmentDefinition
 	}
 
     @Override
-    public String getUrlForAssignment(Assignment assignment) {//revisar y ver la forma de recuperar el GB desde un objeto de este tipo..
+    public String getUrlForAssignment(Assignment assignment) {//TODO s2u-26  revisar y ver la forma de recuperar el GB desde un objeto de este tipo..
 //ESTO IGUAL SE PODRIA HACER DENTRO DEL PROPIO GRADESCONTROLLER NO HAY NADA QUE REQUIERA QUE ESTE AQUI Y ALLI TENGO YA INFO DE TOOLCONFIG SI ME MONTO EL BUCLE Y LO GUARDO EN UN MAP O ALGO
         String gbUrl = "";
         try {
@@ -5197,7 +4991,7 @@ public class GradingServiceImpl implements GradingService {
     }
 
 //TODO ESPACIOS POR TABS
-//TODO CACHE - new en el init?
+//TODO s2u-26 CACHE - new en el init?
 	private static final String GB_GROUP_SITE_PROPERTY = "gradebook_group";
 	private static final String GB_GROUP_TOOL_PROPERTY = "gb-group";
 
@@ -5253,7 +5047,7 @@ public class GradingServiceImpl implements GradingService {
 				Properties props = tc.getPlacementConfig();
 				if (props.getProperty(GB_GROUP_TOOL_PROPERTY) != null) {
 					log.info("Detected gradebook for group {}", props.getProperty(GB_GROUP_TOOL_PROPERTY));
-                    // HOLA ??
+                    // TODO s2u-26 HOLA ??
                     Optional<Gradebook> gb = gradingPersistenceManager.getGradebook(props.getProperty(GB_GROUP_TOOL_PROPERTY));
                     if (gb.isPresent()) {
                         gbList.add(gb.get());
@@ -5321,7 +5115,7 @@ public class GradingServiceImpl implements GradingService {
     }
 
 	@Override
-	//TODO CACHE TB
+	//TODO s2u-26 CACHE TB
 //devolver string + get first gradebook instance for user? para lti..
 		//meter un warn si eso, pero + eficiente con break
 	public List<String> getGradebookInstancesForUser(String siteId, String userId) {
@@ -5393,78 +5187,7 @@ public class GradingServiceImpl implements GradingService {
 
         return gradeMap;
     }
-/*
-    private void finalizeNullGradeRecords(final Gradebook gradebook, final String siteId) {
 
-        final Set<String> studentUids = getAllStudentUids(siteId);
-        final Date now = new Date();
-        final String graderId = sessionManager.getCurrentSessionUserId();
-
-        final List<GradebookAssignment> countedAssignments
-            = gradingPersistenceManager.getCountedAndGradedAssignmentsForGradebook(gradebook.getId());
-
-        final Map<String, Set<GradebookAssignment>> visible = getVisibleExternalAssignments(gradebook, studentUids, countedAssignments);
-
-        for (final GradebookAssignment assignment : countedAssignments) {
-            final List<AssignmentGradeRecord> scoredGradeRecords
-                = gradingPersistenceManager.getAllAssignmentGradeRecordsForAssignment(assignment.getId());
-
-            final Map<String, AssignmentGradeRecord> studentToGradeRecordMap = new HashMap<>();
-            for (final AssignmentGradeRecord scoredGradeRecord : scoredGradeRecords) {
-                studentToGradeRecordMap.put(scoredGradeRecord.getStudentId(), scoredGradeRecord);
-            }
-
-            for (String studentUid : studentUids) {
-                // SAK-11485 - We don't want to add scores for those grouped activities
-                //             that this student should not see or be scored on.
-                if (assignment.getExternallyMaintained() && (!visible.containsKey(studentUid) || !visible.get(studentUid).contains(assignment))) {
-                    continue;
-                }
-                AssignmentGradeRecord gradeRecord = studentToGradeRecordMap.get(studentUid);
-                if (gradeRecord != null) {
-                    if (gradeRecord.getPointsEarned() == null) {
-                        gradeRecord.setPointsEarned(0d);
-                    } else {
-                        continue;
-                    }
-                } else {
-                    gradeRecord = new AssignmentGradeRecord(assignment, studentUid, 0d);
-                }
-                gradeRecord.setGraderId(graderId);
-                gradeRecord.setDateRecorded(now);
-                gradingPersistenceManager.saveAssignmentGradeRecord(gradeRecord);
-                gradingPersistenceManager.saveGradingEvent(new GradingEvent(assignment, graderId, studentUid, gradeRecord.getPointsEarned()));
-            }
-        }
-    }
-
-    private Map<String, Set<GradebookAssignment>> getVisibleExternalAssignments(final Gradebook gradebook, final Collection<String> studentIds, final List<GradebookAssignment> assignments) {
-
-        final String gradebookUid = gradebook.getUid();
-        final Map<String, List<String>> allExternals = getVisibleExternalAssignments(gradebookUid, studentIds);
-        final Map<String, GradebookAssignment> allRequested = new HashMap<String, GradebookAssignment>();
-
-        for (final GradebookAssignment a : assignments) {
-            if (a.getExternallyMaintained()) {
-                allRequested.put(a.getExternalId(), a);
-            }
-        }
-
-        final Map<String, Set<GradebookAssignment>> visible = new HashMap<String, Set<GradebookAssignment>>();
-        for (final String studentId : allExternals.keySet()) {
-            if (studentIds.contains(studentId)) {
-                final Set<GradebookAssignment> studentAssignments = new HashSet<GradebookAssignment>();
-                for (final String assignmentId : allExternals.get(studentId)) {
-                    if (allRequested.containsKey(assignmentId)) {
-                        studentAssignments.add(allRequested.get(assignmentId));
-                    }
-                }
-                visible.put(studentId, studentAssignments);
-            }
-        }
-        return visible;
-    }
-*/
     private String getPropertyValue(final String name) {
 
         // TODO: ADRIAN should be caching these like this?
@@ -5718,4 +5441,5 @@ public class GradingServiceImpl implements GradingService {
 
         return true;
     }
+
 }

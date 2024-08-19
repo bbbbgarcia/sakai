@@ -4502,7 +4502,7 @@ public class DiscussionForumTool {
 
     try {
     	if (selAssignmentName != null) {
-    		setUpGradeInformation(gradebookUid, selAssignmentName, userId);
+    		setUpGradeInformation(gradebookUid, toolManager.getCurrentPlacement().getContext(), selAssignmentName, userId);//TODO JUANDAVID pasar el/los gradebookuid que toque
     	} else {
     		// this is the "Select a gradebook item" selection
     		allowedToGradeItem = false;
@@ -4532,14 +4532,14 @@ public class DiscussionForumTool {
     return GRADE_MESSAGE;
   }
 
-  private void setUpGradeInformation(String gradebookUid, String selAssignmentName, String studentId) {
+  private void setUpGradeInformation(String gradebookUid, String siteId, String selAssignmentName, String studentId) {
 	  GradingService gradingService = getGradingService();
 	  if (gradingService == null) return;
 	  
-	  Assignment assignment = gradingService.getAssignmentByNameOrId(gradebookUid, gradebookUid, selAssignmentName);
+	  Assignment assignment = gradingService.getAssignmentByNameOrId(gradebookUid, siteId, selAssignmentName);
 	  
 	  // first, check to see if user is authorized to view or grade this item in the gradebook
-	  String function = gradingService.getGradeViewFunctionForUserForStudentForItem(gradebookUid, assignment.getId(), studentId);
+	  String function = gradingService.getGradeViewFunctionForUserForStudentForItem(gradebookUid, siteId, assignment.getId(), studentId);
 	  if (function == null) {
 		  allowedToGradeItem = false;
 		  selGBItemRestricted = true;
@@ -6032,7 +6032,7 @@ public class DiscussionForumTool {
 					  studentId = userDirectoryService.getUser(selectedMessage.getMessage().getCreatedBy()).getId();  
 				  }				   
 				  
-				  setUpGradeInformation(gradebookUid, selectedAssign, studentId);
+				  setUpGradeInformation(gradebookUid, toolManager.getCurrentPlacement().getContext(), selectedAssign, studentId);//TODO JUANDAVID pasar el/los gradebookuid que toque
 			  } else {
 				  // this is the "Select a gradebook item" option
 				  allowedToGradeItem = false;

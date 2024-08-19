@@ -118,9 +118,10 @@ public interface GradingAuthz {
      * Check to see if current user may grade or view the given student for the given item in the given gradebook.
      * Returns string representation of function per GradingService vars (view/grade) or null if no permission
      * @param gradebookUid
+     * @param siteId
      * @param itemId
      * @param studentUid
      * @return GradingService.gradePermission, GradingService.viewPermission, or null if no permission
      */
-    public String getGradeViewFunctionForUserForStudentForItem(String gradebookUid, Long itemId, String studentUid);
+    public String getGradeViewFunctionForUserForStudentForItem(String gradebookUid, String siteId, Long itemId, String studentUid);
 }
