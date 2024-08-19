@@ -1274,7 +1274,7 @@ public class AssignmentAction extends PagedResourceActionII {
         userTimeService = ComponentManager.get(UserTimeService.class);
         ltiService = ComponentManager.get(LTIService.class);
         tagService = ComponentManager.get(TagService.class);
-        rangeAndGroups = new RangeAndGroupsDelegate(assignmentService, rb, siteService, securityService, formattedText);
+        rangeAndGroups = new RangeAndGroupsDelegate(assignmentService, rb, siteService, securityService, formattedText, gradingService);
     }
 
     public void init(ServletConfig config) throws ServletException {
@@ -4147,54 +4147,12 @@ public class AssignmentAction extends PagedResourceActionII {
 
         String assignmentRef = (String) state.getAttribute(GRADE_SUBMISSION_ASSIGNMENT_ID);
         Optional<Assignment> assignment = Optional.ofNullable(getAssignment(assignmentRef, "build_instructor_grade_submission_context", state));
-        if (assignment.isPresent()) {
-            Assignment a = assignment.get();
-            context.put("assignment", a);
-            context.put("assignmentReference", assignmentRef);
-            gradeType = a.getTypeOfGrade();
-            scaleFactor = a.getScaleFactor() != null ? a.getScaleFactor() : scaleFactor;
 
-            state.setAttribute(NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING, assignmentService.assignmentUsesAnonymousGrading(a));
-
-            boolean allowToGrade = true;
-            String assignmentAssociateGradebook = a.getProperties().get(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
-            if (StringUtils.isNotBlank(assignmentAssociateGradebook)) {
-                String gradebookUid = toolManager.getCurrentPlacement().getContext();
-                // If the assignment reference is not equal to the associated gradebook item, then a custom gb item is being used
-                // S2U-34 In the 22x version this check was looking if the retrieved object from the gradingservice is null, now we check if an exception is thrown
-                if (!assignmentRef.equals(assignmentAssociateGradebook)) {
-                    try {
-                        org.sakaiproject.grading.api.Assignment gbAssignment = gradingService.getAssignment(gradebookUid, gradebookUid,
-                                assignmentAssociateGradebook);
-
-                        Long associateGradebookAssignmentId = gbAssignment.getId();
-                        context.put("associatedToGbItem", true);
-                        context.put("associatedToGbEntityId", associateGradebookAssignmentId);
-                    } catch (AssessmentNotFoundException e) {
-                        log.error("Assignment not found while building grade submission context for custom gradebook item due to: {} {}",
-                                e.toString(), ExceptionUtils.getStackTrace(e));
-                    }
-                }
-
-                if (!gradingService.currentUserHasGradingPerm(gradebookUid)) {
-                    context.put("notAllowedToGradeWarning", rb.getString("not_allowed_to_grade_in_gradebook"));
-                    allowToGrade = false;
-                }
-            }
-            context.put("allowToGrade", allowToGrade);
-
-            Map<String, Reference> attachmentReferences = new HashMap<>();
-            a.getAttachments().forEach(r -> attachmentReferences.put(r, entityManager.newReference(r)));
-            context.put("assignmentAttachmentReferences", attachmentReferences);
-
-            if (a.getTypeOfGrade() == Assignment.GradeType.SCORE_GRADE_TYPE) {
-                context.put("value_grade", displayGrade(state, (String) state.getAttribute(GRADE_SUBMISSION_GRADE), scaleFactor));
-            }
-        }
 
         String submissionRef = (String) state.getAttribute(GRADE_SUBMISSION_SUBMISSION_ID);
         // assignment submission
         Optional<AssignmentSubmission> submission = Optional.ofNullable(getSubmission(submissionRef, "build_instructor_grade_submission_context", state));
+        Optional<AssignmentSubmissionSubmitter> submitterId = null;
         if (submission.isPresent()) {
             AssignmentSubmission s = submission.get();
             context.put("submission", s);
@@ -4207,7 +4165,10 @@ public class AssignmentAction extends PagedResourceActionII {
 
             context.put("submitterNames", getSubmitterFormattedNames(s, true));
             context.put("submissionStatus", assignmentService.getSubmissionStatus(s.getId(), true));
-            s.getSubmitters().stream().findAny().ifPresent(u -> context.put("submitterId", u.getSubmitter()));
+            submitterId = s.getSubmitters().stream().findAny();
+            if (submitterId.isPresent()) {
+                context.put("submitterId", submitterId.get().getSubmitter());
+            }
 
             s.getSubmitters().stream().findAny().ifPresent(spent -> context.put("submitterTimeSpent", spent.getTimeSpent()));
             if (assignment.isPresent()) {
@@ -4320,6 +4281,58 @@ public class AssignmentAction extends PagedResourceActionII {
 
             putSubmissionLogMessagesInContext(context, s);
             rangeAndGroups.buildInstructorGradeSubmissionContextGroupCheck(assignment, s.getGroupId(), state);
+        }
+
+        if (assignment.isPresent()) {
+            Assignment a = assignment.get();
+            context.put("assignment", a);
+            context.put("assignmentReference", assignmentRef);
+            gradeType = a.getTypeOfGrade();
+            scaleFactor = a.getScaleFactor() != null ? a.getScaleFactor() : scaleFactor;
+
+            state.setAttribute(NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING, assignmentService.assignmentUsesAnonymousGrading(a));
+
+            boolean allowToGrade = true;
+            String assignmentAssociateGradebook = a.getProperties().get(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
+            // TODO s2u-26 revisar - se puede dar que no haya submission y tengamos que pasar por aqui??
+            if (StringUtils.isNotBlank(assignmentAssociateGradebook) && submitterId.isPresent()) {
+                String gradebookUid = toolManager.getCurrentPlacement().getContext();
+                String siteId = toolManager.getCurrentPlacement().getContext();
+                // S2U-26 even if a user can potentially have multiple gradebooks, we're only allowing one return column
+                if (gradingService.isGradebookGroupEnabled(siteId)) {
+                    List<String> userGradebooks = gradingService.getGradebookInstancesForUser(siteId, submitterId.get().getSubmitter());
+                    // S2U-26 TODO warn if >1 ?
+                    // we select the one we find associated with the assignment
+                    // TODO s2u-26 npe??
+                    gradebookUid = userGradebooks.get(0);
+                }
+                // If the assignment reference is not equal to the associated gradebook item, then a custom gb item is being used
+                // S2U-34 In the 22x version this check was looking if the retrieved object from the gradingservice is null, now we check if an exception is thrown
+                if (!assignmentRef.equals(assignmentAssociateGradebook)) {
+                    try {
+                        org.sakaiproject.grading.api.Assignment gbAssignment = gradingService.getAssignment(gradebookUid, siteId, assignmentAssociateGradebook);
+                        Long associateGradebookAssignmentId = gbAssignment.getId();
+                        context.put("associatedToGbItem", true);
+                        context.put("associatedToGbEntityId", associateGradebookAssignmentId);
+                    } catch (AssessmentNotFoundException e) {
+                        log.error("Assignment not found while building grade submission context for custom gradebook item due to: {} {}", e.toString(), ExceptionUtils.getStackTrace(e));
+                    }
+                }
+
+                if (!gradingService.currentUserHasGradingPerm(siteId)) {
+                    context.put("notAllowedToGradeWarning", rb.getString("not_allowed_to_grade_in_gradebook"));
+                    allowToGrade = false;
+                }
+            }
+            context.put("allowToGrade", allowToGrade);
+
+            Map<String, Reference> attachmentReferences = new HashMap<>();
+            a.getAttachments().forEach(r -> attachmentReferences.put(r, entityManager.newReference(r)));
+            context.put("assignmentAttachmentReferences", attachmentReferences);
+
+            if (a.getTypeOfGrade() == Assignment.GradeType.SCORE_GRADE_TYPE) {
+                context.put("value_grade", displayGrade(state, (String) state.getAttribute(GRADE_SUBMISSION_GRADE), scaleFactor));
+            }
         }
 
         context.put("user", state.getAttribute(STATE_USER));
@@ -5217,6 +5230,9 @@ public class AssignmentAction extends PagedResourceActionII {
                 }
                 context.put("value_grades", ugrades);
 
+            }
+
+            if (assignment.getIsGroup() || gradingService.isGradebookGroupEnabled(assignment.getContext())) {
                 rangeAndGroups.buildInstructorGradeAssignmentContext(state, context, assignment);
             }
 
@@ -6045,8 +6061,8 @@ public class AssignmentAction extends PagedResourceActionII {
     private boolean canGrade() {
         boolean rv = false;
         try {
-            String gradebookUid = toolManager.getCurrentPlacement().getContext();
-            if (gradingService.currentUserHasEditPerm(gradebookUid) || gradingService.currentUserHasGradingPerm(gradebookUid)) {
+            String siteId = toolManager.getCurrentPlacement().getContext();
+            if (gradingService.currentUserHasEditPerm(siteId) || gradingService.currentUserHasGradingPerm(siteId)) {
                 rv = true;
             }
         } catch (Exception e) {
@@ -7973,7 +7989,7 @@ public class AssignmentAction extends PagedResourceActionII {
                                         groupChoice != null ? Arrays.asList(groupChoice) : new ArrayList<>(), selectedCategories, true);
 
                                 if (!areCategoriesInGroups) {
-                                    addAlert(state, "Se ha seleccionado una categoría pero no su grupo");
+                                    addAlert(state, "Se ha seleccionado una categoría pero no su grupo");//TODO i18n
                                 }
                             }
 
@@ -8001,7 +8017,7 @@ public class AssignmentAction extends PagedResourceActionII {
                                         groupChoice != null ? Arrays.asList(groupChoice) : new ArrayList<>(), gbItemList, false);
 
                                 if (!areItemsInGroups) {
-                                    addAlert(state, "Los grupos seleccionados deben tener asociado un item del libro de calificaciones");
+                                    addAlert(state, "Los grupos seleccionados deben tener asociado un item del libro de calificaciones");//TODO i18n
                                 }
                             }
                         }
@@ -10301,7 +10317,7 @@ public class AssignmentAction extends PagedResourceActionII {
             addAlert(state, rb.getString("youarenot_addAssignmentContent"));
         }
 
-        if (a.getIsGroup()) {
+        if (a.getIsGroup() || gradingService.isGradebookGroupEnabled(a.getContext())) {
             rangeAndGroups.checkAssignmentForUsersInMultipleGroups(a, state);
         }
 

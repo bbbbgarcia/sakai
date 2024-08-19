@@ -476,7 +476,7 @@ public class AssignmentToolUtils {
 			if (gradebookUid == null) {
 				gradebookUid = siteId;
 			}
-            if (gradingService.currentUserHasGradingPerm(gradebookUid)) {
+            if (gradingService.currentUserHasGradingPerm(siteId)) {
                 boolean isExternalAssignmentDefined = gradingService.isExternalAssignmentDefined(gradebookUid, assignmentRef);
                 boolean isExternalAssociateAssignmentDefined = gradingService.isExternalAssignmentDefined(gradebookUid, associateGradebookAssignment);
                 boolean isAssignmentDefined = gradingService.isAssignmentDefined(gradebookUid, siteId, associateGradebookAssignment);//TODO S2U-26 (revisar) por nombre - caso 1o gb y luego tareas o gb antiguo?

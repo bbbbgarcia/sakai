@@ -38,6 +38,7 @@ import org.sakaiproject.cheftool.RunData;
 import org.sakaiproject.cheftool.VelocityPortletPaneledAction;
 import org.sakaiproject.event.api.SessionState;
 import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.grading.api.GradingService;
 import org.sakaiproject.site.api.Group;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
@@ -68,10 +69,11 @@ class RangeAndGroupsDelegate
 	private final SiteService siteService;
 	private final SecurityService securityService;
 	private final FormattedText formattedText;
+	private final GradingService gradingService;
 
 	void buildInstructorNewEditAssignmentContextGroupCheck(Context context, Assignment asn)
 	{
-		if (!asn.getIsGroup())
+		if (!asn.getIsGroup() && !gradingService.isGradebookGroupEnabled(asn.getContext()))
 		{
 			return;
 		}
@@ -135,6 +137,8 @@ class RangeAndGroupsDelegate
 		else if (VALUE_ASSIGN_TO_INDIVIDUALS_FROM_GROUPS.equals(assignTo))
 		{
 			range = Assignment.Access.GROUP.toString();
+		} else if (VALUE_ASSIGN_TO_INDIVIDUALS.equals(assignTo) && gradingService.isGradebookGroupEnabled(siteId)) {//TODO s2u-26 si se envia a GB
+			VelocityPortletPaneledAction.addAlert(state, "No se pueden crear tareas de sitio al tener gradebooks de grupo");//TODO s2u-26 rb.getFormattedMessage("group.editsite.nopermission"));
 		}
 		state.setAttribute(NEW_ASSIGNMENT_GROUP_SUBMIT, groupAssignment ? "1" : "0");
 
@@ -176,7 +180,7 @@ class RangeAndGroupsDelegate
 		}
 
 		// check groups for duplicate members
-		if (groupAssignment)
+		if (groupAssignment || gradingService.isGradebookGroupEnabled(siteId))
 		{
 			List<String> groupIds = Arrays.asList(ArrayUtils.nullToEmpty(data.getParameters().getStrings("selectedGroups")));
 			List<MultiGroupRecord> dupes = assignmentService.checkAssignmentForUsersInMultipleGroups(siteId, groupsFromIds(siteId, groupIds));
@@ -298,7 +302,7 @@ class RangeAndGroupsDelegate
 
 	void buildStudentViewSubmissionContext(SessionState state, Context context, String userId, Assignment asn, AssignmentAction asnAct)
 	{
-		if (!asn.getIsGroup())
+		if (!asn.getIsGroup() && !gradingService.isGradebookGroupEnabled(asn.getContext()))
 		{
 			return;
 		}
@@ -322,7 +326,7 @@ class RangeAndGroupsDelegate
 
 	void buildStudentViewAssignmentContext(SessionState state, String userId, Assignment asn)
 	{
-		if (asn.getIsGroup() && !validateUserGroups(state, userId, asn))
+		if ((asn.getIsGroup() || gradingService.isGradebookGroupEnabled(asn.getContext())) && !validateUserGroups(state, userId, asn))
 		{
 			VelocityPortletPaneledAction.addAlert(state, rb.getString("group.error.message"));
 		}
@@ -363,19 +367,23 @@ class RangeAndGroupsDelegate
 
 	void buildInstructorGradeSubmissionContextGroupCheck(Optional<Assignment> asnOpt, String groupId, SessionState state)
 	{
-		if (!asnOpt.isPresent() || !asnOpt.get().getIsGroup())
+		if (!asnOpt.isPresent() || (!asnOpt.get().getIsGroup() && !gradingService.isGradebookGroupEnabled(asnOpt.get().getContext())))//TODO s2u-26 verificar - optional por? cómo se puede puntuar una tarea q no existe? 
+//TODO s2u-26 verificar - si es gbgroup y asignado a sitio no deberia llegar
 		{
 			return;
 		}
 
 		Assignment asn = asnOpt.get();
 		Collection<Group> groups = groupsFromIds(asn.getContext(), Collections.singletonList(groupId));
-		if (groups.isEmpty())
+		if (gradingService.isGradebookGroupEnabled(asnOpt.get().getContext())) {
+			checkAssignmentForUsersInMultipleGroups(asn, state);
+		} else if (groups.isEmpty())
 		{
 			log.error("Invalid group id {}", groupId);
+		} else {
+			checkSubmissionForUsersInMultipleGroups(asn, groups.stream().findAny().get(), state, true);
 		}
 
-		checkSubmissionForUsersInMultipleGroups(asn, groups.stream().findAny().get(), state, true);
 	}
 
 	private Site getSite(Assignment asn)
