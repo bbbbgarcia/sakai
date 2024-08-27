@@ -67,6 +67,14 @@ export class SakaiRubricReadonly extends SakaiRubric {
               </sakai-rubric-pdf>
             </div>
           ` : ""}
+          <div class="action-container">
+              <span class="d-none d-sm-none d-md-block visually-hidden">${this._i18n.delete_rubric}</span>
+              <span role="button" title="${this._i18n.remove.replace("{}", this.rubric.title)}" tabindex="0" class="fa fa-times" @click="${this.deleteRubric}"></span>
+          </div>
+          <div class="action-container">
+              <span class="d-none d-sm-none d-md-block visually-hidden">${this._i18n.delete_rubric}</span>
+              <span role="button" title="${this._i18n.revoke.replace("{}", this.rubric.title)}" tabindex="0" class="fa fa-users" @click="${this.revokeShareRubric}"></span>
+          </div>
         </div>
       </div>
 
@@ -82,5 +90,15 @@ export class SakaiRubricReadonly extends SakaiRubric {
 
     e.stopPropagation();
     this.dispatchEvent(new CustomEvent("copy-to-site", { detail: this.rubric.id }));
+  }
+
+  deleteRubric(e) {
+    e.stopPropagation();
+    this.dispatchEvent(new CustomEvent("delete-rubric", { detail: { id: this.rubric.id, title: this.rubric.title }, bubbles: true, composed: true, }));
+  }
+
+  revokeShareRubric(e) {
+    e.stopPropagation();
+    this.dispatchEvent(new CustomEvent("revoke-shared-rubric", { detail: { id: this.rubric.id, title: this.rubric.title }, bubbles: true, composed: true, }));
   }
 }
