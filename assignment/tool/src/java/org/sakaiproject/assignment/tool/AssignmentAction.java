@@ -3776,7 +3776,6 @@ public class AssignmentAction extends PagedResourceActionII {
         } else {
             String aTitle = assignment != null ? assignment.getTitle() : null;
 
-            // get all assignment
             HashMap<String, String> gAssignmentIdTitles = new HashMap<>();
 
             HashMap<String, String> gradebookAssignmentsSelectedDisabled = new HashMap<>();
@@ -3842,18 +3841,6 @@ public class AssignmentAction extends PagedResourceActionII {
 
             context.put("gradebookAssignmentsSelectedDisabled", gradebookAssignmentsSelectedDisabled);
             context.put("gradebookAssignmentsLabel", gradebookAssignmentsLabel);
-        }
-    }
-
-    private void fillSelectedGradebook(String siteId, Long assignmentId, String selectedGradebook) {
-        GradebookAssignment gradebookAssignment = gradingService.getGradebookAssigment(siteId, assignmentId);
-
-        if (gradebookAssignment != null) {
-            if (selectedGradebook.isBlank()) {
-                selectedGradebook += gradebookAssignment.getId().toString();
-            } else {
-                selectedGradebook += ("," + gradebookAssignment.getId().toString());
-            }
         }
     }
 
@@ -4290,7 +4277,18 @@ public class AssignmentAction extends PagedResourceActionII {
                 // S2U-34 In the 22x version this check was looking if the retrieved object from the gradingservice is null, now we check if an exception is thrown
                 if (!assignmentRef.equals(assignmentAssociateGradebook)) {
                     try {
-                        org.sakaiproject.grading.api.Assignment gbAssignment = gradingService.getAssignment(gradebookUid, siteId, assignmentAssociateGradebook);
+                        org.sakaiproject.grading.api.Assignment gbAssignment = null;
+
+                        List<String> associateGbList = Arrays.asList(assignmentAssociateGradebook.split(","));
+                        for (String associateString : associateGbList) {
+                            org.sakaiproject.grading.api.Assignment gbAssignmentFound = gradingService.getAssignment(gradebookUid, siteId, associateString);
+
+                            if (gbAssignmentFound != null) {
+                                gbAssignment = gbAssignmentFound;
+                                break;
+                            }
+                        }
+
                         Long associateGradebookAssignmentId = gbAssignment.getId();
                         context.put("associatedToGbItem", true);
                         context.put("associatedToGbEntityId", associateGradebookAssignmentId);

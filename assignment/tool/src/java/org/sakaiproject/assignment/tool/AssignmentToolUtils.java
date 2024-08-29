@@ -26,6 +26,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,8 +46,10 @@ import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.Assignment;
 import org.sakaiproject.assignment.api.model.AssignmentSubmission;
 import org.sakaiproject.assignment.api.model.AssignmentSubmissionSubmitter;
+import org.sakaiproject.assignment.tool.AssignmentAction.SubmitterSubmission;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.entity.api.Reference;
+import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.grading.api.AssessmentNotFoundException;
 import org.sakaiproject.grading.api.AssignmentHasIllegalPointsException;
@@ -58,6 +62,9 @@ import org.sakaiproject.lti.api.LTIService;
 import org.sakaiproject.rubrics.api.RubricsConstants;
 import org.sakaiproject.rubrics.api.RubricsService;
 import org.sakaiproject.rubrics.api.model.ToolItemRubricAssociation;
+import org.sakaiproject.site.api.Group;
+import org.sakaiproject.site.api.Site;
+import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.time.api.TimeService;
 import org.sakaiproject.tool.api.ToolManager;
 import org.sakaiproject.user.api.User;
@@ -78,6 +85,7 @@ public class AssignmentToolUtils {
         formattedText = ComponentManager.get(FormattedText.class);
     }
 
+    private SiteService siteService;
     private AssignmentService assignmentService;
     private UserDirectoryService userDirectoryService;
     private GradingService gradingService;
@@ -396,12 +404,73 @@ public class AssignmentToolUtils {
 
             String op = gradeOption.equals("remove") ? "remove" : "update";
 
-            List<String> gradebookUids = gradingService.getGradebookUidByExternalId(associateGradebookAssignment);
-            for (String gradebookUid : gradebookUids) {
-        // TODO S2U-26 validar si ese guid va con grupo o da igual? - aqui y en todas las llamadas al metodo
-                alerts.addAll(integrateGradebook(options, gradebookUid, aReference, associateGradebookAssignment, null, null, null, -1, null, sReference, op, -1));
+            String siteId = (String) options.get("siteId");
+
+            boolean isGradebookGroupEnabled = gradingService.isGradebookGroupEnabled(siteId);
+
+            // This block is responsible for dividing between cases where "isGradebookGroupEnabled"
+            // is true and others where it is false.
+            if (!isGradebookGroupEnabled) {
+                // In this case, the "associateGradebookAssignment" association is unique,
+                // so no further action is needed.
+                alerts.addAll(integrateGradebook(options, siteId, aReference, associateGradebookAssignment, null, null, null, -1, null, sReference, op, -1));
+            } else {
+                try {
+                    // First, we need to retrieve the groups of the submitters of the submission.
+                    // To do this, we will iterate through the collection of submitters and check
+                    // with the users of each group in the site.
+                    List<String> groupList = new ArrayList<>();
+
+                    Collection<String> groupRefs = a.getGroups();
+                    Set<AssignmentSubmissionSubmitter> submitterSet = submission.getSubmitters();
+
+                    Site site = siteService.getSite(siteId);
+
+                    for (AssignmentSubmissionSubmitter ass : submitterSet) {
+                        String submitterId = ass.getSubmitter();
+
+                        for (String groupRef : groupRefs) {
+                            Group group = site.getGroup(groupRef);
+                            Set<String> userList = group.getUsers();
+
+                            if (userList != null && userList.size() >= 1 && userList.contains(submitterId)) {
+                                groupList.add(group.getId());
+                            }
+                        }
+                    }
+
+                    for (String gradebookUid : groupList) {
+                        // Since there is a possibility that the "associateGradebookAssignment"
+                        // variable is comma-separated, we need to split it into a list.
+                        List<String> itemList = Arrays.asList(associateGradebookAssignment.split(","));
+
+                        for (String item : itemList) {
+                            // We need to check whether it is a reference or a gradebook item ID.
+                            boolean isExternalAssignmentDefined = gradingService.isExternalAssignmentDefined(gradebookUid, item);
+
+                            if (isExternalAssignmentDefined) {
+                                // In this case, no further actions are required.
+                                alerts.addAll(integrateGradebook(options, gradebookUid, aReference, item, null, null, null, -1, null, sReference, op, -1));
+                            } else {
+                                // In this case, we need to find the item in the list that matches the group being iterated.
+                                Long itemId = Long.parseLong(item);
+
+                                GradebookAssignment gradebookAssignment = gradingService.getGradebookAssigment(gradebookUid, itemId);
+
+                                if (gradebookAssignment != null && gradebookAssignment.getGradebook() != null &&
+                                    gradebookAssignment.getGradebook().getUid().equals(gradebookUid)) {
+                                    // TODO S2U-26 validar si ese guid va con grupo o da igual? - aqui y en todas las llamadas al metodo
+                                    alerts.addAll(integrateGradebook(options, gradebookUid, aReference, item, null, null, null, -1, null, sReference, op, -1));
+                                }
+                            }
+                        }
+                    }
+                } catch (IdUnusedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
-}
+        }
     } // gradeSubmission
 
     /**
