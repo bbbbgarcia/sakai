@@ -3970,7 +3970,6 @@ public class AssignmentAction extends PagedResourceActionII {
         // get all available assignments from Gradebook tool except for those created from
         if (canGrade()) {
             context.put("gradebookChoice", state.getAttribute(NEW_ASSIGNMENT_ADD_TO_GRADEBOOK));
-// TODO S2U-26 revisar
             context.put("associateGradebookAssignment", state.getAttribute(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT));
 
             // information related to gradebook categories
@@ -3990,7 +3989,7 @@ public class AssignmentAction extends PagedResourceActionII {
             // editing existing assignment
             context.put("value_assignment_id", assignmentId);
             Assignment a = getAssignment(assignmentId, "build_instructor_preview_assignment_context", state);
-            if (a != null) {// TODO S2U-26 revisar
+            if (a != null) {
             	context.put("gradeName", getGradeName(a, assignmentId));
                 context.put("value_CheckAnonymousGrading", assignmentService.assignmentUsesAnonymousGrading(a));
                 context.put("isDraft", a.getDraft());
@@ -7957,8 +7956,6 @@ public class AssignmentAction extends PagedResourceActionII {
                             String assignTo = params.getString("assignTo");
 
                             if (!assignTo.equals("individuals")) {
-                                // TODO COMPROBAR ESTOS GRUPOS CON LOS GRUPOS DE LOS ITEMS SELECCIONADOS
-                                // PARA QUE LOS GRUPOS SELECCIONADOS TENGAN AL MENOS 1 ITEM SELECCIONADO
                                 String categorySelected = params.getString(NEW_ASSIGNMENT_CATEGORY);
                                 List<String> selectedCategories = Arrays.asList(categorySelected.split(","));
 
@@ -7985,8 +7982,6 @@ public class AssignmentAction extends PagedResourceActionII {
                         if (isGradebookGroupEnabled) {
                             String assignTo = params.getString("assignTo");
 
-                            // TODO COMPROBAR ESTOS GRUPOS CON LOS GRUPOS DE LAS CATEGORIAS SELECCIONADAS
-                            // PARA QUE LOS GRUPOS SELECCIONADOS TENGAN AL MENOS 1 CATEGORÍA SELECCIONADA
                             if (!assignTo.equals("individuals")) {
                                 List<String> gbItemList = Arrays.asList(gbSelector.split(","));
 
@@ -8030,7 +8025,6 @@ public class AssignmentAction extends PagedResourceActionII {
             }
         }
 
-        // TODO S2U-26 revisar otro caso q no tiene q ver pero -> createToolItemRubricAssociation Requested rubric [0] not found when attempting to create a new association
         String rubricId = params.getString(RubricsConstants.RBCS_LIST);
         if (StringUtils.isNotBlank(rubricId)) {
             Map<String, Object> rubricAssociationMap = new HashMap<>();
@@ -9012,8 +9006,7 @@ public class AssignmentAction extends PagedResourceActionII {
 
             List<String> selectedGradebookUids = new ArrayList<>();
             List<String> selectedGroups = rangeAndGroupSettings.groups.stream().map(Group::getId).collect(Collectors.toList());
-            //TODO S2U-26 COMUNIDAD IGUAL PONE PEGAS POR USAR LISTA PARA EL CASO GB-SITE PERO LA ALTERNATIVA SON MUCHOS IFS...
-			//String gradebookUid = siteId;
+
             buildGradebookUidList(state, siteId, selectedGradebookUids, addtoGradebook, selectedGroups, isGradebookGroupEnabled);
 
             Map<String, String> gradebookCategorieMap = new HashMap<>();
@@ -9175,9 +9168,6 @@ public class AssignmentAction extends PagedResourceActionII {
                 Map<String, String> aProperties = a.getProperties();
                 String oAssociateGradebookAssignment = aProperties.get(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
                 Instant resubmitCloseTime = getTimeFromState(state, ALLOW_RESUBMIT_CLOSE_MONTH, ALLOW_RESUBMIT_CLOSE_DAY, ALLOW_RESUBMIT_CLOSE_YEAR, ALLOW_RESUBMIT_CLOSE_HOUR, ALLOW_RESUBMIT_CLOSE_MIN);
-
-                // TODO S2U-26 send selectedGradebookUids - aqui igual lo guardo todo como 1 prop?
-                // TODO AÑADIR PROPIEDAD PARA GUARDARLO EN LA TAREA
 
                 String gradebookItemKeys = gradebookItemMap.keySet().stream().collect(Collectors.joining(","));
 
@@ -9723,7 +9713,7 @@ public class AssignmentAction extends PagedResourceActionII {
                     alertInvalidPoint(state, gradePoints, assignment.getScaleFactor());
                     log.warn(this + ":initIntegrateWithGradebook " + nE.getMessage());
                 }
-            } else {// TODO S2U-26 we dont know when this happens
+            } else {
                 addAlerts(state, assignmentToolUtils.integrateGradebook(stateToMap(state), gradebookUid, assignmentReference, associateGradebookAssignment, "remove", null, null, -1, null, null, null, category));
             }
         } else {
@@ -10809,7 +10799,6 @@ public class AssignmentAction extends PagedResourceActionII {
                 sb.append(rb.getString("grading.add"))
                         .append(rb.getString("grading.ofcategory"))
                         .append(getCategoryTable().get(0));
-// TODO S2U-26 revisar
                 break;
             case GRADEBOOK_INTEGRATION_ASSOCIATE:
 			    // associated with one existing entry in Gradebook
@@ -13337,10 +13326,9 @@ public class AssignmentAction extends PagedResourceActionII {
      * @return
      */
     private Map<Long, String> getCategoryTable() {
-
         Map<Long, String> catTable = new HashMap<>();
         String gradebookUid = toolManager.getCurrentPlacement().getContext();
-// TODO S2U-26 igual esto se puede cachear mas adelante tb
+
         if (canGrade() && gradingService.isCategoriesEnabled(gradebookUid)) {
             catTable = gradingService.getCategoryDefinitions(gradebookUid, gradebookUid).stream()
                 .collect(Collectors.toMap(c -> c.getId(), c -> c.getName()));

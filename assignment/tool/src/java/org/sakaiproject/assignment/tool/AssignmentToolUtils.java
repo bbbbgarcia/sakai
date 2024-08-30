@@ -404,7 +404,7 @@ public class AssignmentToolUtils {
 
             String op = gradeOption.equals("remove") ? "remove" : "update";
 
-            String siteId = (String) options.get("siteId");
+            String siteId = a.getContext();
 
             boolean isGradebookGroupEnabled = gradingService.isGradebookGroupEnabled(siteId);
 
@@ -459,15 +459,13 @@ public class AssignmentToolUtils {
 
                                 if (gradebookAssignment != null && gradebookAssignment.getGradebook() != null &&
                                     gradebookAssignment.getGradebook().getUid().equals(gradebookUid)) {
-                                    // TODO S2U-26 validar si ese guid va con grupo o da igual? - aqui y en todas las llamadas al metodo
                                     alerts.addAll(integrateGradebook(options, gradebookUid, aReference, item, null, null, null, -1, null, sReference, op, -1));
                                 }
                             }
                         }
                     }
-                } catch (IdUnusedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                } catch (Exception ex) {
+                    log.error("Site not found: ", ex);
                 }
             }
         }
@@ -533,8 +531,7 @@ public class AssignmentToolUtils {
 
         String assignmentId = AssignmentReferenceReckoner.reckoner().reference(assignmentRef).reckon().getId();
         String submissionId = AssignmentReferenceReckoner.reckoner().reference(submissionRef).reckon().getId();
-// TODO S2U-26 especificar alerts respecto al gradebook que corresponda..
-	//preguntar a jesus porque la logica actual es que si falla algo de esto ya se ha guardado la configuracion en la parte de properties de tareas y entiendo que deberiamos mantenerlo....
+
         try {
             String siteId = (String) options.get("siteId");
             if (siteId == null) {
