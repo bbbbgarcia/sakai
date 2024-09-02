@@ -178,6 +178,7 @@ public class MainController {
 
 	@RequestMapping(value = {"/date-manager/update"}, method = RequestMethod.POST, produces = "application/json")
 	public @ResponseBody String dateManagerUpdate(HttpServletRequest req, Model model, @RequestBody String requestString) {
+		System.out.println("Here starts everything");
 		String jsonResponse = "";
 		try {
 			String siteId = req.getRequestURI().split("/")[3];
