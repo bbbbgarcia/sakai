@@ -545,7 +545,7 @@ public class AssignmentToolUtils {
             if (gradingService.currentUserHasGradingPerm(siteId)) {
                 boolean isExternalAssignmentDefined = gradingService.isExternalAssignmentDefined(gradebookUid, assignmentRef);
                 boolean isExternalAssociateAssignmentDefined = gradingService.isExternalAssignmentDefined(gradebookUid, associateGradebookAssignment);
-                boolean isAssignmentDefined = gradingService.isAssignmentDefined(gradebookUid, siteId, associateGradebookAssignment);//TODO S2U-26 (revisar) por nombre - caso 1o gb y luego tareas o gb antiguo?
+                boolean isAssignmentDefined = gradingService.isAssignmentDefined(gradebookUid, siteId, associateGradebookAssignment);
 
                 if (addUpdateRemoveAssignment != null) {
                     Assignment a = assignmentService.getAssignment(assignmentId);
@@ -852,7 +852,7 @@ public class AssignmentToolUtils {
             // iterate through all assignments currently in the site, see if any is associated with this GB entry
             for (Assignment assignment : assignmentService.getAssignmentsForContext(context)) {
                 String reference = AssignmentReferenceReckoner.reckoner().assignment(assignment).reckon().getReference();
-                // TODO S2U-26 revisar
+
                 if (StringUtils.equals(assignment.getProperties().get(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT), associateGradebookAssignment)
                         && !StringUtils.equals(reference, assignmentReference)) {
                     found = true;

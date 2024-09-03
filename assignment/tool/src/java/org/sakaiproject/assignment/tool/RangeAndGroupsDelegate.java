@@ -137,8 +137,8 @@ class RangeAndGroupsDelegate
 		else if (VALUE_ASSIGN_TO_INDIVIDUALS_FROM_GROUPS.equals(assignTo))
 		{
 			range = Assignment.Access.GROUP.toString();
-		} else if (VALUE_ASSIGN_TO_INDIVIDUALS.equals(assignTo) && gradingService.isGradebookGroupEnabled(siteId)) {//TODO s2u-26 si se envia a GB
-			VelocityPortletPaneledAction.addAlert(state, "No se pueden crear tareas de sitio al tener gradebooks de grupo");//TODO s2u-26 rb.getFormattedMessage("group.editsite.nopermission"));
+		} else if (VALUE_ASSIGN_TO_INDIVIDUALS.equals(assignTo) && gradingService.isGradebookGroupEnabled(siteId)) {
+			VelocityPortletPaneledAction.addAlert(state, rb.getFormattedMessage("group.sitegradebook.nopermission"));
 		}
 		state.setAttribute(NEW_ASSIGNMENT_GROUP_SUBMIT, groupAssignment ? "1" : "0");
 
@@ -367,8 +367,7 @@ class RangeAndGroupsDelegate
 
 	void buildInstructorGradeSubmissionContextGroupCheck(Optional<Assignment> asnOpt, String groupId, SessionState state)
 	{
-		if (!asnOpt.isPresent() || (!asnOpt.get().getIsGroup() && !gradingService.isGradebookGroupEnabled(asnOpt.get().getContext())))//TODO s2u-26 verificar - optional por? cómo se puede puntuar una tarea q no existe? 
-//TODO s2u-26 verificar - si es gbgroup y asignado a sitio no deberia llegar
+		if (!asnOpt.isPresent() || (!asnOpt.get().getIsGroup() && !gradingService.isGradebookGroupEnabled(asnOpt.get().getContext())))
 		{
 			return;
 		}

@@ -4271,16 +4271,13 @@ public class AssignmentAction extends PagedResourceActionII {
 
             boolean allowToGrade = true;
             String assignmentAssociateGradebook = a.getProperties().get(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
-            // TODO s2u-26 revisar - se puede dar que no haya submission y tengamos que pasar por aqui??
+
             if (StringUtils.isNotBlank(assignmentAssociateGradebook) && submitterId.isPresent()) {
                 String gradebookUid = toolManager.getCurrentPlacement().getContext();
                 String siteId = toolManager.getCurrentPlacement().getContext();
                 // S2U-26 even if a user can potentially have multiple gradebooks, we're only allowing one return column
                 if (gradingService.isGradebookGroupEnabled(siteId)) {
                     List<String> userGradebooks = gradingService.getGradebookInstancesForUser(siteId, submitterId.get().getSubmitter());
-                    // S2U-26 TODO warn if >1 ?
-                    // we select the one we find associated with the assignment
-                    // TODO s2u-26 npe??
                     gradebookUid = userGradebooks.get(0);
                 }
                 // If the assignment reference is not equal to the associated gradebook item, then a custom gb item is being used
@@ -7788,7 +7785,7 @@ public class AssignmentAction extends PagedResourceActionII {
         state.setAttribute(NEW_ASSIGNMENT_ORDER, order);
 
         String siteId = toolManager.getCurrentPlacement().getContext();
-// TODO S2U-26 con los nuevos aqui sale Failed to retrieve assignment with id null -> es por algo que he metido o es un error anterior?
+
         boolean groupAssignment = rangeAndGroups.setNewOrEditedAssignmentParameters(data, state, siteId);
 
         if (StringUtils.isBlank(title)) {
@@ -8001,7 +7998,7 @@ public class AssignmentAction extends PagedResourceActionII {
                                         groupChoice != null ? Arrays.asList(groupChoice) : new ArrayList<>(), gbItemList, false);
 
                                 if (!areItemsInGroups) {
-                                    addAlert(state, "Los grupos seleccionados deben tener asociado un item del libro de calificaciones");//TODO i18n
+                                    addAlert(state, rb.getFormattedMessage("group.sitegradebook.noitem.selected"));
                                 }
                             }
                         }
@@ -8010,7 +8007,6 @@ public class AssignmentAction extends PagedResourceActionII {
                         break;
                 }
 
-                //TODO S2U-26 ESTA PARTE CUIDADO PORQUE VA POR NOMBRE
                 //DISTINTO EN 25X - ahora hace el match por id en vez de nombre? pero creo que falta conversion?
                 // check if chosen a previously associated object
                 String associatedAssignmentTitles = "";
