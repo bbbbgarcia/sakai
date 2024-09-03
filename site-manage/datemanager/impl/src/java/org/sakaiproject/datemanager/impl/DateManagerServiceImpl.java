@@ -399,22 +399,42 @@ public class DateManagerServiceImpl implements DateManagerService {
 			// if assignment sending grades to gradebook, update the due date in the gradebook
 			String associatedGradebookAssignment = assignment.getProperties().get(AssignmentConstants.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
 			if (StringUtils.isNotBlank(associatedGradebookAssignment)) {
-				// TODO S2U-26 actualizar los items relacionados..
 				// only update externally linked assignments since internal links are already handled
-				if (gradingService.isExternalAssignmentDefined(assignment.getContext(), associatedGradebookAssignment)) {
-					org.sakaiproject.grading.api.Assignment gAssignment = gradingService.getExternalAssignment(assignment.getContext(), associatedGradebookAssignment);
-					if (gAssignment != null) {
-						gradingService.updateExternalAssessment(
-								assignment.getContext(),
-								associatedGradebookAssignment,
-								null,
-								gAssignment.getExternalData(),
-								gAssignment.getName(),
-								gAssignment.getCategoryId(),
-								gAssignment.getPoints(),
-								Date.from(update.dueDate),
-								gAssignment.getUngraded()
-						);
+				String context = assignment.getContext();
+
+				
+				List<String> contextIds = new ArrayList<>();
+				contextIds.add(context);
+				if (gradingService.isGradebookGroupEnabled(getCurrentSiteId())) {
+					contextIds = new ArrayList<>();
+					List<Gradebook> gradebooks = gradingService.getGradebookGroupInstances(context);
+					for (Gradebook gradebook : gradebooks) {
+						List<org.sakaiproject.grading.api.Assignment> groupAssignments = gradingService.getAssignments(gradebook.getUid().toString(), getCurrentSiteId(), SortType.SORT_BY_NONE);
+						for (org.sakaiproject.grading.api.Assignment assignmentAux : groupAssignments) {
+							if (assignmentAux.getExternalId() != null && assignmentAux.getExternalId().equals(associatedGradebookAssignment)) {
+								contextIds.add(gradebook.getUid());
+								context = gradebook.getUid();
+							}
+						}
+					}
+				}
+
+				if (gradingService.isExternalAssignmentDefined(context, associatedGradebookAssignment)) {
+					for (String contextId : contextIds) {
+						org.sakaiproject.grading.api.Assignment gAssignment = gradingService.getExternalAssignment(context, associatedGradebookAssignment);
+						if (gAssignment != null) {
+							gradingService.updateExternalAssessment(
+									contextId,
+									associatedGradebookAssignment,
+									null,
+									gAssignment.getExternalData(),
+									gAssignment.getName(),
+									gAssignment.getCategoryId(),
+									gAssignment.getPoints(),
+									Date.from(update.dueDate),
+									gAssignment.getUngraded()
+							);
+						}	
 					}
 				}
 			}
@@ -659,22 +679,42 @@ public class DateManagerServiceImpl implements DateManagerService {
 				samigoAvailableNotificationService.scheduleAssessmentAvailableNotification(id);
 
 				// only updating if the gradebook item exists and is external
-				String siteId = assessment.getOwnerSiteId();
-				// TODO S2U-26 TODO actualizar los relacionados samigo
-				if (StringUtils.isNotBlank(siteId) && gradingService.isExternalAssignmentDefined(siteId, id)) {
-					org.sakaiproject.grading.api.Assignment gAssignment = gradingService.getExternalAssignment(siteId, id);
-					if (gAssignment != null) {
-						gradingService.updateExternalAssessment(
-								siteId,
-								id,
-								null,
-								gAssignment.getExternalData(),
-								gAssignment.getName(),
-								gAssignment.getCategoryId(),
-								gAssignment.getPoints(),
-								dueDateTemp,
-								gAssignment.getUngraded()
-						);
+				String context = assessment.getOwnerSiteId();
+
+				List<String> contextIds = new ArrayList<>();
+				contextIds.add(context);
+				if (gradingService.isGradebookGroupEnabled(getCurrentSiteId())) {
+					contextIds = new ArrayList<>();
+					List<Gradebook> gradebooks = gradingService.getGradebookGroupInstances(context);
+					for (Gradebook gradebook : gradebooks) {
+						List<org.sakaiproject.grading.api.Assignment> groupAssignments = gradingService.getAssignments(gradebook.getUid().toString(), getCurrentSiteId(), SortType.SORT_BY_NONE);
+						for (org.sakaiproject.grading.api.Assignment assignment : groupAssignments) {
+							if (assignment.getExternalId() != null && assignment.getExternalId().equals(id)) {
+								contextIds.add(gradebook.getUid());
+								context = gradebook.getUid();
+							}
+						}
+					}
+				}
+
+
+
+				if (StringUtils.isNotBlank(context) && gradingService.isExternalAssignmentDefined(context, id)) {
+					for (String contextId : contextIds) {
+						org.sakaiproject.grading.api.Assignment gAssignment = gradingService.getExternalAssignment(contextId, id);
+						if (gAssignment != null) {
+							gradingService.updateExternalAssessment(
+									contextId,
+									id,
+									null,
+									gAssignment.getExternalData(),
+									gAssignment.getName(),
+									gAssignment.getCategoryId(),
+									gAssignment.getPoints(),
+									dueDateTemp,
+									gAssignment.getUngraded()
+							);
+						}
 					}
 				}
 			}
@@ -758,8 +798,22 @@ public class DateManagerServiceImpl implements DateManagerService {
 					dueDate = userTimeService.parseISODateInUserTimezone(dueDateRaw).toInstant();
 				}
 
-				//TODO s2u-26 revisar
-				org.sakaiproject.grading.api.Assignment gbitem = gradingService.getAssignmentById(getCurrentSiteId(), itemId);
+				org.sakaiproject.grading.api.Assignment gbitem;
+				if (gradingService.isGradebookGroupEnabled(getCurrentSiteId())) {
+					List<Gradebook> gradebooks = gradingService.getGradebookGroupInstances(siteId);
+					String groupId = "";
+					for (Gradebook gra : gradebooks) {
+						List<org.sakaiproject.grading.api.Assignment> groupAssignments = gradingService.getAssignments(gra.getUid().toString(), getCurrentSiteId(), SortType.SORT_BY_NONE);
+						for (org.sakaiproject.grading.api.Assignment assignment : groupAssignments) {
+							if (assignment.getId().equals(itemId)) {
+								groupId = gra.getUid();
+							}
+						}
+					}
+					gbitem = gradingService.getAssignmentById(groupId, itemId);
+				} else {
+					gbitem = gradingService.getAssignmentById(getCurrentSiteId(), itemId);
+				}
 				if (gbitem == null) {
 					errors.add(new DateManagerError("gbitem", rb.getFormattedMessage("error.item.not.found", new Object[]{rb.getString("tool.gradebook.item.name")}), "gradebookItems", toolTitle, idx));
 					continue;
