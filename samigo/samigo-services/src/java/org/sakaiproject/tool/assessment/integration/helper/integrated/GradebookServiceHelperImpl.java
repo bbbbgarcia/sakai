@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Locale;
 
@@ -47,6 +48,8 @@ import org.sakaiproject.tool.api.SessionManager;
 import org.sakaiproject.tool.api.Tool;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
 import org.sakaiproject.tool.assessment.data.dao.grading.AssessmentGradingData;
+import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentMetaDataIfc;
+import org.sakaiproject.tool.assessment.data.ifc.assessment.EvaluationModelIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.PublishedAssessmentIfc;
 import org.sakaiproject.tool.assessment.facade.AgentFacade;
 import org.sakaiproject.tool.assessment.facade.GradebookFacade;
@@ -152,34 +155,34 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     return added;
   }
 
-  public boolean buildItemToGradebook(PublishedAssessmentData publishedAssessment,
-    List<String> selectedGroups, Long categoryId, GradingService g) throws Exception {
-
+  public void buildItemToGradebook(PublishedAssessmentData publishedAssessment, List<String> selectedGroups, GradingService g)
+    throws Exception {
     boolean isGradebookGroupEnabled = g.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
 
     if (isGradebookGroupEnabled) {
-      List<Gradebook> gbList = g.getGradebookGroupInstances(AgentFacade.getCurrentSiteId());
-      List<String> existingGradebookUids = gbList.stream().map(Gradebook::getUid).collect(Collectors.toList());
+      Object categoryListMetaData = publishedAssessment.getAssessmentMetaDataMap().get(AssessmentMetaDataIfc.CATEGORY_LIST);
+      String categoryString = categoryListMetaData != null ? (String) categoryListMetaData : "-1";
+      categoryString = !categoryString.equals("-1") ? categoryString : "";
 
-      List<String> selectedGradebookUids = new ArrayList<>();
+      Map<String, String> gradebookCategoryMap = g.buildCategoryGradebookMap(selectedGroups, categoryString, AgentFacade.getCurrentSiteId());
 
-      if (existingGradebookUids.containsAll(selectedGroups)) {
-        selectedGradebookUids.addAll(selectedGroups);
-      } else {
-        System.out.println();
+      for (Map.Entry<String, String> entry : gradebookCategoryMap.entrySet()) {
+        boolean isExternalAssignmentDefined = g.isExternalAssignmentDefined(entry.getKey(), publishedAssessment.getPublishedAssessmentId().toString());
+
+        if (!isExternalAssignmentDefined) {
+          addToGradebook(entry.getKey(), publishedAssessment, !entry.getValue().equals("-1") ? Long.parseLong(entry.getValue()) : null, g);
+        }
       }
-
-      for (String gUid : selectedGradebookUids) {
-        addToGradebook(gUid, publishedAssessment, (categoryId != null ? categoryId : publishedAssessment.getCategoryId()), g);
-      }
-
-      return true;
     } else {
-      System.out.println("NO TENGO GRUPOS DE GRADEBOOK: " + GradebookFacade.getGradebookUId());
-      return addToGradebook(GradebookFacade.getGradebookUId(), publishedAssessment,
-        (categoryId != null ? categoryId : publishedAssessment.getCategoryId()), g);
+      Long categoryId = publishedAssessment.getCategoryId();
+      boolean isExternalAssignmentDefined = g.isExternalAssignmentDefined(AgentFacade.getCurrentSiteId(),
+        publishedAssessment.getPublishedAssessmentId().toString());
+
+      if (!isExternalAssignmentDefined) {
+        addToGradebook(GradebookFacade.getGradebookUId(), publishedAssessment, categoryId, g);
+      }
     }
-  }
+}
 
   /**
    * Update a gradebook.
@@ -188,29 +191,26 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
    * @return false: cannot update the gradebook
    * @throws java.lang.Exception
    */
-  public boolean updateGradebook(PublishedAssessmentIfc publishedAssessment,
-		  GradingService g) throws Exception
+  public boolean updateGradebook(PublishedAssessmentIfc publishedAssessment, boolean isGradebookGroupEnabled,
+		  List<String> gradebookList, Map<String, String> gradebookCategoryMap, GradingService g) throws Exception
   {
     log.debug("updateGradebook start");
-    // TODO S2U-26 uno de estos sera distinto, depende de como guardemos aqui
-    String gradebookUId = GradebookFacade.getGradebookUId();
-    // TODO
-    String siteId = GradebookFacade.getGradebookUId();
-    if (gradebookUId == null)
-    {
-      return false;
+
+    for (String gradebookUid : gradebookList) {
+      String category = gradebookCategoryMap != null ? gradebookCategoryMap.get(gradebookUid) : null;
+
+      log.debug("before g.updateExternalAssessment()");
+      g.updateExternalAssessment(gradebookUid,
+                publishedAssessment.getPublishedAssessmentId().toString(),
+                null,
+                null,
+                publishedAssessment.getTitle(),
+                category != null ? Long.parseLong(category) : null,
+                publishedAssessment.getTotalScore(),
+                publishedAssessment.getAssessmentAccessControl().getDueDate(),
+                null);
     }
 
-    log.debug("before g.updateExternalAssessment()");
-	g.updateExternalAssessment(gradebookUId,
-            publishedAssessment.getPublishedAssessmentId().toString(),
-            null,
-            null,
-            publishedAssessment.getTitle(),
-            null,
-            publishedAssessment.getTotalScore(),
-            publishedAssessment.getAssessmentAccessControl().getDueDate(),
-            null);
     return true;
   }
 
@@ -340,4 +340,15 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     return nf.format(score);
   }
 
+  public List<String> getGradebookList(boolean isGradebookGroupEnabled, String[] groupsAuthorized) {
+    List<String> gradebookList = new ArrayList<>();
+
+    if (isGradebookGroupEnabled && groupsAuthorized != null) {
+      gradebookList = Arrays.asList(groupsAuthorized);
+    } else {
+      gradebookList.add(GradebookFacade.getGradebookUId());
+    }
+
+    return gradebookList;
+  }
 }

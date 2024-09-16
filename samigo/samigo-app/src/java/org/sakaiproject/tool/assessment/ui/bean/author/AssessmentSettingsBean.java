@@ -504,9 +504,13 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
 
         this.gradebookEnabled = populateGradebookEnabled();
 
-        // JUANMA
-        this.categorySelected = initializeCategorySelected(assessment.getData().getCategoryId());
-
+        if (this.gradebookGroupEnabled) {
+          Object categoryListMetaData = assessment.getAssessmentMetaDataMap().get(AssessmentMetaDataIfc.CATEGORY_LIST);
+          this.categorySelected = categoryListMetaData != null ? (String) categoryListMetaData : "-1";
+        } else {
+          // JUANMA
+          this.categorySelected = initializeCategorySelected(assessment.getData().getCategoryId());
+        }
       }
 
       // ip addresses
@@ -566,7 +570,7 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
       }
       return catSelected;
     } else {
-      return categoryId.toString();
+      return categoryId != null ? categoryId.toString() : "-1";
     }
   }
 

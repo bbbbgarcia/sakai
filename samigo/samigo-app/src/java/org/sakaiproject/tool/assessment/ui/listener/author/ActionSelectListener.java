@@ -138,6 +138,7 @@ public class ActionSelectListener implements ActionListener {
 			RemoveAssessmentListener removeAssessmentListener = new RemoveAssessmentListener();
 			removeAssessmentListener.processAction(null);
 			author.setJustPublishedAnAssessment(false);
+			author.setOutcome("author");
 		}
 		else if ("publish_selected".equals(action)) {
 			PublishAssessmentListener publishAssessmentListener = new PublishAssessmentListener();
@@ -146,6 +147,7 @@ public class ActionSelectListener implements ActionListener {
 			ActionEvent newActionEvent = new ActionEvent(component);
 			publishAssessmentListener.processAction(newActionEvent);
 			author.setJustPublishedAnAssessment(false);
+			author.setOutcome("author");
 		}
 		else if ("scores".equals(action)) {
 			delivery.setActionString("gradeAssessment");

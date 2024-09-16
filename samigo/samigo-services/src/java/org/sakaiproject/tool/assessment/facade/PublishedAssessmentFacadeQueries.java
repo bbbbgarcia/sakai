@@ -63,6 +63,7 @@ import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentAccessCont
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentAttachmentIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentBaseIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentIfc;
+import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentMetaDataIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AttachmentIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.EvaluationModelIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.ItemMetaDataIfc;
@@ -79,6 +80,7 @@ import org.sakaiproject.tool.assessment.services.assessment.AssessmentService;
 import org.sakaiproject.tool.assessment.shared.api.grading.GradingSectionAwareServiceAPI;
 import org.sakaiproject.tool.assessment.shared.impl.grading.GradingSectionAwareServiceImpl;
 import org.sakaiproject.user.api.UserDirectoryService;
+import org.springframework.context.annotation.DeferredImportSelector.Group.Entry;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
@@ -785,7 +787,6 @@ public class PublishedAssessmentFacadeQueries extends HibernateDaoSupport implem
 
 			if (toGradebook != null && toGradebook.equals(EvaluationModelIfc.TO_DEFAULT_GRADEBOOK.toString())) {
 				try {
-					System.out.println("ENTRO TO_DEFAULT_GRADEBOOK");
                     Site site = siteService.getSite(toolManager.getCurrentPlacement().getContext());
                     String ref = SamigoReferenceReckoner.reckoner().site(site.getId()).subtype("p")
                                     .id(publishedAssessmentFacade.getPublishedAssessmentId().toString()).reckon().getReference();
@@ -795,9 +796,7 @@ public class PublishedAssessmentFacadeQueries extends HibernateDaoSupport implem
 					Map<String, String> groupMap = getReleaseToGroups(groupsForSite, publishedAssessment.getPublishedAssessmentId());
 					List<String> selectedGroups = groupMap.keySet().stream().collect(Collectors.toList());
 
-					// TODO JUANMA publishAssessment - sustituir null for gradebook uids obtenidos de la property
-					gbsHelper.buildItemToGradebook(publishedAssessment, selectedGroups, null, g);
-
+					gbsHelper.buildItemToGradebook(publishedAssessment, selectedGroups, g);
 				} catch (Exception e) {
 					log.error("Removing published assessment: " + e);
 					delete(publishedAssessment);

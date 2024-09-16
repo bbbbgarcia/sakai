@@ -165,7 +165,7 @@ public class RestoreAssessmentsBean implements Serializable {
                 Map<String, String> groupMap = assessment.getReleaseToGroups();
                 List<String> selectedGroups = groupMap.keySet().stream().collect(Collectors.toList());
 
-                gbsHelper.buildItemToGradebook(data, selectedGroups, null, g);
+                gbsHelper.buildItemToGradebook(data, selectedGroups, g);
 
             }
         } catch (Exception e1) {

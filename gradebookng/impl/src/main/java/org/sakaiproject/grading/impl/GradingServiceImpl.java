@@ -23,6 +23,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -4083,7 +4084,11 @@ public class GradingServiceImpl implements GradingService {
             asn.setUngraded(false);
         }
         if (categoryId != null) {
-            asn.setCategory(getCategory(categoryId));
+            if (categoryId != -1L) {
+                asn.setCategory(getCategory(categoryId));
+            } else {
+                asn.setCategory(null);
+            }
         }
         gradingPersistenceManager.saveGradebookAssignment(asn);
 
@@ -5375,8 +5380,10 @@ public class GradingServiceImpl implements GradingService {
             List<String> gbUidList = new ArrayList<>();
 
             for (String gbItem : multiSelectorList) {
-                String gbUid = getGradebookUidByAssignmentById(siteId, Long.parseLong(gbItem));
-                gbUidList.add(gbUid);
+                if (StringUtils.isNotBlank(gbItem)) {
+                    String gbUid = getGradebookUidByAssignmentById(siteId, Long.parseLong(gbItem));
+                    gbUidList.add(gbUid);
+                }
             }
 
             Collections.sort(gbUidList);
@@ -5392,4 +5399,28 @@ public class GradingServiceImpl implements GradingService {
         return true;
     }
 
+    @Override
+    public Map<String, String> buildCategoryGradebookMap(List<String> selectedGradebookUids, String categoriesString, String siteId) {
+        Map<String, String> gradebookCategoryMap = new HashMap<>();
+
+        if (categoriesString == null || categoriesString.isBlank()) {
+            selectedGradebookUids.forEach(gbUid -> gradebookCategoryMap.put(gbUid, "-1"));
+        } else {
+            List<String> selectedCategories = Arrays.asList(categoriesString.split(","));
+
+            for (String gbUid : selectedGradebookUids) {
+                List<CategoryDefinition> categoryDefinitions = getCategoryDefinitions(gbUid, siteId);
+
+                String categoryId = categoryDefinitions.stream()
+                    .filter(category -> selectedCategories.contains(category.getId().toString()))
+                    .map(category -> category.getId().toString())
+                    .findFirst()
+                    .orElse("-1");
+
+                    gradebookCategoryMap.put(gbUid, categoryId);
+            }
+        }
+
+        return gradebookCategoryMap;
+    }
 }

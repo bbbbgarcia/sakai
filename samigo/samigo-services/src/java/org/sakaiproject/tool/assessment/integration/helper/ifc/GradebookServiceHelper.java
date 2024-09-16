@@ -23,6 +23,7 @@ package org.sakaiproject.tool.assessment.integration.helper.ifc;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.sakaiproject.grading.api.GradingService;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
@@ -47,11 +48,11 @@ public interface GradebookServiceHelper extends Serializable
   public boolean addToGradebook(String gradebookUId, PublishedAssessmentData publishedAssessment, Long categoryId,
 		  GradingService g) throws Exception;
 
-  public boolean buildItemToGradebook(PublishedAssessmentData publishedAssessment,
-    List<String> selectedGroups, Long categoryId, GradingService g) throws Exception;
+  public void buildItemToGradebook(PublishedAssessmentData publishedAssessment,
+    List<String> selectedGroups, GradingService g) throws Exception;
 
-  public boolean updateGradebook(PublishedAssessmentIfc publishedAssessment,
-		  GradingService g) throws Exception;
+  public boolean updateGradebook(PublishedAssessmentIfc publishedAssessment, boolean isGradebookGroupEnabled,
+    List<String> gradebookList, Map<String, String> gradebookCategoryMap, GradingService g) throws Exception;
 
   public boolean isAssignmentDefined(String assessmentTitle, GradingService g);
 
@@ -67,5 +68,7 @@ public interface GradebookServiceHelper extends Serializable
   public String getAppName();
 
   public void updateExternalAssessmentScore(AssessmentGradingData ag, GradingService g, Long assignmentId) throws Exception;
+  
+  public List<String> getGradebookList(boolean isGradebookGroupEnabled, String[] groupsAuthorized);
 
 }

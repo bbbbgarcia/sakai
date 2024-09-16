@@ -731,7 +731,6 @@ public class PublishedAssessmentService extends AssessmentService{
     // a. if Gradebook does not exists, do nothing
     // b. if Gradebook exists, just call removeExternal first to clean up all data. And call addExternal to create
     // a new record. At the end, populate the scores by calling updateExternalAssessmentScores
-    System.out.println("ENTRO A EDITAR EXAMEN PUBLICADO");
     org.sakaiproject.grading.api.GradingService gradingService = null;
     boolean integrated = IntegrationContextFactory.getInstance().isIntegrated();
     if (integrated) {
@@ -776,6 +775,7 @@ public class PublishedAssessmentService extends AssessmentService{
         }
       }
 
+      boolean isGradebookGroupEnabled = gradingService.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
 
       try {
         if (StringUtils.equals(evaluation.getToGradeBook(), EvaluationModelIfc.TO_DEFAULT_GRADEBOOK.toString())) {
@@ -783,11 +783,12 @@ public class PublishedAssessmentService extends AssessmentService{
             String ref = SamigoReferenceReckoner.reckoner().site(site.getId()).subtype("p").id(assessment.getPublishedAssessmentId().toString()).reckon().getReference();
             assessment.setReference(ref);
             if (gbItemExists) {
-                gbsHelper.updateGradebook(assessment, gradingService);
+                List<String> groupsAuthorized = selectedGradebookUids != null ? selectedGradebookUids : new ArrayList<>();
+
+                gbsHelper.updateGradebook(assessment, isGradebookGroupEnabled, groupsAuthorized, null, gradingService);
             } else {
                 log.warn("Gradebook item does not exist for assessment {}, creating a new gradebook item", assessment.getAssessmentId());
                 // TODO JUANMA ?? - sustituir null for gradebook uids obtenidos de la property
-                boolean isGradebookGroupEnabled = gradingService.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
 
                 if (isGradebookGroupEnabled) {
                   for (String gUid : selectedGradebookUids) {

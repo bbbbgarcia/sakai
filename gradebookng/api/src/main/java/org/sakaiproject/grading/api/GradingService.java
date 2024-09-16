@@ -957,5 +957,6 @@ public interface GradingService extends EntityProducer {
     public GradebookAssignment getGradebookAssigment(String siteId, Long assignmentId);
     public String getGradebookUidByAssignmentById(String siteId, Long assignmentId);
     public boolean checkMultiSelectorList(String siteId, List<String> groupList, List<String> multiSelectorList, boolean isCategory);
+    public Map<String, String> buildCategoryGradebookMap(List<String> selectedGradebookUids, String categoriesString, String siteId);
 
 }

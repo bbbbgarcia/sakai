@@ -147,13 +147,14 @@ public class PublishAssessmentListener
 
       repeatedPublishLock.lock();
 
-      // If instructor goes straight to publish from the main authoring page, the ae will be null and the instructor needs to do one more step before publishing
-      if (ae == null) {
-          repeatedPublish = false;
-          return;
-      }
-
       try {
+          // If instructor goes straight to publish from the main authoring page, the ae will be null and the instructor needs to do one more step before publishing
+          if (ae == null) {
+              repeatedPublish = false;
+              return;
+          }
+        
+
           UIComponent eventSource = (UIComponent) ae.getSource();
           ValueBinding vb = eventSource.getValueBinding("value");
 

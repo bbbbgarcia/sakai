@@ -22,6 +22,7 @@
 package org.sakaiproject.tool.assessment.ui.listener.author;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -294,17 +295,9 @@ public class SaveAssessmentSettings
 		}
 	}
 
-  System.out.println("SaveAssessmentSettings CATEGORIA SELECCIONADA: " + assessmentSettings.getCategorySelected());
-
-    if (assessmentSettings.getScoringType()!=null)
-      evaluation.setScoringType(new Integer(assessmentSettings.getScoringType()));
+  if (assessmentSettings.getScoringType()!=null)
+    evaluation.setScoringType(new Integer(assessmentSettings.getScoringType()));
     assessment.setEvaluationModel(evaluation);
-
-    // Add category unless unassigned (-1) is selected or defaulted. CategoryId comes
-    // from the web page as a string representation of a the long cat id.
-    if (!StringUtils.equals(assessmentSettings.getCategorySelected(), "-1") && !StringUtils.isEmpty(assessmentSettings.getCategorySelected())) {
-		  assessment.setCategoryId(Long.parseLong((assessmentSettings.getCategorySelected())));
-    }
 
     // h. update ValueMap: it contains value for teh checkboxes in
     // authorSettings.jsp for: hasAvailableDate, hasDueDate,
@@ -317,8 +310,25 @@ public class SaveAssessmentSettings
     // TODO: https://github.com/sakaiproject/sakai/commit/e9635ea4ec2cf05c07662d7c8e7bd29a1946560d#diff-c3555f437c75f6d93d735ae9[…]e2faf2004ed0b2a13dd0f5e6417089
     if (EvaluationModelIfc.TO_SELECTED_GRADEBOOK.toString().equals(evaluation.getToGradeBook())) {
         assessment.updateAssessmentToGradebookNameMetaData(assessmentSettings.getGradebookName());
-    } else {
-        assessment.updateAssessmentToGradebookNameMetaData("");
+
+        if (assessmentSettings.getGradebookGroupEnabled()) {
+          assessment.updateAssessmentMetaData(AssessmentMetaDataIfc.CATEGORY_LIST, "-1");
+        } else {
+          assessment.setCategoryId(1L);
+        }
+    } else if (EvaluationModelIfc.TO_DEFAULT_GRADEBOOK.toString().equals(evaluation.getToGradeBook())) {
+      if (assessmentSettings.getGradebookGroupEnabled()) {
+        assessment.updateAssessmentMetaData(AssessmentMetaDataIfc.CATEGORY_LIST, assessmentSettings.getCategorySelected());
+      } else {
+        // Add category unless unassigned (-1) is selected or defaulted. CategoryId comes
+        // from the web page as a string representation of a the long cat id.
+        if (!StringUtils.equals(assessmentSettings.getCategorySelected(), "-1") && !StringUtils.isEmpty(assessmentSettings.getCategorySelected())) {
+          List<String> categoryList = Arrays.asList(assessmentSettings.getCategorySelected().split(","));
+          assessment.setCategoryId(Long.parseLong((categoryList.get(0))));
+        }
+      }
+
+      assessment.updateAssessmentToGradebookNameMetaData("");
     }
 
     ExtendedTimeFacade extendedTimeFacade = PersistenceService.getInstance().getExtendedTimeFacade();

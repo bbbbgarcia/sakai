@@ -7972,7 +7972,7 @@ public class AssignmentAction extends PagedResourceActionII {
                                         groupChoice != null ? Arrays.asList(groupChoice) : new ArrayList<>(), selectedCategories, true);
 
                                 if (!areCategoriesInGroups) {
-                                    addAlert(state, "Se ha seleccionado una categoría pero no su grupo");//TODO i18n
+                                    addAlert(state, rb.getFormattedMessage("group.sitegradebook.categories.error"));
                                 }
                             }
 
@@ -7998,7 +7998,7 @@ public class AssignmentAction extends PagedResourceActionII {
                                         groupChoice != null ? Arrays.asList(groupChoice) : new ArrayList<>(), gbItemList, false);
 
                                 if (!areItemsInGroups) {
-                                    addAlert(state, rb.getFormattedMessage("group.sitegradebook.noitem.selected"));
+                                    addAlert(state, rb.getFormattedMessage("group.sitegradebook.items.error"));
                                 }
                             }
                         }

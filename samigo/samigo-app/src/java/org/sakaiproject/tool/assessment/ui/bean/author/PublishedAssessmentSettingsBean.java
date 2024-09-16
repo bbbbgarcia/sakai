@@ -488,7 +488,15 @@ public class PublishedAssessmentSettingsBean extends SpringBeanAutowiringSupport
 
         this.gradebookEnabled = populateGradebookEnabled();
 
-        this.categorySelected = getCategoryForAssessmentName(assessment.getTitle());
+        if (this.gradebookGroupEnabled) {
+          Object categoryListMetaData = assessment.getAssessmentMetaDataMap().get(AssessmentMetaDataIfc.CATEGORY_LIST);
+          this.categorySelected = categoryListMetaData != null ? (String) categoryListMetaData : "-1";
+        } else {
+          // JUANMA
+          this.categorySelected = initializeCategorySelected(assessment.getData().getCategoryId());
+        }
+
+        //this.categorySelected = getCategoryForAssessmentName(assessment.getTitle());
 
       }
 
@@ -1768,6 +1776,31 @@ public void setFeedbackComponentOption(String feedbackComponentOption) {
 	public String getBlockDivs() {
 		return blockDivs;
 	}
+
+      /**
+     * Returns the saved category id if it's there. Otherwise returns
+     * "-1". This is needed to choose which select item is selected
+     * when the authorSettings page loads.
+     * @param categoryId
+     * @return
+     */
+    private String initializeCategorySelected(Long categoryId) {
+      if (!this.gradebookGroupEnabled) {
+        String catSelected = "-1";
+        if (categoryId != null) {
+            String catId;
+            for (SelectItem catIdAndName : categoriesSelectList) {
+                catId = catIdAndName.getValue().toString();
+                if (catId.equals(categoryId.toString())) {
+                    catSelected = catId;
+                }
+            }
+        }
+        return catSelected;
+      } else {
+        return categoryId != null ? categoryId.toString() : "-1";
+      }
+    }
 
 	public String getBgColorSelect()
 	{
