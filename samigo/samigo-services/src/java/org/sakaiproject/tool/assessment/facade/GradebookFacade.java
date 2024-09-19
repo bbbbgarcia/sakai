@@ -51,7 +51,7 @@ public class GradebookFacade implements Serializable
    */
   public static String getGradebookUId(String siteId)
   {
-    return helper.getGradebookUId(siteId);// TODO S2U-26 esto es posible que lo mejor sea quitarlo?
+    return helper.getGradebookUId(siteId);
   }
   
   public static String getGradebookUId()

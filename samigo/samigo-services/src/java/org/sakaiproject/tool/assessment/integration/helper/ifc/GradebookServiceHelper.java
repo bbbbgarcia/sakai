@@ -27,8 +27,10 @@ import java.util.Optional;
 
 import org.sakaiproject.grading.api.GradingService;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
+import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedEvaluationModel;
 import org.sakaiproject.tool.assessment.data.dao.grading.AssessmentGradingData;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.PublishedAssessmentIfc;
+import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
 
 /**
  * <p>Description:
@@ -70,5 +72,10 @@ public interface GradebookServiceHelper extends Serializable
   public void updateExternalAssessmentScore(AssessmentGradingData ag, GradingService g, Long assignmentId) throws Exception;
   
   public List<String> getGradebookList(boolean isGradebookGroupEnabled, String[] groupsAuthorized);
+
+  public boolean isGradebookGroupEnabled(org.sakaiproject.grading.api.GradingService gradingService);
+
+  public void manageScoresToNewGradebook(org.sakaiproject.tool.assessment.services.GradingService samigoGradingService,
+    GradingService gradingService, PublishedAssessmentFacade assessment, PublishedEvaluationModel evaluation);
 
 }

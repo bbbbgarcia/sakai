@@ -55,8 +55,7 @@ public class GradebookHelperImpl implements GradebookHelper
    * This will *fail* unless called from an integrated Sakai context!
    * @return the current gradebook uid.
    */
-  public String getGradebookUId(String siteId)
-  {// TODO S2U-26 esto habra que ver si lo dejamos o lo quitamos
+  public String getGradebookUId(String siteId) {
     String context;
 
     Placement placement = null;

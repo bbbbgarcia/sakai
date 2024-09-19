@@ -30,6 +30,7 @@ import java.util.Locale;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Precision;
 
 import org.sakaiproject.authz.api.SecurityAdvisor;
@@ -47,15 +48,19 @@ import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.tool.api.SessionManager;
 import org.sakaiproject.tool.api.Tool;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
+import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedEvaluationModel;
 import org.sakaiproject.tool.assessment.data.dao.grading.AssessmentGradingData;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentMetaDataIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.EvaluationModelIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.PublishedAssessmentIfc;
 import org.sakaiproject.tool.assessment.facade.AgentFacade;
 import org.sakaiproject.tool.assessment.facade.GradebookFacade;
+import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
 import org.sakaiproject.tool.assessment.integration.helper.ifc.GradebookServiceHelper;
+import org.sakaiproject.tool.assessment.services.PersistenceService;
 import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
 import org.sakaiproject.user.api.PreferencesService;
+import org.springframework.context.annotation.DeferredImportSelector.Group.Entry;
 /**
  *
  * <p>Description:
@@ -128,17 +133,15 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     Exception
   {
     boolean added = false;
-    // TODO S2U-26 renombrar al menos
+
     String siteId = GradebookFacade.getGradebookUId();
-    if (gradebookUId == null)
-    {
+    if (gradebookUId == null) {
       return false;
     }
 
     String title = StringEscapeUtils.unescapeHtml4(publishedAssessment.getTitle());
-    // TODO S2U-26 si son varios gUid se hace bucle y 1 llamada para cada
-    if(!g.isAssignmentDefined(gradebookUId, siteId, title))
-    {
+
+    if (!g.isAssignmentDefined(gradebookUId, siteId, title)) {
       g.addExternalAssessment(gradebookUId, siteId,
               publishedAssessment.getPublishedAssessmentId().toString(),
               null,
@@ -232,18 +235,27 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
    * @throws java.lang.Exception
    */
   public void updateExternalAssessmentScore(AssessmentGradingData ag, GradingService g, Long assignmentId) throws Exception {
-    boolean testErrorHandling=false;
+    boolean testErrorHandling = false;
     PublishedAssessmentService pubService = new PublishedAssessmentService();
-    //TODO s2u-26 revisar y renombrar
+
     String siteId = GradebookFacade.getGradebookUId();
-    //TODO s2u-26 revisar
-    String gradebookUId = pubService.getPublishedAssessmentOwner(
-            ag.getPublishedAssessmentId());
-    if (gradebookUId == null)
-    {
-      return;
+    boolean isGradebookGroupEnabled = g.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
+
+    String gradebookUId = siteId;
+
+    if (isGradebookGroupEnabled) {
+      String foundGradebookUid = g.getGradebookUidByAssignmentById(AgentFacade.getCurrentSiteId(), assignmentId);
+
+      if (foundGradebookUid != null && !StringUtils.isBlank(foundGradebookUid)) {
+        gradebookUId = foundGradebookUid;
+      }
+    } else {
+      gradebookUId = pubService.getPublishedAssessmentOwner(ag.getPublishedAssessmentId());
+      if (gradebookUId == null) {
+        return;
+      }
     }
-    
+
     //Will pass to null value when last submission is deleted
     String points = null;
     if(ag.getFinalScore() != null) {
@@ -257,7 +269,6 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     if (assignmentId == null) {
       g.updateExternalAssessmentScore(gradebookUId, siteId, ag.getPublishedAssessmentId().toString(), ag.getAgentId(), points);
     } else {
-
         // This is the student grading it's own submission, we need to grant permissions to the student temporarily.
         SecurityAdvisor securityAdvisor = new SecurityAdvisor() {
             public SecurityAdvice isAllowed(String userId, String function, String reference) {
@@ -284,7 +295,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
           GradingService g) throws Exception {
 	  boolean testErrorHandling=false;
 	  PublishedAssessmentService pubService = new PublishedAssessmentService();
-	  // TODO S2U-26 uno de estos sera distinto, depende de como guardemos aqui
+
 	  String gradebookUId = pubService.getPublishedAssessmentOwner(publishedAssessmentId);
 	  String siteId = gradebookUId;
 	  if (gradebookUId == null) {
@@ -309,7 +320,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 		return null;
 	}
 
-  private String getFormattedScore(Double score, String gradebookUId) {// TODO S2U-26 ojo cuidado aqui
+  private String getFormattedScore(Double score, String gradebookUId) {
     String currentLocaleStr = null;
     String userId = AgentFacade.getEid();
 
@@ -350,5 +361,71 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     }
 
     return gradebookList;
+  }
+
+  public boolean isGradebookGroupEnabled(org.sakaiproject.grading.api.GradingService gradingService) {
+    return gradingService.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
+  }
+
+  public void manageScoresToNewGradebook(org.sakaiproject.tool.assessment.services.GradingService samigoGradingService,
+    GradingService gradingService, PublishedAssessmentFacade assessment, PublishedEvaluationModel evaluation) {
+
+    Integer scoringType = evaluation.getScoringType();
+
+			// need to decide what to tell gradebook
+			List<AssessmentGradingData> gradingDataList;
+
+			if (EvaluationModelIfc.HIGHEST_SCORE.equals(scoringType)) {
+				gradingDataList = samigoGradingService.getHighestSubmittedOrGradedAssessmentGradingList(assessment.getPublishedAssessmentId());
+			}
+			else {
+				gradingDataList = samigoGradingService.getLastSubmittedOrGradedAssessmentGradingList(assessment.getPublishedAssessmentId());
+			}
+
+			log.debug("list size = {}", gradingDataList.size());
+			for (AssessmentGradingData ag : gradingDataList) {
+				try {
+					log.debug("ag.scores " + ag.getTotalAutoScore());
+					// Send the average score if average was selected for multiple submissions
+					if (scoringType.equals(EvaluationModelIfc.AVERAGE_SCORE)) {
+						// status = 5: there is no submission but grader update something in the score page
+						if(ag.getStatus() ==5) {
+							ag.setFinalScore(ag.getFinalScore());
+						} else {
+							Double averageScore = PersistenceService.getInstance().getAssessmentGradingFacadeQueries().
+							getAverageSubmittedAssessmentGrading(assessment.getPublishedAssessmentId(), ag.getAgentId());
+							ag.setFinalScore(averageScore);
+						}
+					}
+
+          if (EvaluationModelIfc.TO_SELECTED_GRADEBOOK.toString().equals(evaluation.getToGradeBook())) {
+            String gradebookItemIdString = assessment.getAssessmentToGradebookNameMetaData();
+
+						if (isGradebookGroupEnabled(gradingService)) {
+							if (gradebookItemIdString != null && !StringUtils.isBlank(gradebookItemIdString)) {
+                // TODO S2U NEED TO CACHE THIS DATA
+                List<String> userGradebookList = gradingService.getGradebookInstancesForUser(AgentFacade.getCurrentSiteId(), ag.getAgentId());
+								List<String> gradebookItemList = Arrays.asList(gradebookItemIdString.split(","));
+
+                for (String gradebookItem : gradebookItemList) {
+                  String foundGradebookUid = gradingService.getGradebookUidByAssignmentById(AgentFacade.getCurrentSiteId(),
+                    Long.parseLong(gradebookItem));
+
+                    if (userGradebookList.contains(foundGradebookUid)) {
+                      Long gradebookItemId = Long.valueOf(gradebookItem);
+                      updateExternalAssessmentScore(ag, gradingService, gradebookItemId);
+                      break;
+                    }
+                }
+							}
+						} else {
+							updateExternalAssessmentScore(ag, gradingService, Long.valueOf(gradebookItemIdString));
+						}
+					}
+				}
+				catch (Exception e) {
+					log.warn("Exception occues in " + ag + "th record. Message:" + e.getMessage());
+				}
+			}
   }
 }

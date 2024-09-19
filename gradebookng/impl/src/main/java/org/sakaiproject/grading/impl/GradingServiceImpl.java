@@ -1083,8 +1083,6 @@ public class GradingServiceImpl implements GradingService {
 
         final Integer gbGradeType = gradebook.getGradeType();
         if (!Objects.equals(GradingConstants.GRADE_TYPE_POINTS, gbGradeType) && !Objects.equals(GradingConstants.GRADE_TYPE_PERCENTAGE, gbGradeType)) {
-	System.out.println("gradebookgui " + gradebook.getUid());
-	System.out.println("gbGradeType " + gbGradeType);
             log.error("Wrong grade type in GradebookCalculationImpl.getTotalPointsEarnedInternal");
             return Collections.emptyList();
         }

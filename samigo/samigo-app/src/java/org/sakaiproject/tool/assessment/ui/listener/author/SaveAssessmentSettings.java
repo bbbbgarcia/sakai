@@ -35,7 +35,7 @@ import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-
+import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.event.cover.EventTrackingService;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.samigo.util.SamigoConstants;
@@ -307,17 +307,22 @@ public class SaveAssessmentSettings
     Map <String, String> h = assessmentSettings.getValueMap();
     updateMetaWithValueMap(assessment, h);
 
+    org.sakaiproject.grading.api.GradingService gradingService =
+			(org.sakaiproject.grading.api.GradingService) ComponentManager.get("org.sakaiproject.grading.api.GradingService");
+
+    boolean isGradebookGroupEnabled = gradingService.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
+
     // TODO: https://github.com/sakaiproject/sakai/commit/e9635ea4ec2cf05c07662d7c8e7bd29a1946560d#diff-c3555f437c75f6d93d735ae9[…]e2faf2004ed0b2a13dd0f5e6417089
     if (EvaluationModelIfc.TO_SELECTED_GRADEBOOK.toString().equals(evaluation.getToGradeBook())) {
         assessment.updateAssessmentToGradebookNameMetaData(assessmentSettings.getGradebookName());
 
-        if (assessmentSettings.getGradebookGroupEnabled()) {
+        if (isGradebookGroupEnabled) {
           assessment.updateAssessmentMetaData(AssessmentMetaDataIfc.CATEGORY_LIST, "-1");
         } else {
           assessment.setCategoryId(1L);
         }
     } else if (EvaluationModelIfc.TO_DEFAULT_GRADEBOOK.toString().equals(evaluation.getToGradeBook())) {
-      if (assessmentSettings.getGradebookGroupEnabled()) {
+      if (isGradebookGroupEnabled) {
         assessment.updateAssessmentMetaData(AssessmentMetaDataIfc.CATEGORY_LIST, assessmentSettings.getCategorySelected());
       } else {
         // Add category unless unassigned (-1) is selected or defaulted. CategoryId comes

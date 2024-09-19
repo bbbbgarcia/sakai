@@ -42,6 +42,7 @@ import org.sakaiproject.tool.assessment.api.SamigoApiFactory;
 import org.sakaiproject.tool.assessment.data.dao.assessment.AssessmentAccessControl;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentAccessControlIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.EvaluationModelIfc;
+import org.sakaiproject.tool.assessment.facade.AgentFacade;
 import org.sakaiproject.tool.assessment.facade.AssessmentFacade;
 import org.sakaiproject.tool.assessment.services.assessment.AssessmentService;
 import org.sakaiproject.tool.assessment.shared.api.assessment.SecureDeliveryServiceAPI;
@@ -150,7 +151,7 @@ public class SaveAssessmentSettingsListener
         }
     }
 
-	boolean isGradebookGroupEnabled = assessmentSettings.getGradebookGroupEnabled();
+	boolean isGradebookGroupEnabled = gradingService.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
 	boolean isReleaseToSelectedGroups = assessmentSettings.getReleaseTo().equals(AssessmentAccessControl.RELEASE_TO_SELECTED_GROUPS);
 
 	if (isGradebookGroupEnabled && !isReleaseToSelectedGroups) {
@@ -176,8 +177,6 @@ public class SaveAssessmentSettingsListener
 			String siteId = assessmentSettings.getCurrentSiteId();
 			String defaultToGradebook = assessmentSettings.getToDefaultGradebook();
 
-			// TODO S2U sacarlo a un método aparte
-			// no se puede hacer switch debido a que los case deben ser constantes¡
 			if (defaultToGradebook != null && isGradebookGroupEnabled) {
 				if (defaultToGradebook.equals(EvaluationModelIfc.TO_DEFAULT_GRADEBOOK.toString())) {
 					String categorySelected = assessmentSettings.getCategorySelected();
