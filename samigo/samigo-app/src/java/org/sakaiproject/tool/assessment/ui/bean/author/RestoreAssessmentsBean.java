@@ -161,7 +161,6 @@ public class RestoreAssessmentsBean implements Serializable {
 
                 data.setReference(ref);
 
-                // TODO JUANMA restore - sustituir null for gradebook uids obtenidos de la property
                 Map<String, String> groupMap = assessment.getReleaseToGroups();
                 List<String> selectedGroups = groupMap.keySet().stream().collect(Collectors.toList());
 

@@ -140,6 +140,7 @@ public class GradingServiceImpl implements GradingService {
     // POSSIBLE FEATURE SWITCH TO CONSTANT ON A SEPARATE FILE
     private String gradebookGroupEnabledCache = "org.sakaiproject.tool.gradebook.group.enabled";
     private String gradebookGroupInstancesCache = "org.sakaiproject.tool.gradebook.group.instances";
+    private String matchingUserGradebookItemCache = "org.sakaiproject.tool.gradebook.group.user_gradebookItem";
 
     private MemoryService memoryService;
 
@@ -174,9 +175,11 @@ public class GradingServiceImpl implements GradingService {
 
         log.debug(buildCacheLogDebug("creatingCache", gradebookGroupEnabledCache));
         log.debug(buildCacheLogDebug("creatingCache", gradebookGroupInstancesCache));
+        log.debug(buildCacheLogDebug("creatingCache", matchingUserGradebookItemCache));
 
         memoryService.newCache(gradebookGroupEnabledCache);
         memoryService.newCache(gradebookGroupInstancesCache);
+        memoryService.newCache(matchingUserGradebookItemCache);
     }
 
     @Override
@@ -5420,5 +5423,37 @@ public class GradingServiceImpl implements GradingService {
         }
 
         return gradebookCategoryMap;
+    }
+
+    public Long getMatchingUserGradebookItemId(String siteId, String userId, String gradebookItemIdString) {
+        Cache<String, Long> matchingUserGradebookItem = memoryService.getCache(matchingUserGradebookItemCache);
+
+        if (matchingUserGradebookItem != null && matchingUserGradebookItem.containsKey(userId)) {
+            log.debug(buildCacheLogDebug("cacheKeyFound", gradebookGroupInstancesCache));
+            Long gradebookItemId = matchingUserGradebookItem.get(userId);
+
+            if (gradebookItemId != null) {
+                log.debug(buildCacheLogDebug("cacheValueFound", gradebookGroupInstancesCache));
+
+                return gradebookItemId;
+            }
+        }
+
+        List<String> userGradebookList = getGradebookInstancesForUser(siteId, userId);
+        List<String> gradebookItemList = Arrays.asList(gradebookItemIdString.split(","));
+
+        for (String gradebookItem : gradebookItemList) {
+            String foundGradebookUid = getGradebookUidByAssignmentById(siteId,
+                Long.parseLong(gradebookItem));
+
+            if (userGradebookList.contains(foundGradebookUid)) {
+                Long gradebookItemId = Long.valueOf(gradebookItem);
+
+                matchingUserGradebookItem.put(siteId, gradebookItemId);
+                return gradebookItemId;
+            }
+        }
+
+        return null;
     }
 }

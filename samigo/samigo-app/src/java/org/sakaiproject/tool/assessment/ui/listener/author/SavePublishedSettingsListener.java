@@ -1110,7 +1110,7 @@ implements ActionListener
 							String ref = SamigoReferenceReckoner.reckoner().site(site.getId()).subtype("p").id(assessment.getPublishedAssessmentId().toString()).reckon().getReference();
 							data.setReference(ref);
 
-							gbsHelper.addToGradebook(entry.getKey(), data, !entry.getValue().equals("-1") ? Long.parseLong(entry.getValue()) : 1L, gradingServiceApi);
+							gbsHelper.addToGradebook(entry.getKey(), data, !entry.getValue().equals("-1") ? Long.parseLong(entry.getValue()) : null, gradingServiceApi);
 						} catch(Exception e){
 							log.warn("oh well, must have been added already:"+e.getMessage());
 						}

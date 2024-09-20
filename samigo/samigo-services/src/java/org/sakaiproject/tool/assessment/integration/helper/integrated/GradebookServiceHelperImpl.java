@@ -243,16 +243,33 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 
     String gradebookUId = siteId;
 
-    if (isGradebookGroupEnabled) {
-      String foundGradebookUid = g.getGradebookUidByAssignmentById(AgentFacade.getCurrentSiteId(), assignmentId);
-
-      if (foundGradebookUid != null && !StringUtils.isBlank(foundGradebookUid)) {
-        gradebookUId = foundGradebookUid;
-      }
-    } else {
+    if (!isGradebookGroupEnabled) {
       gradebookUId = pubService.getPublishedAssessmentOwner(ag.getPublishedAssessmentId());
+
       if (gradebookUId == null) {
         return;
+      }
+    } else {
+      PublishedAssessmentFacade pAF = pubService.getPublishedAssessment(ag.getPublishedAssessmentId().toString());
+
+      if (pAF != null) {
+        if (assignmentId == null) {
+          List<String> userGradebookList = g.getGradebookInstancesForUser(AgentFacade.getCurrentSiteId(), ag.getAgentId());
+          Map<String, String> releaseToGroupsMap = pAF.getReleaseToGroups();
+
+          for (String userGradebook : userGradebookList) {
+            if (releaseToGroupsMap.containsKey(userGradebook)) {
+              gradebookUId = userGradebook;
+              break;
+            }
+          }
+        } else {
+          String foundGradebookUid = g.getGradebookUidByAssignmentById(AgentFacade.getCurrentSiteId(), assignmentId);
+
+          if (foundGradebookUid != null && !StringUtils.isBlank(foundGradebookUid)) {
+            gradebookUId = foundGradebookUid;
+          }
+        }
       }
     }
 
@@ -398,24 +415,21 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 						}
 					}
 
+          if (EvaluationModelIfc.TO_DEFAULT_GRADEBOOK.toString().equals(evaluation.getToGradeBook())) {
+            updateExternalAssessmentScore(ag, gradingService);
+            updateExternalAssessmentComment(ag.getPublishedAssessmentId(), ag.getAgentId() , ag.getComments(), gradingService);
+          }
+
           if (EvaluationModelIfc.TO_SELECTED_GRADEBOOK.toString().equals(evaluation.getToGradeBook())) {
             String gradebookItemIdString = assessment.getAssessmentToGradebookNameMetaData();
 
 						if (isGradebookGroupEnabled(gradingService)) {
 							if (gradebookItemIdString != null && !StringUtils.isBlank(gradebookItemIdString)) {
-                // TODO S2U NEED TO CACHE THIS DATA
-                List<String> userGradebookList = gradingService.getGradebookInstancesForUser(AgentFacade.getCurrentSiteId(), ag.getAgentId());
-								List<String> gradebookItemList = Arrays.asList(gradebookItemIdString.split(","));
+                Long gradebookItemId = gradingService.getMatchingUserGradebookItemId(AgentFacade.getCurrentSiteId(),
+                  ag.getAgentId(), gradebookItemIdString);
 
-                for (String gradebookItem : gradebookItemList) {
-                  String foundGradebookUid = gradingService.getGradebookUidByAssignmentById(AgentFacade.getCurrentSiteId(),
-                    Long.parseLong(gradebookItem));
-
-                    if (userGradebookList.contains(foundGradebookUid)) {
-                      Long gradebookItemId = Long.valueOf(gradebookItem);
-                      updateExternalAssessmentScore(ag, gradingService, gradebookItemId);
-                      break;
-                    }
+                if (gradebookItemId != null) {
+                  updateExternalAssessmentScore(ag, gradingService, gradebookItemId);
                 }
 							}
 						} else {

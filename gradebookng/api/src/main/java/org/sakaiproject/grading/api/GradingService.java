@@ -952,11 +952,12 @@ public interface GradingService extends EntityProducer {
     public boolean isGradebookGroupEnabled(String siteId);
     public List<Gradebook> getGradebookGroupInstances(String siteId);
     public List<String> getGradebookGroupInstancesIds(String siteId);
-    public List<String> getGradebookInstancesForUser(String siteId, String userId);
     public Assignment getAssignmentById(String siteId, Long assignmentId);
     public GradebookAssignment getGradebookAssigment(String siteId, Long assignmentId);
     public String getGradebookUidByAssignmentById(String siteId, Long assignmentId);
     public boolean checkMultiSelectorList(String siteId, List<String> groupList, List<String> multiSelectorList, boolean isCategory);
     public Map<String, String> buildCategoryGradebookMap(List<String> selectedGradebookUids, String categoriesString, String siteId);
+    public Long getMatchingUserGradebookItemId(String siteId, String userId, String gradebookItemIdString);
+    public List<String> getGradebookInstancesForUser(String siteId, String userId);
 
 }

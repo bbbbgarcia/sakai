@@ -508,7 +508,6 @@ public class AssessmentSettingsBean extends SpringBeanAutowiringSupport implemen
           Object categoryListMetaData = assessment.getAssessmentMetaDataMap().get(AssessmentMetaDataIfc.CATEGORY_LIST);
           this.categorySelected = categoryListMetaData != null ? (String) categoryListMetaData : "-1";
         } else {
-          // JUANMA
           this.categorySelected = initializeCategorySelected(assessment.getData().getCategoryId());
         }
       }

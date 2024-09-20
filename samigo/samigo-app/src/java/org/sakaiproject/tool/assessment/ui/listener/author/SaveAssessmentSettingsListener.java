@@ -151,6 +151,8 @@ public class SaveAssessmentSettingsListener
         }
     }
 
+	GradingService gradingService = (GradingService) ComponentManager.get("org.sakaiproject.grading.api.GradingService");
+
 	boolean isGradebookGroupEnabled = gradingService.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
 	boolean isReleaseToSelectedGroups = assessmentSettings.getReleaseTo().equals(AssessmentAccessControl.RELEASE_TO_SELECTED_GROUPS);
 
@@ -171,8 +173,6 @@ public class SaveAssessmentSettingsListener
     	}
     	else {
 			List<String> groupList = Arrays.asList(groupsAuthorized);
-
-			GradingService gradingService = (GradingService) ComponentManager.get("org.sakaiproject.grading.api.GradingService");
 
 			String siteId = assessmentSettings.getCurrentSiteId();
 			String defaultToGradebook = assessmentSettings.getToDefaultGradebook();
