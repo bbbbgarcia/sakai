@@ -7980,10 +7980,10 @@ public class AssignmentAction extends PagedResourceActionII {
                             List<String> existingGradebookUids = gbList.stream().map(Gradebook::getUid).collect(Collectors.toList());
 
                             for (String gbUid : existingGradebookUids) {
-                                buildGradebookPointsMap(gbUid, siteId, assignmentRef, gradebookPointsMap, newCategoryString);
+                                gradingService.buildGradebookPointsMap(gbUid, siteId, assignmentRef, gradebookPointsMap, newCategoryString);
                             }
                         } else {
-                            buildGradebookPointsMap(siteId, siteId, assignmentRef, gradebookPointsMap, catInt.toString());
+                            gradingService.buildGradebookPointsMap(siteId, siteId, assignmentRef, gradebookPointsMap, catInt.toString());
                         }
                         break;
                     case GRADEBOOK_INTEGRATION_ASSOCIATE:
@@ -8398,43 +8398,6 @@ public class AssignmentAction extends PagedResourceActionII {
         }
 
     } // setNewAssignmentParameters
-
-    // What this part does is search in one gradebook or several (if isGradebookGroupEnabled is active)
-    // for the category that contains the assignment. When it finds it, it retrieves the points for the
-    // category (category.getPointsForCategory()) and stores them in a HashMap that keeps track
-    // of the gradebook + category score. In the end, instead of using the old Double,
-    // we will iterate through the HashMap, using the Double from each entry, and perform
-    // the same check as before.
-    private void buildGradebookPointsMap(String gbUid, String siteId, String assignmentRef,
-    Map<String, Double> gradebookPointsMap, String newCategoryString) {
-        Long catRef = -1L;
-
-        List<CategoryDefinition> categoryDefinitions = gradingService.getCategoryDefinitions(gbUid, siteId);
-        if (!newCategoryString.equals("-1") || assignmentRef.isEmpty()) {
-            // NO DEBERÍA EJECUTARSE
-            // TODO JUANMA CATEGORIA VACIA
-            // catRefList = newCategoryString;
-        } else {
-            for (CategoryDefinition categorie : categoryDefinitions) {
-                if (categorie.isAssignmentInThisCategory(assignmentRef)) {
-                    catRef = categorie.getId();
-                }
-            }
-        }
-
-        if (catRef != -1) {
-            for (CategoryDefinition thisCategoryDefinition : categoryDefinitions) {
-                if (Objects.equals(thisCategoryDefinition.getId(), catRef)) {
-                    if (thisCategoryDefinition.getDropKeepEnabled() && !thisCategoryDefinition.getEqualWeight()) {
-                        Double thisCategoryPoints = thisCategoryDefinition.getPointsForCategory();
-                        if (thisCategoryPoints != null) {
-                            gradebookPointsMap.put(gbUid, thisCategoryPoints);
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     /**
      * check to see whether there is already an assignment with the same title in the site
