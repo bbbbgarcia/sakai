@@ -8002,32 +8002,57 @@ public class AssignmentAction extends PagedResourceActionII {
                                 }
                             }
                         }
+
+                        List<String> gradebookReferenceList = new ArrayList<>();
+
+                        if (isGradebookGroupEnabled) {
+                            List<String> gbItemList = Arrays.asList(gbSelector.split(","));
+
+                            for (String gbItem : gbItemList) {
+                                Long itemId = Long.parseLong(gbItem);
+
+                                GradebookAssignment gradebookAssignment = gradingService.getGradebookAssigment(siteId, itemId);
+
+                                String reference = gradebookAssignment.getExternallyMaintained() ?
+                                    gradebookAssignment.getExternalId() : gradebookAssignment.getId().toString();
+
+                                gradebookReferenceList.add(reference);
+                            }
+                        } else {
+                            gradebookReferenceList.add(associateAssignment);
+                        }
+
+                        String associatedAssignmentTitles = "";
+                        // check assignments from the site
+                        for (Assignment a : assignmentService.getAssignmentsForContext(siteId)) {
+                            if (assignmentId.equals(a.getId())) {
+                                continue;
+                            }
+
+                            String selectedAssociateAssignment = a.getProperties().get(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
+
+                            for (String gradebookReference : gradebookReferenceList) {
+                                if (selectedAssociateAssignment != null) {
+                                    List<String> selectedAssociateAssignmentList = Arrays.asList(selectedAssociateAssignment.split(","));
+
+                                    if (selectedAssociateAssignmentList.contains(gradebookReference)) {
+                                        associatedAssignmentTitles += a.getTitle();
+                                    }
+                                }
+                            }
+                        }
+                        if (StringUtils.isNotBlank(associatedAssignmentTitles) && state.getAttribute(NEW_ASSIGNMENT_PREVIOUSLY_ASSOCIATED) == null) {
+                            state.setAttribute(NEW_ASSIGNMENT_PREVIOUSLY_ASSOCIATED, Boolean.TRUE);
+                        } else {
+                            // clean the attribute after user confirm
+                            state.removeAttribute(NEW_ASSIGNMENT_PREVIOUSLY_ASSOCIATED);
+                        }
+                        if (state.getAttribute(NEW_ASSIGNMENT_PREVIOUSLY_ASSOCIATED) != null && validify) {
+                            addAlert(state, rb.getString("addtogradebook.previouslyAssoc"));
+                        }
                         break;
                     default:
                         break;
-                }
-
-                //DISTINTO EN 25X - ahora hace el match por id en vez de nombre? pero creo que falta conversion?
-                // check if chosen a previously associated object
-                String associatedAssignmentTitles = "";
-                // check assignments from the site
-                for (Assignment a : assignmentService.getAssignmentsForContext(siteId)) {
-                    if (assignmentId.equals(a.getId())) {
-                        continue;
-                    }
-                    String gradebookItem = a.getProperties().get(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
-                    if (gradebookItem != null && StringUtils.equals(associateAssignment, gradebookItem)) {
-                        associatedAssignmentTitles += a.getTitle();
-                    }
-                }
-                if (StringUtils.isNotBlank(associatedAssignmentTitles) && state.getAttribute(NEW_ASSIGNMENT_PREVIOUSLY_ASSOCIATED) == null) {
-                    state.setAttribute(NEW_ASSIGNMENT_PREVIOUSLY_ASSOCIATED, Boolean.TRUE);
-                } else {
-                    // clean the attribute after user confirm
-                    state.removeAttribute(NEW_ASSIGNMENT_PREVIOUSLY_ASSOCIATED);
-                }
-                if (state.getAttribute(NEW_ASSIGNMENT_PREVIOUSLY_ASSOCIATED) != null && validify) {
-                    addAlert(state, rb.getString("addtogradebook.previouslyAssoc"));
                 }
             }
         }
