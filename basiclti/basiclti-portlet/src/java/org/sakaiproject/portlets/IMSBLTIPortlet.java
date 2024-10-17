@@ -343,6 +343,9 @@ public class IMSBLTIPortlet extends GenericPortlet {
 		// For outcomes we check for tools in the site before offering the options
 		String allowOutcomes = ServerConfigurationService.getString(SakaiBLTIUtil.BASICLTI_OUTCOMES_ENABLED, SakaiBLTIUtil.BASICLTI_OUTCOMES_ENABLED_DEFAULT);
 
+		GradingService gradingService = (GradingService) ComponentManager.get("org.sakaiproject.grading.api.GradingService");
+		request.setAttribute("isGradebookGroupEnabled", gradingService.isGradebookGroupEnabled(getContext()));
+
 		boolean foundLessons = false;
 		boolean foundGradebook = false;
 		ToolConfiguration toolConfig = SiteService.findTool(placement.getId());
