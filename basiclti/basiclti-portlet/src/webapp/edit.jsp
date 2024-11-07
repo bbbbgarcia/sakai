@@ -54,8 +54,6 @@ Boolean allowOutcomes = (Boolean) rReq.getAttribute("allowOutcomes");
 
 Boolean isGradebookGroupEnabled = (Boolean) rReq.getAttribute("isGradebookGroupEnabled");
 
-Boolean allowSettings = (Boolean) rReq.getAttribute("allowSettings");
-
 Boolean allowRoster = (Boolean) rReq.getAttribute("allowRoster");
 
 %>
