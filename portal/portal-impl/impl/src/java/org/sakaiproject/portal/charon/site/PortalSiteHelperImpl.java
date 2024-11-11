@@ -131,8 +131,8 @@ public class PortalSiteHelperImpl implements PortalSiteHelper
 	private static final String OVERVIEW_TOOL_TITLE = "overview";
 	private static final String SAK_PROP_FORCE_OVERVIEW_TO_TOP = "portal.forceOverviewToTop";
 	private static final boolean SAK_PROP_FORCE_OVERVIEW_TO_TOP_DEFAULT = false;
-	private static final String GRADEBOOK_TOOL_ID = "sakai.gradebookng";
-	private static final String GRADEBOOK_GROUP_PROPERTY = "gb-group";
+	public static final String GRADEBOOK_TOOL_ID = "sakai.gradebookng";
+	public static final String GRADEBOOK_GROUP_PROPERTY = "gb-group";
 
 	private final AliasService aliasService;
 	private final AuthzGroupService authzGroupService;
@@ -1380,14 +1380,14 @@ public class PortalSiteHelperImpl implements PortalSiteHelper
 		return newPages;
 	}
 
-	public static boolean checkGradebookVisibility(ToolConfiguration tc, Site site) {
+	public boolean checkGradebookVisibility(ToolConfiguration tc, Site site) {
 		//1 if tool is not gb or has no property or user is instructor
-		if (!GRADEBOOK_TOOL_ID.equals(tc.getToolId()) || tc.getPlacementConfig().getProperty(GRADEBOOK_GROUP_PROPERTY) == null || getSecurityService().unlock("section.role.instructor", site.getReference())) {
+		if (!GRADEBOOK_TOOL_ID.equals(tc.getToolId()) || tc.getPlacementConfig().getProperty(GRADEBOOK_GROUP_PROPERTY) == null || securityService.unlock("section.role.instructor", site.getReference())) {
 			return true;
 		}
 		//2 check user groups match
 		String gbGroup = tc.getPlacementConfig().getProperty(GRADEBOOK_GROUP_PROPERTY);
-		List<String> groupIds = site.getGroupsWithMember(getUserDirectoryService().getCurrentUser().getId()).stream().map(Group::getId).collect(Collectors.toList());
+		List<String> groupIds = site.getGroupsWithMember(userDirectoryService.getCurrentUser().getId()).stream().map(Group::getId).collect(Collectors.toList());
 		return groupIds.contains(gbGroup);
 	}
 

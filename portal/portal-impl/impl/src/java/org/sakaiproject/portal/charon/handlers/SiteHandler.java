@@ -92,6 +92,9 @@ import org.sakaiproject.util.RequestFilter;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.stream.Collectors;
+import org.sakaiproject.portal.charon.site.PortalSiteHelperImpl;//TODO removed import after lessons subnav , temp fix, duplicate checkGradebookVisibility method
+import org.sakaiproject.site.api.Group;
 
 /**
  * @author ieb
@@ -1104,7 +1107,7 @@ public class SiteHandler extends WorksiteHandler
 		ToolManager toolManager = (ToolManager) ComponentManager.get(ToolManager.class.getName());
 		boolean allowedUser = toolManager.allowTool(site, siteTool);
 		if ( ! allowedUser ) return false;
-		if (!PortalSiteHelperImpl.checkGradebookVisibility(siteTool, site)) return false;
+		if (!checkGradebookVisibility(siteTool, site)) return false;
 		return true;
 	}
 
@@ -1298,6 +1301,18 @@ public class SiteHandler extends WorksiteHandler
 				toolPathInfo);
 
 		return true;
+	}
+
+	//TODO duplicated method from PortalSiteHelperImpl after lessons subnav , temporary fix for gb groups qa
+	public boolean checkGradebookVisibility(ToolConfiguration tc, Site site) {
+		//1 if tool is not gb or has no property or user is instructor
+		if (!PortalSiteHelperImpl.GRADEBOOK_TOOL_ID.equals(tc.getToolId()) || tc.getPlacementConfig().getProperty(PortalSiteHelperImpl.GRADEBOOK_GROUP_PROPERTY) == null || securityService.unlock("section.role.instructor", site.getReference())) {
+			return true;
+		}
+		//2 check user groups match
+		String gbGroup = tc.getPlacementConfig().getProperty(PortalSiteHelperImpl.GRADEBOOK_GROUP_PROPERTY);
+		List<String> groupIds = site.getGroupsWithMember(userDirectoryService.getCurrentUser().getId()).stream().map(Group::getId).collect(Collectors.toList());
+		return groupIds.contains(gbGroup);
 	}
 
 }
