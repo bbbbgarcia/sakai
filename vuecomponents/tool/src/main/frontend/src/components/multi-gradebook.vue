@@ -97,6 +97,7 @@ export default {
 		tool: { type: String },
 		selectedTemp: { type: String },
 		isCategory: { type: Boolean },
+		groupId: { type: String},
 		multipleSelection: { type: Boolean },
 		userId: { type: String },
 	},
@@ -134,11 +135,13 @@ export default {
 	},
 	async mounted() {
 		var endpoint = this.isCategory ? "/categories" : "/items";
-		console.debug("ENDPOINT: " + endpoint);
-		console.debug("selection" , this.multipleSelection);
 
 		if (this.userId) {
 			endpoint += "/" + this.userId;
+		}
+
+		if (this.groupId && this.groupId.trim() !== "") {
+			endpoint += "/" + this.groupId;
 		}
 
 		await fetch('/api/sites/' + this.siteId + endpoint)

@@ -251,30 +251,15 @@
 		   		  </h:panelGroup>
 			    <f:verbatim></h3></f:verbatim>
           </h:panelGroup> 
-          <h:panelGroup styleClass="itemNav">
-		  <h:panelGroup rendered="#{!mfStatisticsBean.gradingService.isGradebookGroupEnabled(ForumTool.siteId)}">
-			<h:outputText value="#{msgs.cdfm_select_assign}: "/>
-			<h:selectOneMenu id="assignment" value="#{mfStatisticsBean.selectedAssign}" valueChangeListener="#{mfStatisticsBean.processGradeAssignChange}" styleClass="selAssignVal"
-			onchange="document.forms[0].submit();">
-			<f:selectItems value="#{mfStatisticsBean.assignments}" />
-			</h:selectOneMenu>
-		  </h:panelGroup>
-			<h:panelGroup rendered="#{mfStatisticsBean.gradingService.isGradebookGroupEnabled(ForumTool.siteId)}">
-				<sakai-multi-gradebook
-						id="gb-selector"
-						site-id='<h:outputText value="#{ForumTool.siteId}" />'
-						selected-temp='<h:outputText value="Hey" />'
-					>
-				</sakai-multi-gradebook>
-				<h:inputHidden 
-					id="gb_selector" 
-					value="#{mfStatisticsBean.selectedAssign}" 
-				/>
-				
-				<h:commandButton action="#{mfStatisticsBean.proccessActionGradeAssignsChangeSubmit}" value="#{msgs.cdfm_gradebook_group_selector_send_button}" accesskey="s"
-				onclick="warn = false;SPNR.disableControlsAndSpin( this, null );" />
+          <h:panelGroup style="display:block; height: 125px; width: 500px;">
+			<h:panelGroup rendered="#{!mfStatisticsBean.gradingService.isGradebookGroupEnabled(ForumTool.siteId)}">
+				<h:outputText value="#{msgs.cdfm_select_assign}: "/>
+				<h:selectOneMenu id="assignment" value="#{mfStatisticsBean.selectedAssign}" valueChangeListener="#{mfStatisticsBean.processGradeAssignChange}" styleClass="selAssignVal"
+				onchange="document.forms[0].submit();">
+				<f:selectItems value="#{mfStatisticsBean.assignments}" />
+				</h:selectOneMenu>
 			</h:panelGroup>
-          </h:panelGroup>  
+          </h:panelGroup>
           <h:panelGroup styleClass="itemNav" rendered="#{!empty mfStatisticsBean.groupsForStatisticsByTopic}">
           
           </h:panelGroup>
@@ -296,6 +281,26 @@
           	</div>
 	  	</f:subview>
 	  	
+		<div style="margin-bottom: 1rem;">
+			<h:panelGroup rendered="#{mfStatisticsBean.gradingService.isGradebookGroupEnabled(ForumTool.siteId) && !mfStatisticsBean.discussionGeneric}" id="multigradebook-group-container">
+				<div style="margin-bottom: 0.5rem;">
+					<sakai-multi-gradebook
+						id="gb-selector"
+						site-id='<h:outputText value="#{ForumTool.siteId}" />'
+						user-id='<h:outputText value="#{ForumTool.userId}" />'
+						group-id='<h:outputText value="#{mfStatisticsBean.groupId}" />'
+						selected-temp='<h:outputText value="Hey" />'>
+					</sakai-multi-gradebook>
+					<h:inputHidden 
+						id="gb_selector" 
+						value="#{mfStatisticsBean.selectedAssign}" 
+					/>
+				</div>
+				
+				<h:commandButton action="#{mfStatisticsBean.proccessActionGradeAssignsChangeSubmit}" value="#{msgs.cdfm_gradebook_group_selector_send_button}" accesskey="s"
+				onclick="warn = false;SPNR.disableControlsAndSpin( this, null );"/>
+			</h:panelGroup>
+		</div>
 	  	
 		<%--
 			Use cahcedTopicStatistics - value is cached from #{!empty mfStatisticsBean.groupForStatisticsByTopic} above.
@@ -407,7 +412,7 @@
   					<f:convertNumber type="percent" />
   				</h:outputText>
   			</h:column>
-  			<h:column rendered="#{mfStatisticsBean.selectedAssign == 'Default_0'}">
+  			<h:column rendered="#{mfStatisticsBean.selectedAssign == 'Default_0' && mfStatisticsBean.discussionGeneric}">
   				<f:facet name="header">
 					<h:outputText value="#{msgs.cdfm_button_bar_grade}" />
   				</f:facet>
@@ -432,7 +437,7 @@
 						<h:graphicImage value="/images/sortdescending.gif" rendered="#{mfStatisticsBean.gradeSort && !mfStatisticsBean.ascending}" alt="#{mfStatisticsBean.selAssignName}"/>
 						<f:verbatim><br/></f:verbatim>
 						<h:outputFormat value=" #{msgs.cdfm_points_possible}" rendered="#{mfStatisticsBean.gradeByPoints}">
-							<f:param value="#{mfStatisticsBean.gbItemPointsPossible}"/>
+							<f:param value="#{mfStatisticsBean.gbItemPointsPossible.split(',')[0]}"/>
 						</h:outputFormat>
 					</h:commandLink>
   				</f:facet>
