@@ -541,8 +541,7 @@ public class AssignmentToolUtils {
             if (siteId == null) {
                 siteId = toolManager.getCurrentPlacement().getContext();
             }
-			//TODO modificar esto, vendra de param?
-			//String gradebookUid = siteId;
+
 			if (gradebookUid == null) {
 				gradebookUid = siteId;
 			}

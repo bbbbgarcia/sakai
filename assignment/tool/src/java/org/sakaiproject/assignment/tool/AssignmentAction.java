@@ -6886,7 +6886,6 @@ public class AssignmentAction extends PagedResourceActionII {
                                     // update grade in gradebook
                                     List<String> gradebookUids = gradingService.getGradebookUidByExternalId(associateGradebookAssignment);
                                     for (String gradebookUid : gradebookUids) {
-//TODO validar si ese guid va con grupo o da igual?
                                         addAlerts(state, assignmentToolUtils.integrateGradebook(stateToMap(state), gradebookUid, assignmentRef, associateGradebookAssignment, null, null, null, -1, null, submissionId, "update", -1));
                                     }
                                 }
@@ -11030,7 +11029,6 @@ public class AssignmentAction extends PagedResourceActionII {
                     // remove from Gradebook
                     List<String> gradebookUids = gradingService.getGradebookUidByExternalId(item);
                     for (String gradebookUid : gradebookUids) {
-                         //TODO validar si ese guid va con grupo o da igual?
                         addAlerts(state, assignmentToolUtils.integrateGradebook(stateToMap(state), gradebookUid, ref, item, "remove", null, null, -1, null, null, null, -1));
                     }
                 }
@@ -11533,7 +11531,6 @@ public class AssignmentAction extends PagedResourceActionII {
                 String associateGradebookAssignment = a.getProperties().get(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
                 List<String> gradebookUids = gradingService.getGradebookUidByExternalId(associateGradebookAssignment);
                 for (String gradebookUid : gradebookUids) {
-                    //TODO validar si ese guid va con grupo o da igual?
                     addAlerts(state, assignmentToolUtils.integrateGradebook(stateToMap(state), gradebookUid, aReference, associateGradebookAssignment, null, null, null, -1, null, null, "update", -1));
                 }
             }
@@ -12304,7 +12301,6 @@ public class AssignmentAction extends PagedResourceActionII {
                                             // update grade in gradebook
                                             List<String> gradebookUids = gradingService.getGradebookUidByExternalId(associateGradebookAssignment);
                                             for (String gradebookUid : gradebookUids) {
-                                                //TODO validar si ese guid va con grupo o da igual?
                                                 addAlerts(state, assignmentToolUtils.integrateGradebook(stateToMap(state), gradebookUid, aReference, associateGradebookAssignment, null, null, null, -1, null, submissionId, "update", -1));
                                             }
                                         }
@@ -15047,7 +15043,6 @@ public class AssignmentAction extends PagedResourceActionII {
                             if (associateGradebookAssignment != null) {
                                 List<String> gradebookUids = gradingService.getGradebookUidByExternalId(associateGradebookAssignment);
                                 for (String gradebookUid : gradebookUids) {
-                                    //TODO validar si ese guid va con grupo o da igual?
                                     addAlerts(state, assignmentToolUtils.integrateGradebook(stateToMap(state), gradebookUid, aReference, associateGradebookAssignment, null, null, null, -1, null, sReference, "update", -1));
                                 }
                             }
