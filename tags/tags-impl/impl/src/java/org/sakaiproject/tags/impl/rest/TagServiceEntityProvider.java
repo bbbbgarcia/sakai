@@ -215,6 +215,40 @@ public class TagServiceEntityProvider implements EntityProvider, AutoRegisterEnt
         }
     }
 
+    @EntityCustomAction(action = "getTagsByItemId", viewKey = EntityView.VIEW_LIST)
+    public JSONObject getTagsByItemId(EntityView view, Map<String, Object> params) {
+        try {
+            WrappedParams wp = new WrappedParams(params);
+            String assignmentId = wp.getString("assignmentId");
+            String siteId = wp.getString("siteId");
+
+            List<Tag> tagList = tagService().getAssociatedTagsForItem(siteId, assignmentId);
+
+            return buildtagJsonOject(tagList, tagList.size());
+        } catch (Exception e) {
+            log.error("Error calling getTagsByItemId:", e);
+            return null;
+        }
+    }
+
+    private JSONObject buildtagJsonOject(List<Tag> tagList, int tagCount) {
+        JSONObject responseDetailsJson = new JSONObject();
+        JSONArray jsonArray = new JSONArray();
+
+        for (Tag p : tagList) {
+            JSONObject formDetailsJson = new JSONObject();
+            formDetailsJson.put("tagId", p.getTagId());
+            formDetailsJson.put("tagLabel", p.getTagLabel());
+            formDetailsJson.put("collectionName", p.getCollectionName());
+            formDetailsJson.put("tagCollectionId", p.getTagCollectionId());
+            jsonArray.add(formDetailsJson);
+        }
+        responseDetailsJson.put("total",tagCount );
+        responseDetailsJson.put("tags", jsonArray);
+
+        return responseDetailsJson;
+    }
+
 
 
     private TagService tagService() {
